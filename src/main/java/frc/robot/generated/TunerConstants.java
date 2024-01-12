@@ -7,6 +7,7 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveModuleConstantsFactory;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.ClosedLoopOutputType;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModuleConstants.SteerFeedbackType;
 
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import frc.robot.CommandSwerveDrivetrain;
 
@@ -46,7 +47,7 @@ public class TunerConstants {
 
 	private static final double kDriveGearRatio = 6.746031746031747;
 	private static final double kSteerGearRatio = 21.428571428571427;
-	private static final double kWheelRadiusInches = 2;
+	private static final double kWheelRadiusInches = 2.11;
 
 	private static final boolean kSteerMotorReversed = true;
 	private static final boolean kInvertLeftSide = false;
@@ -63,26 +64,26 @@ public class TunerConstants {
 	private static final double kDriveFrictionVoltage = 0.25;
 
 	private static final SwerveDrivetrainConstants DrivetrainConstants = new SwerveDrivetrainConstants()
-		.withPigeon2Id(kPigeonId)
-		.withCANbusName(kCANbusName);
+			.withPigeon2Id(kPigeonId)
+			.withCANbusName(kCANbusName);
 
 	private static final SwerveModuleConstantsFactory ConstantCreator = new SwerveModuleConstantsFactory()
-		.withDriveMotorGearRatio(kDriveGearRatio)
-		.withSteerMotorGearRatio(kSteerGearRatio)
-		.withWheelRadius(kWheelRadiusInches)
-		.withSlipCurrent(kSlipCurrentA)
-		.withSteerMotorGains(steerGains)
-		.withDriveMotorGains(driveGains)
-		.withSteerMotorClosedLoopOutput(steerClosedLoopOutput)
-		.withDriveMotorClosedLoopOutput(driveClosedLoopOutput)
-		.withSpeedAt12VoltsMps(kSpeedAt12VoltsMps)
-		.withSteerInertia(kSteerInertia)
-		.withDriveInertia(kDriveInertia)
-		.withSteerFrictionVoltage(kSteerFrictionVoltage)
-		.withDriveFrictionVoltage(kDriveFrictionVoltage)
-		.withFeedbackSource(SteerFeedbackType.FusedCANcoder)
-		.withCouplingGearRatio(kCoupleRatio)
-		.withSteerMotorInverted(kSteerMotorReversed);
+			.withDriveMotorGearRatio(kDriveGearRatio)
+			.withSteerMotorGearRatio(kSteerGearRatio)
+			.withWheelRadius(kWheelRadiusInches)
+			.withSlipCurrent(kSlipCurrentA)
+			.withSteerMotorGains(steerGains)
+			.withDriveMotorGains(driveGains)
+			.withSteerMotorClosedLoopOutput(steerClosedLoopOutput)
+			.withDriveMotorClosedLoopOutput(driveClosedLoopOutput)
+			.withSpeedAt12VoltsMps(kSpeedAt12VoltsMps)
+			.withSteerInertia(kSteerInertia)
+			.withDriveInertia(kDriveInertia)
+			.withSteerFrictionVoltage(kSteerFrictionVoltage)
+			.withDriveFrictionVoltage(kDriveFrictionVoltage)
+			.withFeedbackSource(SteerFeedbackType.FusedCANcoder)
+			.withCouplingGearRatio(kCoupleRatio)
+			.withSteerMotorInverted(kSteerMotorReversed);
 
 	// Front Left
 	private static final int kFrontLeftDriveMotorId = 5;
