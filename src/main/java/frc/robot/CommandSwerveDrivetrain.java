@@ -1,7 +1,10 @@
 package frc.robot;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
+import com.choreo.lib.Choreo;
+import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveDrivetrain;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveDrivetrainConstants;
@@ -9,8 +12,12 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
@@ -61,7 +68,7 @@ public class CommandSwerveDrivetrain extends SwerveDrivetrain implements Subsyst
 
     public void logModulePositions() {
         for (int i = 0; i < Modules.length; i++) {
-            SmartDashboard.putNumber("Module " + i + "/position",
+            SmartDashboard.putNumber("Module " + i + "/Position",
                     getModule(i).getDriveMotor().getPosition().getValueAsDouble());
         }
     }
@@ -71,5 +78,23 @@ public class CommandSwerveDrivetrain extends SwerveDrivetrain implements Subsyst
             getModule(i).getDriveMotor().setNeutralMode(NeutralModeValue.Coast);
             getModule(i).getSteerMotor().setNeutralMode(NeutralModeValue.Brake);
         }
+    }
+
+    // TODO: make the trajectory chooser at some point
+    public Command choreoSwerveCommand() {
+        ChoreoTrajectory traj = Choreo.getTrajectory("oneMeter");
+
+        return Choreo.choreoSwerveCommand(
+                traj,
+                this.m_odometry::getEstimatedPosition,
+                new PIDController(Constants.AutoConstants.kPXController, 0.0, 0.0),
+                new PIDController(Constants.AutoConstants.kPXController, 0.0, 0.0),
+                new PIDController(Constants.AutoConstants.kPThetaController, 0.0, 0.0),
+                (ChassisSpeeds speeds) -> this.m_kinematics.toSwerveModuleStates(speeds),
+                () -> {
+                    Optional<DriverStation.Alliance> alliance = DriverStation.getAlliance();
+                    return alliance.isPresent() && alliance.get() == Alliance.Red;
+                },
+                this);
     }
 }
