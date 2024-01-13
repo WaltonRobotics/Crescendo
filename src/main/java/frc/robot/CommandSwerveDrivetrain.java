@@ -91,18 +91,17 @@ public class CommandSwerveDrivetrain extends SwerveDrivetrain implements Subsyst
 		});
 
 		var choreoFollowCmd = Choreo.choreoSwerveCommand(
-			traj,
-			()-> getState().Pose,
-			new PIDController(Constants.AutoConstants.kPXController, 0.0, 0.0),
-			new PIDController(Constants.AutoConstants.kPXController, 0.0, 0.0),
-			new PIDController(Constants.AutoConstants.kPThetaController, 0.0, 0.0),
-			(speeds) -> setControl(m_autoRequest.withSpeeds(speeds)),
-			() -> {
-				Optional<DriverStation.Alliance> alliance = DriverStation.getAlliance();
-				return alliance.isPresent() && alliance.get() == Alliance.Red;
-			},
-			this
-		);
+				traj,
+				() -> getState().Pose,
+				new PIDController(Constants.AutoConstants.kPXController, 0.0, 0.0),
+				new PIDController(Constants.AutoConstants.kPXController, 0.0, 0.0),
+				new PIDController(Constants.AutoConstants.kPThetaController, 0.0, 0.0),
+				(speeds) -> setControl(m_autoRequest.withSpeeds(speeds)),
+				() -> {
+					Optional<DriverStation.Alliance> alliance = DriverStation.getAlliance();
+					return alliance.isPresent() && alliance.get() == Alliance.Red;
+				},
+				this);
 
 		return Commands.sequence(resetPoseCmd, choreoFollowCmd).withName("ChoreoFollower");
 	}
