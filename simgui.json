@@ -1,4 +1,11 @@
 {
+  "HALProvider": {
+    "Timing": {
+      "window": {
+        "visible": false
+      }
+    }
+  },
   "NTProvider": {
     "types": {
       "/FMSInfo": "FMSInfo",
@@ -12,7 +19,7 @@
       "/Pose": {
         "bottom": 544,
         "builtin": "2024 Crescendo",
-        "height": 8.256999969482422,
+        "height": 8.013679504394531,
         "left": 46,
         "right": 1088,
         "robotPose": {
@@ -21,7 +28,7 @@
         },
         "top": 36,
         "units": "meters",
-        "width": 16.482999801635742,
+        "width": 16.541748046875,
         "window": {
           "visible": true
         }

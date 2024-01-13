@@ -35,7 +35,7 @@ public class CommandSwerveDrivetrain extends SwerveDrivetrain implements Subsyst
 	private ApplyChassisSpeeds m_autoRequest = new ApplyChassisSpeeds();
 
 	public CommandSwerveDrivetrain(SwerveDrivetrainConstants driveTrainConstants, double OdometryUpdateFrequency,
-			SwerveModuleConstants... modules) {
+		SwerveModuleConstants... modules) {
 		super(driveTrainConstants, OdometryUpdateFrequency, modules);
 		if (Utils.isSimulation()) {
 			startSimThread();
@@ -71,7 +71,7 @@ public class CommandSwerveDrivetrain extends SwerveDrivetrain implements Subsyst
 	public void logModulePositions() {
 		for (int i = 0; i < Modules.length; i++) {
 			SmartDashboard.putNumber("Module " + i + "/Position",
-					getModule(i).getDriveMotor().getPosition().getValueAsDouble());
+				getModule(i).getDriveMotor().getPosition().getValueAsDouble());
 		}
 	}
 
@@ -83,25 +83,23 @@ public class CommandSwerveDrivetrain extends SwerveDrivetrain implements Subsyst
 	}
 
 	// TODO: make the trajectory chooser at some point
-	public Command choreoSwerveCommand() {
-		ChoreoTrajectory traj = Choreo.getTrajectory("5pc");
-
+	public Command choreoSwerveCommand(ChoreoTrajectory traj) {
 		var resetPoseCmd = runOnce(() -> {
 			seedFieldRelative(traj.getInitialPose());
 		});
 
 		var choreoFollowCmd = Choreo.choreoSwerveCommand(
-				traj,
-				() -> getState().Pose,
-				new PIDController(Constants.AutoConstants.kPXController, 0.0, 0.0),
-				new PIDController(Constants.AutoConstants.kPXController, 0.0, 0.0),
-				new PIDController(Constants.AutoConstants.kPThetaController, 0.0, 0.0),
-				(speeds) -> setControl(m_autoRequest.withSpeeds(speeds)),
-				() -> {
-					Optional<DriverStation.Alliance> alliance = DriverStation.getAlliance();
-					return alliance.isPresent() && alliance.get() == Alliance.Red;
-				},
-				this);
+			traj,
+			() -> getState().Pose,
+			new PIDController(Constants.AutoConstants.kPXController, 0.0, 0.0),
+			new PIDController(Constants.AutoConstants.kPXController, 0.0, 0.0),
+			new PIDController(Constants.AutoConstants.kPThetaController, 0.0, 0.0),
+			(speeds) -> setControl(m_autoRequest.withSpeeds(speeds)),
+			() -> {
+				Optional<DriverStation.Alliance> alliance = DriverStation.getAlliance();
+				return alliance.isPresent() && alliance.get() == Alliance.Red;
+			},
+			this);
 
 		return Commands.sequence(resetPoseCmd, choreoFollowCmd).withName("ChoreoFollower");
 	}

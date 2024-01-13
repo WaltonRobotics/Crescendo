@@ -15,15 +15,20 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.auton.AutonFactory;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.Shooter;
 
 public class Robot extends TimedRobot {
-  private double MaxSpeed = 5; // 6 meters per second desired top speed
+	private double MaxSpeed = 5; // 6 meters per second desired top speed
 	private double MaxAngularRate = 1.5 * Math.PI; // 3/4 of a rotation per second max angular velocity
 
 	/* Setting up bindings for necessary control of the swerve drive platform */
 	private final CommandXboxController joystick = new CommandXboxController(0); // My joystick
 	public final CommandSwerveDrivetrain drivetrain = TunerConstants.DriveTrain; // My drivetrain
+	public final Intake intake = new Intake();
+	public final Shooter shooter = new Shooter();
 
 	private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
 		.withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
@@ -32,19 +37,18 @@ public class Robot extends TimedRobot {
 	private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 	private final Telemetry logger = new Telemetry(MaxSpeed);
 
-  private Command m_autonomousCommand;
+	private Command m_autonomousCommand;
 
-  private void configureBindings() {
+	private void configureBindings() {
 		drivetrain.setDefaultCommand(drivetrain.applyRequest(() -> drive
 			.withVelocityX(-joystick.getLeftY() * MaxSpeed)
 			.withVelocityY(-joystick.getLeftX() * MaxSpeed)
-			.withRotationalRate(-joystick.getRawAxis(2) * MaxAngularRate)
-		));
+			.withRotationalRate(-joystick.getRawAxis(2) * MaxAngularRate)));
 
 		joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
 		joystick.b().whileTrue(drivetrain
-				.applyRequest(
-						() -> point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))));
+			.applyRequest(
+				() -> point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))));
 
 		// reset the field-centric heading on left bumper press
 		joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
@@ -55,81 +59,80 @@ public class Robot extends TimedRobot {
 		drivetrain.registerTelemetry(logger::telemeterize);
 	}
 
-  private Command getAutonomousCommand() {
-		return drivetrain.choreoSwerveCommand();
+	private Command getAutonomousCommand() {
+		return AutonFactory.fivePiece(drivetrain, intake, shooter);
 	}
 
-  @Override
-  public void robotInit() {
-    configureBindings();
+	@Override
+	public void robotInit() {
+		configureBindings();
+		// drivetrain.setTestMode();
+	}
 
-    // drivetrain.setTestMode();
-  }
+	@Override
+	public void robotPeriodic() {
+		CommandScheduler.getInstance().run();
+		drivetrain.logModulePositions();
+	}
 
-  @Override
-  public void robotPeriodic() {
-    CommandScheduler.getInstance().run();
-    drivetrain.logModulePositions();
-  }
+	@Override
+	public void disabledInit() {
+	}
 
-  @Override
-  public void disabledInit() {
-  }
+	@Override
+	public void disabledPeriodic() {
+	}
 
-  @Override
-  public void disabledPeriodic() {
-  }
+	@Override
+	public void disabledExit() {
+	}
 
-  @Override
-  public void disabledExit() {
-  }
+	@Override
+	public void autonomousInit() {
+		m_autonomousCommand = getAutonomousCommand();
 
-  @Override
-  public void autonomousInit() {
-    m_autonomousCommand = getAutonomousCommand();
+		if (m_autonomousCommand != null) {
+			m_autonomousCommand.schedule();
+		}
+	}
 
-    if (m_autonomousCommand != null) {
-      m_autonomousCommand.schedule();
-    }
-  }
+	@Override
+	public void autonomousPeriodic() {
+	}
 
-  @Override
-  public void autonomousPeriodic() {
-  }
+	@Override
+	public void autonomousExit() {
+	}
 
-  @Override
-  public void autonomousExit() {
-  }
+	@Override
+	public void teleopInit() {
+		if (m_autonomousCommand != null) {
+			m_autonomousCommand.cancel();
+		}
+	}
 
-  @Override
-  public void teleopInit() {
-    if (m_autonomousCommand != null) {
-      m_autonomousCommand.cancel();
-    }
-  }
+	@Override
+	public void teleopPeriodic() {
+	}
 
-  @Override
-  public void teleopPeriodic() {
-  }
+	@Override
+	public void teleopExit() {
+	}
 
-  @Override
-  public void teleopExit() {
-  }
+	@Override
+	public void testInit() {
+		CommandScheduler.getInstance().cancelAll();
+	}
 
-  @Override
-  public void testInit() {
-    CommandScheduler.getInstance().cancelAll();
-  }
+	@Override
+	public void testPeriodic() {
+	}
 
-  @Override
-  public void testPeriodic() {
-  }
+	@Override
+	public void testExit() {
+	}
 
-  @Override
-  public void testExit() {
-  }
-
-  @Override
-  public void simulationPeriodic() {
-  }
+	@Override
+	public void simulationPeriodic() {
+	}
 }

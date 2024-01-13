@@ -672,42 +672,42 @@
                         "first"
                     ],
                     "type": "StopPoint",
-                    "uuid": "998fceb4-9a70-4fe3-a0a3-260a43a67461"
+                    "uuid": "3c9e1c7d-7165-4447-ac87-f77997fc09a2"
                 },
                 {
                     "scope": [
                         "last"
                     ],
                     "type": "StopPoint",
-                    "uuid": "eb892208-76ac-46dc-ba4d-bf3fd62cfd1f"
+                    "uuid": "91859e5e-b924-40a9-9d4a-75717d032205"
                 },
                 {
                     "scope": [
                         0
                     ],
                     "type": "StopPoint",
-                    "uuid": "cf486018-33b9-4a5a-b9d4-d4ae4836dcf9"
+                    "uuid": "901de5fa-6b83-4cca-96ee-d3e2f549472f"
                 },
                 {
                     "scope": [
                         2
                     ],
                     "type": "StopPoint",
-                    "uuid": "6a6021fc-60d3-4bb3-ab1a-f22a2ef58b2c"
+                    "uuid": "862406e8-058d-43d8-96f9-d0f72669155c"
                 },
                 {
                     "scope": [
                         4
                     ],
                     "type": "StopPoint",
-                    "uuid": "2967aa84-ee6c-443c-956b-b0f82833ccc6"
+                    "uuid": "00743f6d-c8ec-4565-86a0-c600a884b66a"
                 },
                 {
                     "scope": [
                         6
                     ],
                     "type": "StopPoint",
-                    "uuid": "b5c56b89-c68b-4fd0-8458-c76c7619b899"
+                    "uuid": "8f17bfc5-17f6-44be-87e5-ee8144d273a2"
                 }
             ],
             "usesControlIntervalGuessing": true,
@@ -1545,14 +1545,14 @@
                         "first"
                     ],
                     "type": "StopPoint",
-                    "uuid": "29e01d8a-c5e0-4120-853d-075c3c659191"
+                    "uuid": "026ace0f-f144-4106-b261-435944c21e5f"
                 },
                 {
                     "scope": [
                         "last"
                     ],
                     "type": "StopPoint",
-                    "uuid": "7fcd6edd-72c0-464a-a0f3-4413fa7b6f9f"
+                    "uuid": "fcf4ab65-44e0-440c-a3c1-9d445d02814b"
                 }
             ],
             "usesControlIntervalGuessing": true,

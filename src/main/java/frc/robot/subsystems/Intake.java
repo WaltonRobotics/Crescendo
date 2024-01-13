@@ -14,7 +14,7 @@ public class Intake extends SubsystemBase {
      */
     public Command intake() {
         return Commands.run(
-                () -> m_motor.set(-1),
-                this).withTimeout(1);
+            () -> m_motor.set(-1),
+            this).withTimeout(1);
     }
 }

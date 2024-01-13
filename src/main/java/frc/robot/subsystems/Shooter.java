@@ -14,7 +14,7 @@ public class Shooter extends SubsystemBase {
      */
     public Command shoot() {
         return Commands.run(
-                () -> m_motor.set(1),
-                this).withTimeout(1);
+            () -> m_motor.set(1),
+            this).withTimeout(1);
     }
 }
