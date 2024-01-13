@@ -10,6 +10,18 @@
     },
     "windows": {
       "/Pose": {
+        "bottom": 544,
+        "builtin": "2024 Crescendo",
+        "height": 8.256999969482422,
+        "left": 46,
+        "right": 1088,
+        "robotPose": {
+          "length": 0.7620000243186951,
+          "width": 0.7620000243186951
+        },
+        "top": 36,
+        "units": "meters",
+        "width": 16.482999801635742,
         "window": {
           "visible": true
         }
@@ -17,6 +29,9 @@
     }
   },
   "NetworkTables Info": {
+    "Server": {
+      "open": true
+    },
     "visible": true
   }
 }
