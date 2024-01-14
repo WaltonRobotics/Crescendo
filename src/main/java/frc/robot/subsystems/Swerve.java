@@ -1,4 +1,4 @@
-package frc.robot;
+package frc.robot.subsystems;
 
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -14,6 +14,8 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.ApplyChassisSpeeds;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
@@ -22,19 +24,20 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import static frc.robot.Constants.AutoConstants.*;
 
 /**
  * Class that extends the Phoenix SwerveDrivetrain class and implements
  * subsystem
  * so it can be used in command-based projects easily.
  */
-public class CommandSwerveDrivetrain extends SwerveDrivetrain implements Subsystem {
+public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private static final double kSimLoopPeriod = 0.005; // 5 ms
 	private Notifier m_simNotifier = null;
 	private double m_lastSimTime;
 	private ApplyChassisSpeeds m_autoRequest = new ApplyChassisSpeeds();
 
-	public CommandSwerveDrivetrain(SwerveDrivetrainConstants driveTrainConstants, double OdometryUpdateFrequency,
+	public Swerve(SwerveDrivetrainConstants driveTrainConstants, double OdometryUpdateFrequency,
 		SwerveModuleConstants... modules) {
 		super(driveTrainConstants, OdometryUpdateFrequency, modules);
 		if (Utils.isSimulation()) {
@@ -42,7 +45,7 @@ public class CommandSwerveDrivetrain extends SwerveDrivetrain implements Subsyst
 		}
 	}
 
-	public CommandSwerveDrivetrain(SwerveDrivetrainConstants driveTrainConstants, SwerveModuleConstants... modules) {
+	public Swerve(SwerveDrivetrainConstants driveTrainConstants, SwerveModuleConstants... modules) {
 		super(driveTrainConstants, modules);
 		if (Utils.isSimulation()) {
 			startSimThread();
@@ -82,7 +85,19 @@ public class CommandSwerveDrivetrain extends SwerveDrivetrain implements Subsyst
 		}
 	}
 
-	// TODO: make the trajectory chooser at some point
+	public void stop() {
+		for (int i = 0; i < Modules.length; i++) {
+			getModule(i).getDriveMotor().set(0);
+			getModule(i).getSteerMotor().set(0);
+		}
+	}
+
+	public Command resetPoseToSpeaker() {
+		return runOnce(() -> {
+			seedFieldRelative(new Pose2d(1.45, 5.5, Rotation2d.fromRadians(0)));
+		});
+	}
+
 	public Command choreoSwerveCommand(ChoreoTrajectory traj) {
 		var resetPoseCmd = runOnce(() -> {
 			seedFieldRelative(traj.getInitialPose());
@@ -91,9 +106,9 @@ public class CommandSwerveDrivetrain extends SwerveDrivetrain implements Subsyst
 		var choreoFollowCmd = Choreo.choreoSwerveCommand(
 			traj,
 			() -> getState().Pose,
-			new PIDController(Constants.AutoConstants.kPXController, 0.0, 0.0),
-			new PIDController(Constants.AutoConstants.kPXController, 0.0, 0.0),
-			new PIDController(Constants.AutoConstants.kPThetaController, 0.0, 0.0),
+			new PIDController(kPXController, 0.0, 0.0),
+			new PIDController(kPYController, 0.0, 0.0),
+			new PIDController(kPThetaController, 0.0, 0.0),
 			(speeds) -> setControl(m_autoRequest.withSpeeds(speeds)),
 			() -> {
 				Optional<DriverStation.Alliance> alliance = DriverStation.getAlliance();
@@ -101,6 +116,8 @@ public class CommandSwerveDrivetrain extends SwerveDrivetrain implements Subsyst
 			},
 			this);
 
-		return Commands.sequence(resetPoseCmd, choreoFollowCmd).withName("ChoreoFollower");
+		var brakeCmd = runOnce(() -> stop());
+
+		return Commands.sequence(resetPoseCmd, choreoFollowCmd, brakeCmd).withName("ChoreoFollower");
 	}
 }

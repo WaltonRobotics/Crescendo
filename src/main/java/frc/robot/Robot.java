@@ -14,9 +14,13 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.auton.AutonChooser;
+import frc.robot.auton.AutonChooser.AutonOption;
 import frc.robot.auton.AutonFactory;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 
@@ -25,8 +29,8 @@ public class Robot extends TimedRobot {
 	private double MaxAngularRate = 1.5 * Math.PI; // 3/4 of a rotation per second max angular velocity
 
 	/* Setting up bindings for necessary control of the swerve drive platform */
-	private final CommandXboxController joystick = new CommandXboxController(0); // My joystick
-	public final CommandSwerveDrivetrain drivetrain = TunerConstants.DriveTrain; // My drivetrain
+	private final CommandXboxController driver = new CommandXboxController(0); // My joystick
+	public final Swerve drivetrain = TunerConstants.DriveTrain; // My drivetrain
 	public final Intake intake = new Intake();
 	public final Shooter shooter = new Shooter();
 
@@ -40,18 +44,30 @@ public class Robot extends TimedRobot {
 	private Command m_autonomousCommand;
 
 	private void configureBindings() {
-		drivetrain.setDefaultCommand(drivetrain.applyRequest(() -> drive
-			.withVelocityX(-joystick.getLeftY() * MaxSpeed)
-			.withVelocityY(-joystick.getLeftX() * MaxSpeed)
-			.withRotationalRate(-joystick.getRawAxis(2) * MaxAngularRate)));
+		drivetrain.setDefaultCommand(drivetrain.applyRequest(() -> {
+			double leftY = -driver.getLeftY();
+			double leftYSig = Math.signum(leftY);
+			leftY *= leftY;
+			leftY *= leftYSig;
 
-		joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
-		joystick.b().whileTrue(drivetrain
+			double leftX = -driver.getLeftX();
+			double leftXSig = Math.signum(leftX);
+			leftX *= leftX;
+			leftX *= leftXSig;
+			return drive
+				.withVelocityX(leftY * MaxSpeed)
+				.withVelocityY(leftX * MaxSpeed)
+				.withRotationalRate(-driver.getRightX() * MaxAngularRate);
+		}));
+
+		driver.a().whileTrue(drivetrain.applyRequest(() -> brake));
+		driver.b().whileTrue(drivetrain
 			.applyRequest(
-				() -> point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))));
+				() -> point.withModuleDirection(new Rotation2d(-driver.getLeftY(), -driver.getLeftX()))));
 
 		// reset the field-centric heading on left bumper press
-		joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
+		driver.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
+		driver.rightBumper().onTrue(drivetrain.resetPoseToSpeaker());
 
 		if (Utils.isSimulation()) {
 			drivetrain.seedFieldRelative(new Pose2d(new Translation2d(), Rotation2d.fromDegrees(90)));
@@ -59,13 +75,23 @@ public class Robot extends TimedRobot {
 		drivetrain.registerTelemetry(logger::telemeterize);
 	}
 
+	public void mapAutonCommands() {
+		AutonChooser.setDefaultAuton(AutonOption.DO_NOTHING);
+		AutonChooser.assignAutonCommand(AutonOption.DO_NOTHING, Commands.none());
+		AutonChooser.assignAutonCommand(AutonOption.ONE_METER, AutonFactory.oneMeter(drivetrain));
+		AutonChooser.assignAutonCommand(AutonOption.SIMPLE_THING, AutonFactory.simpleThing(drivetrain));
+		AutonChooser.assignAutonCommand(AutonOption.THREE_PC, AutonFactory.threePiece(drivetrain, intake, shooter));
+		AutonChooser.assignAutonCommand(AutonOption.FIVE_PC, AutonFactory.fivePiece(drivetrain, intake, shooter));
+	}
+
 	private Command getAutonomousCommand() {
-		return AutonFactory.fivePiece(drivetrain, intake, shooter);
+		return AutonChooser.getChosenAutonCmd();
 	}
 
 	@Override
 	public void robotInit() {
 		configureBindings();
+		mapAutonCommands();
 		// drivetrain.setTestMode();
 	}
 
@@ -90,7 +116,6 @@ public class Robot extends TimedRobot {
 	@Override
 	public void autonomousInit() {
 		m_autonomousCommand = getAutonomousCommand();
-
 		if (m_autonomousCommand != null) {
 			m_autonomousCommand.schedule();
 		}

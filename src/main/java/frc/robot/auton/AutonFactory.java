@@ -2,14 +2,22 @@ package frc.robot.auton;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.CommandSwerveDrivetrain;
+import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 import static frc.robot.auton.Trajectories.*;
 
 public final class AutonFactory {
+	public static Command oneMeter(Swerve swerve) {
+		return swerve.choreoSwerveCommand(oneMeter);
+	}
+
+	public static Command simpleThing(Swerve swerve) {
+		return swerve.choreoSwerveCommand(simpleThing);
+	}
+
 	// TODO: make faster (robot should be able to shoot from farther away)
-	public static Command threePiece(CommandSwerveDrivetrain swerve, Intake intake, Shooter shooter) {
+	public static Command threePiece(Swerve swerve, Intake intake, Shooter shooter) {
 		var pathCmd1 = swerve.choreoSwerveCommand(threePc[0]).asProxy();
 		var shootCmd1 = shooter.shoot().asProxy();
 		var intakeCmd1 = intake.intake().asProxy();
@@ -34,7 +42,7 @@ public final class AutonFactory {
 			shootCmd3);
 	}
 
-	public static Command fivePiece(CommandSwerveDrivetrain swerve, Intake intake, Shooter shooter) {
+	public static Command fivePiece(Swerve swerve, Intake intake, Shooter shooter) {
 		// TODO: check to make sure the path starts at a good place
 		var pathCmd = swerve.choreoSwerveCommand(fivePc);
 		var shootCmd1 = shooter.shoot().asProxy();
