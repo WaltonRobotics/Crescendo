@@ -49,20 +49,21 @@ public final class AutonFactory {
 
 		return Commands.sequence(
 			shootCmd1,
+			intakeCmd1,
 			Commands.parallel(
-				intakeCmd1,
 				pathCmd,
-				Commands.waitSeconds(0.41),
-				shootCmd2,
-				Commands.waitSeconds(0.31),
-				intakeCmd2,
-				Commands.waitSeconds(0.28),
-				shootCmd3,
-				Commands.waitSeconds(0.38),
-				intakeCmd3,
-				shootCmd4,
-				Commands.waitSeconds(1.46),
-				intakeCmd4),
+				Commands.sequence(
+					Commands.waitSeconds(0.41),
+					shootCmd2,
+					Commands.waitSeconds(0.31),
+					intakeCmd2,
+					Commands.waitSeconds(0.28),
+					shootCmd3,
+					Commands.waitSeconds(0.38),
+					intakeCmd3,
+					shootCmd4,
+					Commands.waitSeconds(1.46),
+					intakeCmd4)),
 			shootCmd5);
 	}
 }
