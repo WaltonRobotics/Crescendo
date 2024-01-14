@@ -11,6 +11,7 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.ApplyChassisSpeeds;
+import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SwerveDriveBrake;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.controller.PIDController;
@@ -36,6 +37,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private Notifier m_simNotifier = null;
 	private double m_lastSimTime;
 	private ApplyChassisSpeeds m_autoRequest = new ApplyChassisSpeeds();
+	private SwerveDriveBrake m_brake = new SwerveDriveBrake();
 
 	public Swerve(SwerveDrivetrainConstants driveTrainConstants, double OdometryUpdateFrequency,
 		SwerveModuleConstants... modules) {
@@ -85,13 +87,6 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		}
 	}
 
-	public void stop() {
-		for (int i = 0; i < Modules.length; i++) {
-			getModule(i).getDriveMotor().set(0);
-			getModule(i).getSteerMotor().set(0);
-		}
-	}
-
 	public Command resetPoseToSpeaker() {
 		return runOnce(() -> {
 			seedFieldRelative(new Pose2d(1.45, 5.5, Rotation2d.fromRadians(0)));
@@ -116,7 +111,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			},
 			this);
 
-		var brakeCmd = runOnce(() -> stop());
+		var brakeCmd = runOnce(() -> setControl(m_brake));
 
 		return Commands.sequence(resetPoseCmd, choreoFollowCmd, brakeCmd).withName("ChoreoFollower");
 	}
