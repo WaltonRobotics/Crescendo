@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import java.sql.Driver;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -89,7 +90,11 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	public Command resetPoseToSpeaker() {
 		return runOnce(() -> {
-			seedFieldRelative(new Pose2d(1.45, 5.5, Rotation2d.fromRadians(0)));
+			if (DriverStation.getAlliance().get() == Alliance.Blue) {
+				seedFieldRelative(new Pose2d(1.45, 5.5, Rotation2d.fromRadians(0)));
+			} else {
+				seedFieldRelative(new Pose2d(1.45, 2.7, Rotation2d.fromRadians(0)));
+			}
 		});
 	}
 
