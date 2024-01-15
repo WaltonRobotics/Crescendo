@@ -17,6 +17,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
@@ -25,6 +26,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.robot.auton.AutonChooser;
+
 import static frc.robot.Constants.AutoConstants.*;
 
 /**
@@ -38,6 +41,10 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private double m_lastSimTime;
 	private ApplyChassisSpeeds m_autoRequest = new ApplyChassisSpeeds();
 	private SwerveDriveBrake m_brake = new SwerveDriveBrake();
+
+	PIDController xController = new PIDController(kPX, 0.0, 0.0);
+	PIDController yController = new PIDController(kPY, 0.0, 0.0);
+	PIDController thetaController = new PIDController(kPTheta, 0.0, 0.0);
 
 	public Swerve(SwerveDrivetrainConstants driveTrainConstants, double OdometryUpdateFrequency,
 		SwerveModuleConstants... modules) {
@@ -97,6 +104,16 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		});
 	}
 
+	public Command goToAutonPose() {
+		var pose = AutonChooser.getChosenAutonInitPose().get();
+		var xSpeed = xController.calculate(pose.getX());
+		var ySpeed = yController.calculate(pose.getY());
+		var thetaSpeed = thetaController.calculate(pose.getRotation().getRadians());
+
+		return runOnce(() -> setControl(m_autoRequest
+			.withSpeeds(ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, thetaSpeed, pose.getRotation()))));
+	}
+
 	public Command choreoSwerveCommand(ChoreoTrajectory traj) {
 		var resetPoseCmd = runOnce(() -> {
 			seedFieldRelative(traj.getInitialPose());
@@ -105,9 +122,9 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		var choreoFollowCmd = Choreo.choreoSwerveCommand(
 			traj,
 			() -> getState().Pose,
-			new PIDController(kPXController, 0.0, 0.0),
-			new PIDController(kPYController, 0.0, 0.0),
-			new PIDController(kPThetaController, 0.0, 0.0),
+			xController,
+			yController,
+			thetaController,
 			(speeds) -> setControl(m_autoRequest.withSpeeds(speeds)),
 			() -> {
 				Optional<DriverStation.Alliance> alliance = DriverStation.getAlliance();

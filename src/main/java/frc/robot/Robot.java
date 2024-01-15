@@ -64,6 +64,7 @@ public class Robot extends TimedRobot {
 		driver.b().whileTrue(drivetrain
 			.applyRequest(
 				() -> point.withModuleDirection(new Rotation2d(-driver.getLeftY(), -driver.getLeftX()))));
+		driver.x().whileTrue(drivetrain.goToAutonPose());
 
 		// reset the field-centric heading on left bumper press
 		driver.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
