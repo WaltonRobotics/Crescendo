@@ -17,6 +17,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
@@ -28,6 +29,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.auton.AutonChooser;
 
+import static frc.robot.Constants.*;
 import static frc.robot.Constants.AutoConstants.*;
 
 /**
@@ -41,10 +43,9 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private double m_lastSimTime;
 	private ApplyChassisSpeeds m_autoRequest = new ApplyChassisSpeeds();
 	private SwerveDriveBrake m_brake = new SwerveDriveBrake();
-
-	PIDController xController = new PIDController(kPX, 0.0, 0.0);
-	PIDController yController = new PIDController(kPY, 0.0, 0.0);
-	PIDController thetaController = new PIDController(kPTheta, 0.0, 0.0);
+	private PIDController xController = new PIDController(kPX, 0.0, 0.0);
+	private PIDController yController = new PIDController(kPY, 0.0, 0.0);
+	private PIDController thetaController = new PIDController(kPTheta, 0.0, 0.0);
 
 	public Swerve(SwerveDrivetrainConstants driveTrainConstants, double OdometryUpdateFrequency,
 		SwerveModuleConstants... modules) {
@@ -99,19 +100,25 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			if (DriverStation.getAlliance().get() == Alliance.Blue) {
 				seedFieldRelative(new Pose2d(1.45, 5.5, Rotation2d.fromRadians(0)));
 			} else {
-				seedFieldRelative(new Pose2d(1.45, 2.7, Rotation2d.fromRadians(0)));
+				seedFieldRelative(new Pose2d(1.45, kFieldWidth - 5.5, Rotation2d.fromRadians(0)));
 			}
 		});
 	}
 
 	public Command goToAutonPose() {
 		var pose = AutonChooser.getChosenAutonInitPose().get();
+		if (DriverStation.getAlliance().get() == Alliance.Red) {
+			Translation2d redTranslation = new Translation2d(pose.getX(), kFieldWidth - pose.getY());
+			Rotation2d redRotation = pose.getRotation().times(-1);
+			pose = new Pose2d(redTranslation, redRotation);
+		}
 		var xSpeed = xController.calculate(pose.getX());
 		var ySpeed = yController.calculate(pose.getY());
 		var thetaSpeed = thetaController.calculate(pose.getRotation().getRadians());
+		var speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, thetaSpeed, pose.getRotation());
 
 		return runOnce(() -> setControl(m_autoRequest
-			.withSpeeds(ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, thetaSpeed, pose.getRotation()))));
+			.withSpeeds(speeds)));
 	}
 
 	public Command choreoSwerveCommand(ChoreoTrajectory traj) {
