@@ -59,7 +59,8 @@ public class AutonChooser {
     }
 
     public static Optional<Pose2d> getAutonInitPose(AutonOption auton) {
-        return autonInitPoseMap.computeIfAbsent(auton, a -> Optional.empty());
+        Optional<Pose2d> result = autonInitPoseMap.computeIfAbsent(auton, a -> Optional.empty());
+        return result;
     }
 
     public static Command getChosenAutonCmd() {
@@ -67,6 +68,14 @@ public class AutonChooser {
     }
 
     public static Optional<Pose2d> getChosenAutonInitPose() {
-        return getAutonInitPose(autonNTChooser.getSelected());
+        var selected = AutonChooser.autonNTChooser.getSelected();
+        System.out.println(selected);
+
+        if (selected == null) {
+            System.out.println("NULLLLL");
+            return Optional.empty();
+        }
+        System.out.println("NOT NULLLL");
+        return getAutonInitPose(selected);
     }
 }

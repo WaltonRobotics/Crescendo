@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import com.choreo.lib.Choreo;
@@ -28,6 +29,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.auton.AutonChooser;
+import frc.util.AdvantageScopeUtil;
 
 import static frc.robot.Constants.*;
 import static frc.robot.Constants.AutoConstants.*;
@@ -106,24 +108,47 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	}
 
 	public Command goToAutonPose() {
-		var pose = AutonChooser.getChosenAutonInitPose().get();
-		if (DriverStation.getAlliance().get() == Alliance.Red) {
-			Translation2d redTranslation = new Translation2d(pose.getX(), kFieldWidth - pose.getY());
-			Rotation2d redRotation = pose.getRotation().times(-1);
-			pose = new Pose2d(redTranslation, redRotation);
-		}
-		var xSpeed = xController.calculate(pose.getX());
-		var ySpeed = yController.calculate(pose.getY());
-		var thetaSpeed = thetaController.calculate(pose.getRotation().getRadians());
-		var speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, thetaSpeed, pose.getRotation());
+		return run(() -> {
+			var bluePose = AutonChooser.getChosenAutonInitPose();
+			System.out.println(bluePose.isPresent());
+			if (bluePose.isPresent()) {
+				Pose2d pose;
+				if (DriverStation.getAlliance().get() == Alliance.Red) {
+					Translation2d redTranslation = new Translation2d(bluePose.get().getX(),
+						kFieldWidth - bluePose.get().getY());
+					Rotation2d redRotation = bluePose.get().getRotation().times(-1);
+					pose = new Pose2d(redTranslation, redRotation);
+				} else {
+					pose = bluePose.get();
+				}
 
-		return runOnce(() -> setControl(m_autoRequest
-			.withSpeeds(speeds)));
+				SmartDashboard.putNumberArray("desired pose", AdvantageScopeUtil.toDoubleArr(pose));
+
+				var curPose = getState().Pose;
+
+				var xSpeed = xController.calculate(curPose.getX(), pose.getX());
+				var ySpeed = yController.calculate(curPose.getY(), pose.getY());
+				var thetaSpeed = thetaController.calculate(curPose.getRotation().getRadians(),
+					pose.getRotation().getRadians());
+
+				var speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, thetaSpeed, pose.getRotation());
+
+				setControl(m_autoRequest.withSpeeds(speeds));
+			}
+		});
 	}
 
 	public Command choreoSwerveCommand(ChoreoTrajectory traj) {
+		// System.out.println(DriverStation.getAlliance().get());
+
+		BooleanSupplier shouldMirror = () -> {
+			Optional<DriverStation.Alliance> alliance = DriverStation.getAlliance();
+			return alliance.isPresent() && alliance.get() == Alliance.Red;
+		};
+
 		var resetPoseCmd = runOnce(() -> {
-			seedFieldRelative(traj.getInitialPose());
+			var properTraj = shouldMirror.getAsBoolean() ? traj.flipped() : traj;
+			seedFieldRelative(properTraj.getInitialPose());
 		});
 
 		var choreoFollowCmd = Choreo.choreoSwerveCommand(
@@ -133,10 +158,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			yController,
 			thetaController,
 			(speeds) -> setControl(m_autoRequest.withSpeeds(speeds)),
-			() -> {
-				Optional<DriverStation.Alliance> alliance = DriverStation.getAlliance();
-				return alliance.isPresent() && alliance.get() == Alliance.Red;
-			},
+			shouldMirror,
 			this);
 
 		var brakeCmd = runOnce(() -> setControl(m_brake));

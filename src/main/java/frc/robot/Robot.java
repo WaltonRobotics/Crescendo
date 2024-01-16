@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.auton.AutonChooser;
 import frc.robot.auton.AutonChooser.AutonOption;
 import frc.robot.auton.AutonFactory;
+import frc.robot.auton.Trajectories;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Intake;
@@ -79,10 +80,15 @@ public class Robot extends TimedRobot {
 	public void mapAutonCommands() {
 		AutonChooser.setDefaultAuton(AutonOption.DO_NOTHING);
 		AutonChooser.assignAutonCommand(AutonOption.DO_NOTHING, Commands.none());
-		AutonChooser.assignAutonCommand(AutonOption.ONE_METER, AutonFactory.oneMeter(drivetrain));
-		AutonChooser.assignAutonCommand(AutonOption.SIMPLE_THING, AutonFactory.simpleThing(drivetrain));
-		AutonChooser.assignAutonCommand(AutonOption.THREE_PC, AutonFactory.threePiece(drivetrain, intake, shooter));
-		AutonChooser.assignAutonCommand(AutonOption.FIVE_PC, AutonFactory.fivePiece(drivetrain, intake, shooter));
+		AutonChooser.assignAutonCommand(AutonOption.ONE_METER, AutonFactory.oneMeter(drivetrain),
+			Trajectories.oneMeter.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.SIMPLE_THING, AutonFactory.simpleThing(drivetrain),
+			Trajectories.simpleThing.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.THREE_PC, AutonFactory.threePiece(drivetrain, intake, shooter),
+			Trajectories.threePc[0].getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.FIVE_PC, AutonFactory.fivePiece(drivetrain, intake, shooter),
+			Trajectories.fivePc.getInitialPose());
+
 	}
 
 	private Command getAutonomousCommand() {
@@ -91,8 +97,8 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void robotInit() {
-		configureBindings();
 		mapAutonCommands();
+		configureBindings();
 		// drivetrain.setTestMode();
 	}
 
