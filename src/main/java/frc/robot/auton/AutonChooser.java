@@ -69,13 +69,11 @@ public class AutonChooser {
 
     public static Optional<Pose2d> getChosenAutonInitPose() {
         var selected = AutonChooser.autonNTChooser.getSelected();
-        System.out.println(selected);
 
         if (selected == null) {
-            System.out.println("NULLLLL");
             return Optional.empty();
         }
-        System.out.println("NOT NULLLL");
+
         return getAutonInitPose(selected);
     }
 }

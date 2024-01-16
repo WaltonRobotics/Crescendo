@@ -110,7 +110,6 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	public Command goToAutonPose() {
 		return run(() -> {
 			var bluePose = AutonChooser.getChosenAutonInitPose();
-			System.out.println(bluePose.isPresent());
 			if (bluePose.isPresent()) {
 				Pose2d pose;
 				if (DriverStation.getAlliance().get() == Alliance.Red) {
@@ -125,12 +124,10 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 				SmartDashboard.putNumberArray("desired pose", AdvantageScopeUtil.toDoubleArr(pose));
 
 				var curPose = getState().Pose;
-
 				var xSpeed = xController.calculate(curPose.getX(), pose.getX());
 				var ySpeed = yController.calculate(curPose.getY(), pose.getY());
 				var thetaSpeed = thetaController.calculate(curPose.getRotation().getRadians(),
 					pose.getRotation().getRadians());
-
 				var speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, thetaSpeed, pose.getRotation());
 
 				setControl(m_autoRequest.withSpeeds(speeds));
@@ -139,8 +136,6 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	}
 
 	public Command choreoSwerveCommand(ChoreoTrajectory traj) {
-		// System.out.println(DriverStation.getAlliance().get());
-
 		BooleanSupplier shouldMirror = () -> {
 			Optional<DriverStation.Alliance> alliance = DriverStation.getAlliance();
 			return alliance.isPresent() && alliance.get() == Alliance.Red;
