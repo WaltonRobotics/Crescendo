@@ -6,6 +6,7 @@ package frc.robot;
 
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.DriveRequestType;
+import com.pathplanner.lib.auto.NamedCommands;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -43,6 +44,11 @@ public class Robot extends TimedRobot {
 	private final Telemetry logger = new Telemetry(MaxSpeed);
 
 	private Command m_autonomousCommand;
+
+	private void registerCommands() {
+		NamedCommands.registerCommand("intake", intake.intake());
+		NamedCommands.registerCommand("shoot", shooter.shoot());
+	}
 
 	private void configureBindings() {
 		drivetrain.setDefaultCommand(drivetrain.applyRequest(() -> {
@@ -99,6 +105,7 @@ public class Robot extends TimedRobot {
 	@Override
 	public void robotInit() {
 		mapAutonCommands();
+		registerCommands();
 		configureBindings();
 		// drivetrain.setTestMode();
 	}

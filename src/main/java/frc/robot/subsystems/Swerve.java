@@ -14,6 +14,7 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.ApplyChassisSpeeds;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SwerveDriveBrake;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.pathplanner.lib.auto.AutoBuilder;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -36,8 +37,7 @@ import static frc.robot.Constants.AutoConstants.*;
 
 /**
  * Class that extends the Phoenix SwerveDrivetrain class and implements
- * subsystem
- * so it can be used in command-based projects easily.
+ * Subsystem so it can be used in command-based projects easily.
  */
 public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private static final double kSimLoopPeriod = 0.005; // 5 ms
@@ -45,13 +45,31 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private double m_lastSimTime;
 	private ApplyChassisSpeeds m_autoRequest = new ApplyChassisSpeeds();
 	private SwerveDriveBrake m_brake = new SwerveDriveBrake();
-	private PIDController xController = new PIDController(kPX, 0.0, 0.0);
-	private PIDController yController = new PIDController(kPY, 0.0, 0.0);
-	private PIDController thetaController = new PIDController(kPTheta, 0.0, 0.0);
+	private PIDController m_xController = new PIDController(kPX, 0.0, 0.0);
+	private PIDController m_yController = new PIDController(kPY, 0.0, 0.0);
+	private PIDController m_thetaController = new PIDController(kPTheta, 0.0, 0.0);
+
+	private void configureAutoBuilder() {
+		AutoBuilder.configureHolonomic(
+			() -> getState().Pose,
+			this::seedFieldRelative,
+			() -> m_kinematics.toChassisSpeeds(getState().ModuleStates),
+			(speeds) -> setControl(m_autoRequest.withSpeeds(speeds)),
+			kPathFollowerConfig,
+			() -> {
+				var alliance = DriverStation.getAlliance();
+				if (alliance.isPresent()) {
+					return alliance.get() == Alliance.Red;
+				}
+				return false;
+			},
+			this);
+	}
 
 	public Swerve(SwerveDrivetrainConstants driveTrainConstants, double OdometryUpdateFrequency,
 		SwerveModuleConstants... modules) {
 		super(driveTrainConstants, OdometryUpdateFrequency, modules);
+		configureAutoBuilder();
 		if (Utils.isSimulation()) {
 			startSimThread();
 		}
@@ -59,6 +77,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	public Swerve(SwerveDrivetrainConstants driveTrainConstants, SwerveModuleConstants... modules) {
 		super(driveTrainConstants, modules);
+		configureAutoBuilder();
 		if (Utils.isSimulation()) {
 			startSimThread();
 		}
@@ -124,9 +143,9 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 				SmartDashboard.putNumberArray("desired pose", AdvantageScopeUtil.toDoubleArr(pose));
 
 				var curPose = getState().Pose;
-				var xSpeed = xController.calculate(curPose.getX(), pose.getX());
-				var ySpeed = yController.calculate(curPose.getY(), pose.getY());
-				var thetaSpeed = thetaController.calculate(curPose.getRotation().getRadians(),
+				var xSpeed = m_xController.calculate(curPose.getX(), pose.getX());
+				var ySpeed = m_yController.calculate(curPose.getY(), pose.getY());
+				var thetaSpeed = m_thetaController.calculate(curPose.getRotation().getRadians(),
 					pose.getRotation().getRadians());
 				var speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, thetaSpeed, pose.getRotation());
 
@@ -149,9 +168,9 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		var choreoFollowCmd = Choreo.choreoSwerveCommand(
 			traj,
 			() -> getState().Pose,
-			xController,
-			yController,
-			thetaController,
+			m_xController,
+			m_yController,
+			m_thetaController,
 			(speeds) -> setControl(m_autoRequest.withSpeeds(speeds)),
 			shouldMirror,
 			this);
