@@ -11,4 +11,5 @@ public class Trajectories {
 		Choreo.getTrajectory("3pc1"),
 		Choreo.getTrajectory("3pc2")
 	};
+	public static final ChoreoTrajectory fourPc = Choreo.getTrajectory("4pc");
 }

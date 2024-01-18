@@ -86,6 +86,7 @@ public class Robot extends TimedRobot {
 			Trajectories.simpleThing.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.THREE_PC, AutonFactory.threePiece(drivetrain, intake, shooter),
 			Trajectories.threePc[0].getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.FOUR_PC, AutonFactory.fourPiece(drivetrain, intake, shooter));
 		AutonChooser.assignAutonCommand(AutonOption.FIVE_PC, AutonFactory.fivePiece(drivetrain, intake, shooter),
 			Trajectories.fivePc.getInitialPose());
 

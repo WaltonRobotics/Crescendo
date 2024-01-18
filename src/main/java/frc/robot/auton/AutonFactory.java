@@ -42,6 +42,39 @@ public final class AutonFactory {
 			shootCmd3);
 	}
 
+	public static Command fourPiece(Swerve swerve, Intake intake, Shooter shooter) {
+		var pathCmd = swerve.choreoSwerveCommand(fourPc);
+		var shootCmd1 = shooter.shoot();
+		var intakeCmd1 = intake.intake();
+		var shootCmd2 = shooter.shoot();
+		var intakeCmd2 = intake.intake();
+		var shootCmd3 = shooter.shoot();
+		var intakeCmd3 = intake.intake();
+		var shootCmd4 = shooter.shoot();
+
+		return Commands.sequence(
+			shootCmd1,
+			Commands.parallel(
+				pathCmd,
+				Commands.sequence(
+					// TODO: check timing :(
+					Commands.waitSeconds(0.58),
+					intakeCmd1,
+					Commands.waitSeconds(0.29),
+					shootCmd2,
+					Commands.waitSeconds(1.34),
+					intakeCmd2,
+					Commands.waitSeconds(1.62),
+					shootCmd3,
+					Commands.waitSeconds(1.17),
+					intakeCmd3,
+					Commands.waitSeconds(1.63),
+					shootCmd4
+				)
+			)
+		);
+	}
+
 	public static Command fivePiece(Swerve swerve, Intake intake, Shooter shooter) {
 		// TODO: check to make sure the path starts at a good place
 		var pathCmd = swerve.choreoSwerveCommand(fivePc);
