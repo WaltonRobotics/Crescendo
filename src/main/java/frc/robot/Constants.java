@@ -17,7 +17,7 @@ public class Constants {
             new PIDConstants(kPX),
             new PIDConstants(kPTheta),
             5,
-            4.5, // FIXME
+            Math.sqrt(Math.pow(10.3125, 12.375)),
             new ReplanningConfig());
     }
 }

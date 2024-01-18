@@ -69,14 +69,10 @@ public final class AutonFactory {
 					Commands.waitSeconds(1.17),
 					intakeCmd3,
 					Commands.waitSeconds(1.63),
-					shootCmd4
-				)
-			)
-		);
+					shootCmd4)));
 	}
 
 	public static Command fivePiece(Swerve swerve, Intake intake, Shooter shooter) {
-		// TODO: check to make sure the path starts at a good place
 		var pathCmd = swerve.choreoSwerveCommand(fivePc);
 		var shootCmd1 = shooter.shoot().asProxy();
 		var intakeCmd1 = intake.intake().asProxy();

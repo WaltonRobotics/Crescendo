@@ -11,8 +11,12 @@ import edu.wpi.first.wpilibj2.command.Commands;
 
 public class AutonChooser {
     public enum AutonOption {
-        DO_NOTHING("0 - do nothing"), ONE_METER("0 - one meter"), SIMPLE_THING("0 - simple thing"), THREE_PC(
-            "3 - speaker"), FOUR_PC("4 - speaker"), FIVE_PC("5 - speaker");
+        DO_NOTHING("0 - do nothing"),
+        ONE_METER("0 - one meter"),
+        SIMPLE_THING("0 - simple thing"),
+        THREE_PC("3 - speaker"),
+        FOUR_PC("4 - speaker"),
+        FIVE_PC("5 - speaker");
 
         public final String description;
 
