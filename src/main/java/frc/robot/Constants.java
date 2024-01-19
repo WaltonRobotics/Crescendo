@@ -3,6 +3,10 @@ package frc.robot;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.ReplanningConfig;
+import com.revrobotics.CANSparkLowLevel.MotorType;
+
+import edu.wpi.first.hal.CANAPITypes.CANDeviceType;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 
 public class Constants {
     public static final double kFieldLength = 16.54; // meters
@@ -19,5 +23,19 @@ public class Constants {
             5,
             Math.sqrt(Math.pow(10.3125, 12.375)),
             new ReplanningConfig());
+    }
+
+    public static final class TrapK {
+        public static final class TrapEleK {
+
+        }
+
+        public static final class TrapTiltK {
+
+        }
+
+        public static final class TrapShootK {
+
+        }
     }
 }
