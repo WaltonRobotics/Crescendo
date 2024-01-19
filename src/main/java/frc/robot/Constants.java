@@ -27,7 +27,19 @@ public class Constants {
 
     public static final class TrapK {
         public static final class TrapEleK {
+            // TODO: fix
+            public static final int kExtendCANID = 21;
+            public static final int kLowerLimitSwitchPort = 20;
 
+            public static final double kMaxVelocity = 3.25; // Meters Per Second
+            public static final double kMaxAcceleration = 2.75; // Meters Per Second Squared
+
+            public static final double kMaxHeight = 6; // Rotations? from base
+            public static final double kMinHeight = 0; // Rotations? from base
+        
+            public static final double kP = 22;
+            public static final double kPHold = .7;
+            public static final TrapezoidProfile.Constraints kConstraints = new TrapezoidProfile.Constraints(kMaxVelocity, kMaxAcceleration); 
         }
 
         public static final class TrapTiltK {

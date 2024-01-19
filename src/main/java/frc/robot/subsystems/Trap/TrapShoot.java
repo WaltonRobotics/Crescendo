@@ -1,5 +1,7 @@
 package frc.robot.subsystems.Trap;
 
-public class TrapShoot {
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+
+public class TrapShoot extends SubsystemBase {
     
 }
