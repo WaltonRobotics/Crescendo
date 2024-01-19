@@ -27,7 +27,7 @@ public class Constants {
 
     public static final class TrapK {
         public static final class TrapEleK {
-            // TODO: fix
+// TODO: fix
             public static final int kExtendCANID = 21;
             public static final int kLowerLimitSwitchPort = 20;
 
@@ -43,7 +43,8 @@ public class Constants {
         }
 
         public static final class TrapTiltK {
-
+            public static final int kMotorCANID = 22;
+            public static final CANSparkLowLevel.MotorType kBrus
         }
 
         public static final class TrapShootK {
