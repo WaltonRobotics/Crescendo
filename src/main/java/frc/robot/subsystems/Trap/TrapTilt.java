@@ -1,14 +1,16 @@
 package frc.robot.subsystems.Trap;
 
+import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
-import edu.wpi.first.wpilib.MathUtil;
-import edu.wpi.first.wpilib.Timer;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 
-import static frc.robot.Constants.Trap.TrapTilt;
+import static frc.robot.Constants.TrapK.TrapTiltK.*;
 
 public class TrapTilt extends SubsystemBase {
     private final CANSparkMax m_motor = new CANSparkMax(kMotorCANID, MotorType.kBrushless);
@@ -32,7 +34,7 @@ public class TrapTilt extends SubsystemBase {
 
     // this WAS an i_ method but i have no idea whats up with them and i think i heard somethingn about not doing them anymore
     public void setTarget(double degrees) {
-        m_targetAngle = MathUtild.clamp(degrees, 0, kAbsMaxDegree);
+        m_targetAngle = MathUtil.clamp(degrees, 0, kAbsMaxDegree);
     }
 
     public boolean atForwardLimit() {
@@ -45,6 +47,7 @@ public class TrapTilt extends SubsystemBase {
     public boolean getHomeSwitch() {
         // seems to get position of some kind of limit switch denoting if it's at its reverse limit
         // check to see if we have this and what we need to do if we don't
+        return true;
     }
 
     public boolean atReverseLimit() {
@@ -53,10 +56,12 @@ public class TrapTilt extends SubsystemBase {
 
     public double getDegrees() {
         // absolute encoder required
+        return 0;
     }
 
-    public double getEffortForTarget(double angleDegrees) { // why is this param "angleDegrees"? doesn't seem consistent with other methods
+    public double getEffortForTarget(double angleDegrees) { // why is this param "angleDegrees"? doesn't seem consistent with other methods (it is the angle in degrees lol)
         m_pdEffort = m_controller.calculate(getDegrees(), angleDegrees);
+        return 0;
     }
 
 }

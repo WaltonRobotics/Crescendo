@@ -46,6 +46,9 @@ public class Constants {
             public static final int kMotorCANID = 22;
             public static final int kAbsoluteEncoderPort = 23;
 
+             public static final double kMaxVelocity = 3.25; // Meters Per Second
+            public static final double kMaxAcceleration = 2.75; // Meters Per Second Squared
+
             // TODO: adjust values for PID and constants
             public static final double kP = 2;
             public static final double kPHold = .7;
