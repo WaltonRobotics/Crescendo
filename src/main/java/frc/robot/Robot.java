@@ -32,6 +32,7 @@ public class Robot extends TimedRobot {
 
 	/* Setting up bindings for necessary control of the swerve drive platform */
 	private final CommandXboxController driver = new CommandXboxController(0); // My joystick
+	private final CommandXboxController manipulator = new CommandXboxController(1);
 	public final Swerve drivetrain = TunerConstants.DriveTrain; // My drivetrain
 	public final Intake intake = new Intake();
 	public final Shooter shooter = new Shooter();
@@ -76,6 +77,9 @@ public class Robot extends TimedRobot {
 		// reset the field-centric heading on left bumper press
 		driver.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
 		driver.rightBumper().onTrue(drivetrain.resetPoseToSpeaker());
+		driver.rightTrigger().whileTrue(shooter.shoot());
+
+		manipulator.rightBumper().whileTrue(intake.intake());
 
 		if (Utils.isSimulation()) {
 			drivetrain.seedFieldRelative(new Pose2d(new Translation2d(), Rotation2d.fromDegrees(90)));
