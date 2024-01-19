@@ -44,7 +44,17 @@ public class Constants {
 
         public static final class TrapTiltK {
             public static final int kMotorCANID = 22;
-            public static final CANSparkLowLevel.MotorType kBrus
+            public static final int kAbsoluteEncoderPort = 23;
+
+            // TODO: adjust values for PID and constants
+            public static final double kP = 2;
+            public static final double kPHold = .7;
+            public static final double kDHold = 0;
+            public static final double kHoldKs = .705;
+            public static final TrapezoidProfile.Constraints kConstraints = new TrapezoidProfile.Constraints(kMaxVelocity,
+                kMaxAcceleration);
+
+            public static final double kAbsMaxDegree = 35; // stolen from chargedup, MUST adjust
         }
 
         public static final class TrapShootK {
