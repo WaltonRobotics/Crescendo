@@ -21,7 +21,7 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 
-import static frc.robot.Constants.stickDeadband;
+import static frc.robot.Constants.*;
 import static frc.robot.Constants.TrapK.TrapTiltK.*;
 
 import java.util.Set;
@@ -128,7 +128,7 @@ public class TrapTilt extends SubsystemBase {
 
     public Command teleopCmd(DoubleSupplier power) {
 		return run(() -> {
-			double powerVal = MathUtil.applyDeadband(power.getAsDouble(), stickDeadband);
+			double powerVal = MathUtil.applyDeadband(power.getAsDouble(), kStickDeadband);
 			m_targetAngle += powerVal * 1.2;
 			double effort = getEffortForTarget(m_targetAngle);
 			double holdEffort = getEffortToHold(m_targetAngle);
@@ -136,7 +136,7 @@ public class TrapTilt extends SubsystemBase {
 			if(powerVal > 0){
 				setVoltage(effort);
 			} else {
-				powerVal = MathUtil.applyDeadband(power.getAsDouble(), stickDeadband);
+				powerVal = MathUtil.applyDeadband(power.getAsDouble(), kStickDeadband);
 				setVoltage(holdEffort);
 			}
 			setVoltage(effort);
@@ -146,7 +146,7 @@ public class TrapTilt extends SubsystemBase {
     public void setSpeed(double power) {
         double output;
         double dir = Math.signum(power);
-        double powerVal = MathUtil.applyDeadband(power, stickDeadband);
+        double powerVal = MathUtil.applyDeadband(power, kStickDeadband);
         if ((atForwardLimit() && dir == 1) || (atReverseLimit() && dir == -1)) {
             output = 0;
         } else {
@@ -158,7 +158,7 @@ public class TrapTilt extends SubsystemBase {
     public void setVoltage(double voltage) {
         double output;
         double dir = Math.signum(voltage);
-        double powerVal = MathUtil.applyDeadband(voltage, stickDeadband);
+        double powerVal = MathUtil.applyDeadband(voltage, kStickDeadband);
         if ((atForwardLimit() && dir == 1) || (atReverseLimit() && dir == -1)) {
             output = 0;
         } else {
