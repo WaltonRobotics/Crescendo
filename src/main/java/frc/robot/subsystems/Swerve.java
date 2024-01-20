@@ -36,9 +36,9 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.auton.AutonChooser;
 import frc.util.AdvantageScopeUtil;
 
-import static frc.robot.Constants.Field.*;
-import static frc.robot.Constants.Auto.*;
-import static frc.robot.Constants.Vision.*;
+import static frc.robot.Constants.FieldK.*;
+import static frc.robot.Constants.AutoK.*;
+import static frc.robot.Constants.VisionK.*;
 
 /**
  * Class that extends the Phoenix SwerveDrivetrain class and implements
