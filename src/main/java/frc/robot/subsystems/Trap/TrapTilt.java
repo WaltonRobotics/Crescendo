@@ -1,4 +1,4 @@
-package frc.robot.subsystems.Trap;
+package frc.robot.subsystems.trap;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkBase.IdleMode;

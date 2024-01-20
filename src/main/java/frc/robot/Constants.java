@@ -81,7 +81,20 @@ public class Constants {
         }
 
         public static final class TrapShootK {
+            public static final int kMotorCANID = 23;
+            public static final int kAbsoluteEncoderPort = 23;
 
+            public static final double kMaxVelocity = 3.25; // Meters Per Second
+            public static final double kMaxAcceleration = 2.75; // Meters Per Second Squared
+            public static final double kMaxVelocityForward = kMaxVelocity * 0.75;
+            public static final double kMaxAccelerationForward = kMaxAcceleration * 0.75;
+
+            public static final double kP = 2;
+            public static final double kPHold = 0.7;
+            public static final double kDHold = 0;
+            public static final double kHoldKs = 0.705;
+            public static final TrapezoidProfile.Constraints kConstraints = new TrapezoidProfile.Constraints(kMaxVelocity,
+                kMaxAcceleration);
         }
     }
 }

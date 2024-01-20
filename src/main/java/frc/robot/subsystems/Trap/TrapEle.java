@@ -1,4 +1,4 @@
-package frc.robot.subsystems.Trap;
+package frc.robot.subsystems.trap;
 
 import static frc.robot.Constants.TrapK.TrapEleK.*;
 import static frc.robot.Constants.*;
@@ -133,7 +133,15 @@ public class TrapEle extends SubsystemBase {
     public Command setCoast(boolean coast) {
         return runOnce(() -> {
             m_motor.setNeutralMode(coast ? NeutralModeValue.Coast : NeutralModeValue.Brake);
+            m_isCoast = coast;
         });
+    }
+
+    /**
+     * @return m_isCoast
+     */
+    public boolean getCoast() {
+        return m_isCoast;
     }
 
     /**
@@ -178,6 +186,10 @@ public class TrapEle extends SubsystemBase {
 		});
     }
 
+    /**
+     * @param targetHeightMeters the target height (meters)
+     * @return a command that can move the elevator to a certain height
+     */
     public Command toHeightCmd(Double targetHeightMeters) {
         var setupCmd = runOnce(() -> {
                 m_controller.reset(getActualHeightMeters());
