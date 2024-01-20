@@ -55,19 +55,27 @@ public class Constants {
         }
 
         public static final class TrapTiltK {
+            // TODO: adjust values
+            public static final String DB_TAB_NAME = "TrapTiltSubsys";
+
             public static final int kMotorCANID = 22;
             public static final int kAbsoluteEncoderPort = 23;
+            public static final int kHomeSwitchPort = 24;
+            public static final int kMotorCurrLimit = 20;
 
-             public static final double kMaxVelocity = 3.25; // Meters Per Second
+            public static final double kMaxVelocity = 3.25; // Meters Per Second
             public static final double kMaxAcceleration = 2.75; // Meters Per Second Squared
-
-            // TODO: adjust values for PID and constants
+            public static final double kMaxVelocityForward = kMaxVelocity * 0.75;
+            public static final double kMaxAccelerationForward = kMaxAcceleration * 0.75;
+            
             public static final double kP = 2;
             public static final double kPHold = 0.7;
             public static final double kDHold = 0;
             public static final double kHoldKs = 0.705;
             public static final TrapezoidProfile.Constraints kConstraints = new TrapezoidProfile.Constraints(kMaxVelocity,
                 kMaxAcceleration);
+
+            public static final double kVoltageCompSaturationVolts = 12.0; // value directly yoinked from chargedup
 
             public static final double kAbsMaxDegree = 35; // stolen from chargedup, MUST adjust
         }
