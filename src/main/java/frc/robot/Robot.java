@@ -23,6 +23,7 @@ import frc.robot.auton.AutonFactory;
 import frc.robot.auton.Trajectories;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 
@@ -36,6 +37,7 @@ public class Robot extends TimedRobot {
 	public final Swerve drivetrain = TunerConstants.DriveTrain; // My drivetrain
 	public final Intake intake = new Intake();
 	public final Shooter shooter = new Shooter();
+	public final Climber climber = new Climber();
 
 	private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
 		.withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
@@ -87,6 +89,7 @@ public class Robot extends TimedRobot {
 		drivetrain.registerTelemetry(logger::telemeterize);
 
 		shooter.setDefaultCommand(shooter.aimAtSpeaker(drivetrain));
+		climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
 	}
 
 	public void mapAutonCommands() {

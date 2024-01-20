@@ -15,6 +15,9 @@ import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 
 public class Constants {
+    public static final double kStickDeadband = 0.1;
+    public static final String kCanbus = "fd";
+
     public class Field {
         public static final Measure<Distance> kFieldLength = Meters.of(16.54);
         public static final Measure<Distance> kFieldWidth = Meters.of(8.21);
@@ -32,6 +35,16 @@ public class Constants {
 
     public class Vision {
         public static final Transform3d kCamToRobot = new Transform3d(); // FIXME
+    }
+
+    public class Climber {
+        // FIXME when they've been like actually made
+        public static final int kLeftId = 31;
+        public static final int kRightId = 32;
+        public static final int kLimitSwitchId = 33;
+        public static final double kMetersPerRotation = 0.3;
+        public static final double kP = 3.25;
+        public static final Measure<Distance> kMaxHeight = Inches.of(56);
     }
 
     public class Shooter {
