@@ -1,10 +1,12 @@
 package frc.robot.subsystems.Trap;
 
 import static frc.robot.Constants.TrapK.TrapEleK.*;
+import static frc.robot.Constants.*;
 
 import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.ControlModeValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.MathUtil;
@@ -61,15 +63,43 @@ public class TrapEle extends SubsystemBase {
     }
 
     /**
+     * @param meters the height in meters
+     * sets target height (meters)
+     */
+    private void i_setTargetHeight(double meters) {
+        m_targetHeight = MathUtil.clamp(meters, kMinHeight, kMaxHeight);
+    }
+
+    /**
+     * see above ^-^
+     * @param meters the height in meters
+     * @return a command to set the target height
+     */
+    public Command setTargetHeight(double meters) {
+        return runOnce(() -> {
+            i_setTargetHeight(meters);
+        });
+    }
+
+    // TODO: figure out how to do
+    private double getActualVeloMps() {
+        return 0;
+    }
+
+    /**
      * @return whether the ele is hitting the sensor
      */
     public boolean isAtBottom() {
         return !m_lowerLimit.get();
     }
 
-    // TODO: figure out how to do
-    private double getActualVeloMps() {
-        return 0;
+    /**
+     * @return sets the motor position to 0 (rotations)
+     */
+    private Command rezero() {
+        return runOnce(() -> {
+            m_motor.setPosition(0);
+        });
     }
 
     /**
@@ -106,25 +136,6 @@ public class TrapEle extends SubsystemBase {
 	}
 
     /**
-     * @param meters the height in meters
-     * sets target height (meters)
-     */
-    private void i_setTargetHeight(double meters) {
-        m_targetHeight = MathUtil.clamp(meters, kMinHeight, kMaxHeight);
-    }
-
-    /**
-     * see above ^-^
-     * @param meters the height in meters
-     * @return a command to set the target height
-     */
-    public Command setTargetHeight(double meters) {
-        return runOnce(() -> {
-            i_setTargetHeight(meters);
-        });
-    }
-
-    /**
      * @param coast
      * @return a command to setCoast to coast value
      */
@@ -143,17 +154,63 @@ public class TrapEle extends SubsystemBase {
 				m_motor.setVoltage(-2);
 			}, () -> {
 				m_motor.setVoltage(0);
-			}).until(m_lowerLimitTrigger)
+			}).until(m_lowerLimitTrigger), 
+            rezero()
 		);
 	}
 
     /**
      * if there is no input, set the elevator to a target height
+     * TODO: figure out how to do
      * @param pwr power used
      * @return moving the ele using the controller
      */
     public Command teleopCmd(DoubleSupplier pwr) {
-        return Commands.none();
+        return run(() -> {
+			double direction = Math.signum(pwr.getAsDouble());
+			double output = 0;
+
+            if(!(isAtBottom() && direction == -1)) {
+                output = MathUtil.applyDeadband(pwr.getAsDouble(), kStickDeadband);
+            }
+
+			m_targetHeight += output * .02;
+			double effort = getEffortForTarget(m_targetHeight);
+			double holdEffort = getEffortToHold(m_targetHeight);
+			
+			if(output > 0){
+				m_motor.setVoltage(effort);
+			} else {
+				output = MathUtil.applyDeadband(pwr.getAsDouble(), kStickDeadband);
+				m_motor.setVoltage(holdEffort);
+			}
+		});
+    }
+
+    public Command toHeightCmd(Double targetHeightMeters) {
+        var setupCmd = runOnce(() -> {
+                m_controller.reset(getActualHeightMeters());
+                i_setTargetHeight(targetHeightMeters);
+            });
+        var runCmd = run(() -> {
+                var effort = 
+                MathUtil.clamp(
+                    getEffortForTarget(m_targetHeight), 
+                    -kVoltageCompSaturationVolts, 
+                    kVoltageCompSaturationVolts);
+                m_motor.set(effort / kVoltageCompSaturationVolts);
+            }).until(() -> {
+                return m_controller.atGoal();
+            });
+        var doneCmd = runOnce(() -> {
+                m_motor.set(0);
+            });
+        
+        return Commands.sequence(
+            setupCmd,
+            runCmd,
+            doneCmd
+        );
     }
 
     @Override

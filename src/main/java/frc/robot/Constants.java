@@ -13,6 +13,8 @@ public class Constants {
     public static final double kFieldLength = 16.54; // meters
     public static final double kFieldWidth = 8.21; // meters
 
+    public static final double kStickDeadband = 0.1;
+
     public class AutoConstants {
         // TODO: check these values they're just copied from bubbles
         public static final double kPX = 3.25; // 8
@@ -39,17 +41,14 @@ public class Constants {
             public static final double kMinHeight = 0; // Rotations? from base
         
             public static final double kP = 22;
-            // what are these for?
             public static final double kS = 0.16114;
             public static final double kG = 0.16114;
             public static final double kV = 0.16114;
             public static final double kA = 0.16114;
-            // ^^
 
             public static final double kPHold = 0.7;
-            // what are these for?
             public static final double kHoldKs = 0.705;
-            // ^^
+            public static final double kVoltageCompSaturationVolts = 12.0;
            
             public static final ElevatorFeedforward kFeedforward = new ElevatorFeedforward(kS, kG, kV, kA);
             public static final TrapezoidProfile.Constraints kConstraints = new TrapezoidProfile.Constraints(kMaxVelocity, kMaxAcceleration); 
