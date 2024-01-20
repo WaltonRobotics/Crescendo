@@ -4,6 +4,9 @@ import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
+import org.photonvision.PhotonCamera;
+import org.photonvision.PhotonUtils;
+
 import com.choreo.lib.Choreo;
 import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.Utils;
@@ -18,6 +21,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -34,6 +38,7 @@ import frc.util.AdvantageScopeUtil;
 
 import static frc.robot.Constants.Field.*;
 import static frc.robot.Constants.Auto.*;
+import static frc.robot.Constants.Vision.*;
 
 /**
  * Class that extends the Phoenix SwerveDrivetrain class and implements
@@ -43,15 +48,17 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private static final double kSimLoopPeriod = 0.005; // 5 ms
 	private Notifier m_simNotifier = null;
 	private double m_lastSimTime;
-	private ApplyChassisSpeeds m_autoRequest = new ApplyChassisSpeeds();
-	private SwerveDriveBrake m_brake = new SwerveDriveBrake();
-	private PIDController m_xController = new PIDController(kPX, 0.0, 0.0);
-	private PIDController m_yController = new PIDController(kPY, 0.0, 0.0);
-	private PIDController m_thetaController = new PIDController(kPTheta, 0.0, 0.0);
+
+	private final ApplyChassisSpeeds m_autoRequest = new ApplyChassisSpeeds();
+	private final SwerveDriveBrake m_brake = new SwerveDriveBrake();
+	private final PIDController m_xController = new PIDController(kPX, 0.0, 0.0);
+	private final PIDController m_yController = new PIDController(kPY, 0.0, 0.0);
+	private final PIDController m_thetaController = new PIDController(kPTheta, 0.0, 0.0);
+	private final PhotonCamera m_cam = new PhotonCamera("cameraName");
 
 	private void configureAutoBuilder() {
 		AutoBuilder.configureHolonomic(
-			() -> getState().Pose,
+			() -> getPose().toPose2d(),
 			this::seedFieldRelative,
 			() -> m_kinematics.toChassisSpeeds(getState().ModuleStates),
 			(speeds) -> setControl(m_autoRequest.withSpeeds(speeds)),
@@ -84,7 +91,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	}
 
 	public Command applyRequest(Supplier<SwerveRequest> requestSupplier) {
-		return run(() -> this.setControl(requestSupplier.get()));
+		return run(() -> setControl(requestSupplier.get()));
 	}
 
 	private void startSimThread() {
@@ -121,7 +128,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			if (DriverStation.getAlliance().get() == Alliance.Blue) {
 				seedFieldRelative(new Pose2d(1.45, 5.5, Rotation2d.fromRadians(0)));
 			} else {
-				seedFieldRelative(new Pose2d(1.45, kFieldWidth - 5.5, Rotation2d.fromRadians(0)));
+				seedFieldRelative(new Pose2d(1.45, kFieldWidth.magnitude() - 5.5, Rotation2d.fromRadians(0)));
 			}
 		});
 	}
@@ -133,7 +140,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 				Pose2d pose;
 				if (DriverStation.getAlliance().get() == Alliance.Red) {
 					Translation2d redTranslation = new Translation2d(bluePose.get().getX(),
-						kFieldWidth - bluePose.get().getY());
+						kFieldWidth.magnitude() - bluePose.get().getY());
 					Rotation2d redRotation = bluePose.get().getRotation().times(-1);
 					pose = new Pose2d(redTranslation, redRotation);
 				} else {
@@ -142,7 +149,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 				SmartDashboard.putNumberArray("desired pose", AdvantageScopeUtil.toDoubleArr(pose));
 
-				var curPose = getState().Pose;
+				var curPose = getPose().toPose2d();
 				var xSpeed = m_xController.calculate(curPose.getX(), pose.getX());
 				var ySpeed = m_yController.calculate(curPose.getY(), pose.getY());
 				var thetaSpeed = m_thetaController.calculate(curPose.getRotation().getRadians(),
@@ -152,6 +159,14 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 				setControl(m_autoRequest.withSpeeds(speeds));
 			}
 		});
+	}
+
+	public Pose3d getPose() {
+		var result = m_cam.getLatestResult();
+		var target = result.getBestTarget();
+		var robotPose = PhotonUtils.estimateFieldToRobotAprilTag(target.getBestCameraToTarget(),
+			kFieldLayout.getTagPose(target.getFiducialId()).get(), kCamToRobot);
+		return robotPose;
 	}
 
 	public Command choreoSwerveCommand(ChoreoTrajectory traj) {
@@ -167,7 +182,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 		var choreoFollowCmd = Choreo.choreoSwerveCommand(
 			traj,
-			() -> getState().Pose,
+			() -> getPose().toPose2d(),
 			m_xController,
 			m_yController,
 			m_thetaController,

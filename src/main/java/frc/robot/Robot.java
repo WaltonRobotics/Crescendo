@@ -85,6 +85,8 @@ public class Robot extends TimedRobot {
 			drivetrain.seedFieldRelative(new Pose2d(new Translation2d(), Rotation2d.fromDegrees(90)));
 		}
 		drivetrain.registerTelemetry(logger::telemeterize);
+
+		shooter.setDefaultCommand(shooter.aimAtSpeaker(drivetrain));
 	}
 
 	public void mapAutonCommands() {
@@ -108,6 +110,7 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void robotInit() {
+		shooter.getSpeakerPose();
 		mapAutonCommands();
 		registerCommands();
 		configureBindings();

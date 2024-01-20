@@ -7,10 +7,14 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+import static frc.robot.Constants.Field.*;
 import static frc.robot.Constants.Shooter.*;
 
 public class Shooter extends SubsystemBase {
@@ -24,9 +28,13 @@ public class Shooter extends SubsystemBase {
     private final RelativeEncoder m_encoder = m_aim.getEncoder();
     private final PIDController m_aimController = new PIDController(kPAim, 0, 0);
 
+    private double m_targetAngle;
+    private Translation3d m_speakerPose;
+
     public Shooter() {
         m_left.setControl(m_follower);
         m_encoder.setPositionConversionFactor(kConversion);
+        m_targetAngle = m_encoder.getPosition();
     }
 
     public Command shoot() {
@@ -48,14 +56,25 @@ public class Shooter extends SubsystemBase {
         return Commands.sequence(setupCmd, moveCmd);
     }
 
-    public Command aimAtSpeaker() {
-        /*
-         * angle for shooter = arctan((z of target - z of top of shooter) / (x of target
-         * - x of top of shooter))
-         * find distance to apriltag and then add the translation of shooter target to
-         * get distance to target
-         * set angle to correct angle
-         */
-        return Commands.none();
+    public void getSpeakerPose() {
+        var alliance = DriverStation.getAlliance();
+        if (alliance.isPresent() && alliance.get() == Alliance.Blue) {
+            m_speakerPose = kBlueSpeakerPose;
+        } else {
+            m_speakerPose = kRedSpeakerPose;
+        }
+    }
+
+    public Command aimAtSpeaker(Swerve swerve) {
+        var getAngleCmd = run(() -> {
+            var translation = swerve.getPose().getTranslation();
+            Translation3d poseToSpeaker = m_speakerPose.minus(translation);
+            m_targetAngle = Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX()));
+        });
+        var toAngleCmd = toAngle(Math.toDegrees(m_targetAngle));
+
+        return Commands.repeatingSequence(
+            getAngleCmd,
+            toAngleCmd);
     }
 }

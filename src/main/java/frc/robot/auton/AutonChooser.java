@@ -18,15 +18,15 @@ public class AutonChooser {
         FOUR_PC("4 - speaker"),
         FIVE_PC("5 - speaker");
 
-        public final String description;
+        public final String m_description;
 
         AutonOption(String description) {
-            this.description = description;
+            m_description = description;
         }
 
         @Override
         public String toString() {
-            return name() + ": " + description;
+            return name() + ": " + m_description;
         }
     }
 
@@ -46,7 +46,7 @@ public class AutonChooser {
         autonChooserMap.put(auton, command);
         autonInitPoseMap.put(auton, Optional.ofNullable(holonomicStartPose));
 
-        autonNTChooser.addOption(auton.description, auton);
+        autonNTChooser.addOption(auton.m_description, auton);
     }
 
     public static void assignAutonCommand(AutonOption auton, Command command) {
@@ -54,7 +54,7 @@ public class AutonChooser {
     }
 
     public static void setDefaultAuton(AutonOption auton) {
-        autonNTChooser.setDefaultOption(auton.description, auton);
+        autonNTChooser.setDefaultOption(auton.m_description, auton);
     }
 
     public static Command getAuton(AutonOption auton) {
