@@ -3,13 +3,10 @@ package frc.robot.subsystems.Trap;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel.MotorType;
-import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
-import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -32,11 +29,11 @@ public class TrapTilt extends SubsystemBase {
     private final DutyCycleEncoder m_absoluteEncoder = new DutyCycleEncoder(kAbsoluteEncoderPort); // i didn't initally include this but neos are supposed to have one
     private final DigitalInput m_homeSwitch = new DigitalInput(kHomeSwitchPort);
 
-    // private boolean m_isCoast = false;
+    private boolean m_isCoast = false;
 
     // TODO: work out how much of this is relevant and what values to change
     private final ProfiledPIDController m_controller = new ProfiledPIDController(kP, 0, 0, kConstraints);
-	private final PIDController m_holdController = new PIDController(kPHold, 0, 0); // modified these to be a "P controller i think, if it doesn't work ig fix it
+	private final PIDController m_holdController = new PIDController(kPHold, 0, 0); 
 	private double m_targetAngle = 0;
 	private static double m_pdEffort = 0;
 	private double m_holdPdEffort = 0;
@@ -48,7 +45,7 @@ public class TrapTilt extends SubsystemBase {
     public final Trigger m_homeSwitchTrigger = new Trigger(m_homeSwitch::get).negate();
     // private final GenericEntry nte_isCoast;
 
-    public static double nte_pdEffort = m_pdEffort;
+    // public static double nte_pdEffort = m_pdEffort;
 
     public TrapTilt() {
         double subsystemInitBegin = Timer.getFPGATimestamp();
