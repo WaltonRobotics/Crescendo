@@ -6,6 +6,7 @@ import com.pathplanner.lib.util.ReplanningConfig;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.hal.CANAPITypes.CANDeviceType;
+import edu.wpi.first.math.controller.ElevatorFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 
 public class Constants {
@@ -38,7 +39,19 @@ public class Constants {
             public static final double kMinHeight = 0; // Rotations? from base
         
             public static final double kP = 22;
-            public static final double kPHold = .7;
+            // what are these for?
+            public static final double kS = 0.16114;
+            public static final double kG = 0.16114;
+            public static final double kV = 0.16114;
+            public static final double kA = 0.16114;
+            // ^^
+
+            public static final double kPHold = 0.7;
+            // what are these for?
+            public static final double kHoldKs = 0.705;
+            // ^^
+           
+            public static final ElevatorFeedforward kFeedforward = new ElevatorFeedforward(kS, kG, kV, kA);
             public static final TrapezoidProfile.Constraints kConstraints = new TrapezoidProfile.Constraints(kMaxVelocity, kMaxAcceleration); 
         }
 
@@ -51,9 +64,9 @@ public class Constants {
 
             // TODO: adjust values for PID and constants
             public static final double kP = 2;
-            public static final double kPHold = .7;
+            public static final double kPHold = 0.7;
             public static final double kDHold = 0;
-            public static final double kHoldKs = .705;
+            public static final double kHoldKs = 0.705;
             public static final TrapezoidProfile.Constraints kConstraints = new TrapezoidProfile.Constraints(kMaxVelocity,
                 kMaxAcceleration);
 
