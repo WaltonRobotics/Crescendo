@@ -18,6 +18,7 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.ApplyChassisSpeeds;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SwerveDriveBrake;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.path.PathPlannerPath;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -58,7 +59,8 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	private void configureAutoBuilder() {
 		AutoBuilder.configureHolonomic(
-			() -> getPose().toPose2d(),
+			// () -> getPose().toPose2d(),
+			() -> getState().Pose,
 			this::seedFieldRelative,
 			() -> m_kinematics.toChassisSpeeds(getState().ModuleStates),
 			(speeds) -> setControl(m_autoRequest.withSpeeds(speeds)),
@@ -149,7 +151,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 				SmartDashboard.putNumberArray("desired pose", AdvantageScopeUtil.toDoubleArr(pose));
 
-				var curPose = getPose().toPose2d();
+				var curPose = getState().Pose;
 				var xSpeed = m_xController.calculate(curPose.getX(), pose.getX());
 				var ySpeed = m_yController.calculate(curPose.getY(), pose.getY());
 				var thetaSpeed = m_thetaController.calculate(curPose.getRotation().getRadians(),
@@ -169,6 +171,19 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		return robotPose;
 	}
 
+	public Command resetPose(PathPlannerPath path) {
+		return runOnce(() -> {
+			var alliance = DriverStation.getAlliance();
+			Pose2d pose;
+			if (alliance.isPresent() && alliance.get() == Alliance.Blue) {
+				pose = path.getStartingDifferentialPose();
+			} else {
+				pose = path.flipPath().getStartingDifferentialPose();
+			}
+			seedFieldRelative(pose);
+		});
+	}
+
 	public Command choreoSwerveCommand(ChoreoTrajectory traj) {
 		BooleanSupplier shouldMirror = () -> {
 			Optional<DriverStation.Alliance> alliance = DriverStation.getAlliance();
@@ -182,7 +197,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 		var choreoFollowCmd = Choreo.choreoSwerveCommand(
 			traj,
-			() -> getPose().toPose2d(),
+			() -> getState().Pose,
 			m_xController,
 			m_yController,
 			m_thetaController,

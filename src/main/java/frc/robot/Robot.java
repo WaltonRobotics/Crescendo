@@ -88,7 +88,7 @@ public class Robot extends TimedRobot {
 		}
 		drivetrain.registerTelemetry(logger::telemeterize);
 
-		shooter.setDefaultCommand(shooter.aimAtSpeaker(drivetrain));
+		// shooter.setDefaultCommand(shooter.aimAtSpeaker(drivetrain));
 		climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
 	}
 

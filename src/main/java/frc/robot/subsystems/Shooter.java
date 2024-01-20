@@ -24,7 +24,7 @@ public class Shooter extends SubsystemBase {
 
     private final CANSparkMax m_conveyor = new CANSparkMax(kConveyorId, MotorType.kBrushless);
 
-    private final CANSparkMax m_aim = new CANSparkMax(kConveyorId, MotorType.kBrushless);
+    private final CANSparkMax m_aim = new CANSparkMax(kAimId, MotorType.kBrushless);
     private final RelativeEncoder m_encoder = m_aim.getEncoder();
     private final PIDController m_aimController = new PIDController(kPAim, 0, 0);
 
@@ -38,10 +38,10 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command shoot() {
-        var shooterCmd = run(() -> m_right.set(1));
-        var conveyorCmd = run(() -> m_conveyor.set(0.5));
-
-        return Commands.parallel(shooterCmd, conveyorCmd);
+        return run(() -> {
+            m_right.set(1);
+            m_conveyor.set(0.5);
+        });
     }
 
     public Command toAngle(double degrees) {

@@ -6,6 +6,9 @@ import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 import static frc.robot.auton.Trajectories.*;
+import static frc.robot.auton.Paths.*;
+
+import com.pathplanner.lib.auto.AutoBuilder;
 
 public final class AutonFactory {
 	public static Command oneMeter(Swerve swerve) {
@@ -73,7 +76,9 @@ public final class AutonFactory {
 	}
 
 	public static Command fivePiece(Swerve swerve, Intake intake, Shooter shooter) {
-		var pathCmd = swerve.choreoSwerveCommand(fivePc);
+		var resetPoseCmd = swerve.resetPose(fivePcPath);
+		var pathCmd = AutoBuilder.followPath(fivePcPath).asProxy();
+		// TODO add timeouts and stuff
 		var shootCmd1 = shooter.shoot().asProxy();
 		var intakeCmd1 = intake.intake().asProxy();
 		var shootCmd2 = shooter.shoot().asProxy();
@@ -85,22 +90,27 @@ public final class AutonFactory {
 		var shootCmd5 = shooter.shoot().asProxy();
 
 		return Commands.sequence(
-			shootCmd1,
-			intakeCmd1,
+			resetPoseCmd,
+			// shootCmd1,
+			// intakeCmd1,
 			Commands.parallel(
-				pathCmd,
-				Commands.sequence(
-					Commands.waitSeconds(0.41),
-					shootCmd2,
-					Commands.waitSeconds(0.31),
-					intakeCmd2,
-					Commands.waitSeconds(0.28),
-					shootCmd3,
-					Commands.waitSeconds(0.38),
-					intakeCmd3,
-					shootCmd4,
-					Commands.waitSeconds(1.46),
-					intakeCmd4)),
-			shootCmd5);
+				pathCmd));
+		// Commands.sequence(
+		// Commands.waitSeconds(0.41),
+		// shootCmd2,
+		// Commands.waitSeconds(0.31),
+		// intakeCmd2,
+		// Commands.waitSeconds(0.28),
+		// shootCmd3,
+		// Commands.waitSeconds(0.38),
+		// intakeCmd3,
+		// shootCmd4,
+		// Commands.waitSeconds(1.46),
+		// intakeCmd4)),
+		// shootCmd5);
+	}
+
+	public static Command fivePcPP() {
+		return AutoBuilder.buildAuto("5pc");
 	}
 }

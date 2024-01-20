@@ -55,7 +55,7 @@ public class Constants {
     public class ClimberK {
         public static final int kLeftId = 31;
         public static final int kRightId = 32;
-        public static final int kLimitSwitchId = 33;
+        public static final int kLimitSwitchId = 1;
         public static final double kMetersPerRotation = 0.3;
         public static final double kP = 3.25;
         public static final Measure<Distance> kMaxHeight = Inches.of(56);
