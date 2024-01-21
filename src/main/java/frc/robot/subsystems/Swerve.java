@@ -174,13 +174,21 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	public Command resetPose(PathPlannerPath path) {
 		return runOnce(() -> {
 			var alliance = DriverStation.getAlliance();
-			Pose2d pose;
-			if (alliance.isPresent() && alliance.get() == Alliance.Blue) {
-				pose = path.getStartingDifferentialPose();
-			} else {
-				pose = path.flipPath().getStartingDifferentialPose();
+			var correctedPath = path;
+			if (alliance.isPresent() && alliance.get() == Alliance.Red) {
+				correctedPath = path.flipPath();
 			}
-			seedFieldRelative(pose);
+
+			// var thatThing = correctedPath.getPoint(0);
+			var correctedPose = correctedPath.getPreviewStartingHolonomicPose();
+			var thingy = correctedPath.getAllPathPoints();
+			var thingypt2 = thingy.get(0);
+			var thingypt3 = thingypt2.rotationTarget.getTarget();
+			correctedPose.rotateBy(thingypt3);
+
+			var newHeading = correctedPose.getRotation().getDegrees();
+			m_pigeon2.setYaw(newHeading);
+			seedFieldRelative(correctedPose);
 		});
 	}
 

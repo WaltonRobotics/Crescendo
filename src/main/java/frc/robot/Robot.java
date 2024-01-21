@@ -104,7 +104,7 @@ public class Robot extends TimedRobot {
 		AutonChooser.assignAutonCommand(AutonOption.FOUR_PC, AutonFactory.fourPiece(drivetrain, intake, shooter));
 		AutonChooser.assignAutonCommand(AutonOption.FIVE_PC, AutonFactory.fivePiece(drivetrain, intake, shooter),
 			Trajectories.fivePc.getInitialPose());
-
+		// AutonChooser.assignAutonCommand(AutonOption.THING, AutonFactory.thing(drivetrain));
 	}
 
 	private Command getAutonomousCommand() {

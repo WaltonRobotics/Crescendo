@@ -11,6 +11,9 @@ import static frc.robot.auton.Paths.*;
 import com.pathplanner.lib.auto.AutoBuilder;
 
 public final class AutonFactory {
+	private static double shooterTimeout = 0.25;
+	private static double intakeTimeout = 0.25;
+
 	public static Command oneMeter(Swerve swerve) {
 		return swerve.choreoSwerveCommand(oneMeter);
 	}
@@ -19,7 +22,7 @@ public final class AutonFactory {
 		return swerve.choreoSwerveCommand(simpleThing);
 	}
 
-	// TODO: make faster (robot should be able to shoot from farther away)
+	// TODO make faster (robot should be able to shoot from farther away)
 	public static Command threePiece(Swerve swerve, Intake intake, Shooter shooter) {
 		var pathCmd1 = swerve.choreoSwerveCommand(threePc[0]).asProxy();
 		var shootCmd1 = shooter.shoot().asProxy();
@@ -46,16 +49,18 @@ public final class AutonFactory {
 	}
 
 	public static Command fourPiece(Swerve swerve, Intake intake, Shooter shooter) {
-		var pathCmd = swerve.choreoSwerveCommand(fourPc);
-		var shootCmd1 = shooter.shoot();
-		var intakeCmd1 = intake.intake();
-		var shootCmd2 = shooter.shoot();
-		var intakeCmd2 = intake.intake();
-		var shootCmd3 = shooter.shoot();
-		var intakeCmd3 = intake.intake();
-		var shootCmd4 = shooter.shoot();
+		var resetPoseCmd = swerve.resetPose(fourPcPath);
+		var pathCmd = AutoBuilder.followPath(fourPcPath);
+		var shootCmd1 = shooter.shoot().withTimeout(shooterTimeout).asProxy();
+		var intakeCmd1 = intake.intake().withTimeout(intakeTimeout).asProxy();
+		var shootCmd2 = shooter.shoot().withTimeout(shooterTimeout).asProxy();
+		var intakeCmd2 = intake.intake().withTimeout(intakeTimeout).asProxy();
+		var shootCmd3 = shooter.shoot().withTimeout(shooterTimeout).asProxy();
+		var intakeCmd3 = intake.intake().withTimeout(intakeTimeout).asProxy();
+		var shootCmd4 = shooter.shoot().withTimeout(shooterTimeout).asProxy();
 
 		return Commands.sequence(
+			resetPoseCmd,
 			shootCmd1,
 			Commands.parallel(
 				pathCmd,
@@ -77,40 +82,38 @@ public final class AutonFactory {
 
 	public static Command fivePiece(Swerve swerve, Intake intake, Shooter shooter) {
 		var resetPoseCmd = swerve.resetPose(fivePcPath);
-		var pathCmd = AutoBuilder.followPath(fivePcPath).asProxy();
-		// TODO add timeouts and stuff
-		var shootCmd1 = shooter.shoot().asProxy();
-		var intakeCmd1 = intake.intake().asProxy();
-		var shootCmd2 = shooter.shoot().asProxy();
-		var intakeCmd2 = intake.intake().asProxy();
-		var shootCmd3 = shooter.shoot().asProxy();
-		var intakeCmd3 = intake.intake().asProxy();
-		var shootCmd4 = shooter.shoot().asProxy();
-		var intakeCmd4 = intake.intake().asProxy();
-		var shootCmd5 = shooter.shoot().asProxy();
+		var pathCmd = AutoBuilder.followPath(fivePcPath);
+		var shootCmd1 = shooter.shoot().withTimeout(shooterTimeout).asProxy();
+		var finalIntake = intake.intake().withTimeout(intakeTimeout).asProxy();
+		var finalShot = shooter.shoot().withTimeout(shooterTimeout).asProxy();
 
 		return Commands.sequence(
 			resetPoseCmd,
-			// shootCmd1,
-			// intakeCmd1,
+			shootCmd1,
+			intakeShotCycle(intake, shooter),
 			Commands.parallel(
-				pathCmd));
-		// Commands.sequence(
-		// Commands.waitSeconds(0.41),
-		// shootCmd2,
-		// Commands.waitSeconds(0.31),
-		// intakeCmd2,
-		// Commands.waitSeconds(0.28),
-		// shootCmd3,
-		// Commands.waitSeconds(0.38),
-		// intakeCmd3,
-		// shootCmd4,
-		// Commands.waitSeconds(1.46),
-		// intakeCmd4)),
-		// shootCmd5);
+				pathCmd,
+				Commands.sequence(
+					Commands.waitSeconds(0.52),
+					intakeShotCycle(intake, shooter)),
+				Commands.sequence(
+					Commands.waitSeconds(1.38),
+					intakeShotCycle(intake, shooter)),
+				Commands.sequence(
+					Commands.waitSeconds(2.86),
+					finalIntake)),
+			finalShot);
 	}
 
-	public static Command fivePcPP() {
-		return AutoBuilder.buildAuto("5pc");
+	// public static Command thing(Swerve swerve) {
+	// var resetPoseCmd = swerve.resetPose(thing);
+	// var pathCmd = AutoBuilder.followPath(thing);
+	// return Commands.sequence(resetPoseCmd, pathCmd);
+	// }
+
+	private static Command intakeShotCycle(Intake intake, Shooter shooter) {
+		var shootCmd = shooter.shoot().withTimeout(shooterTimeout).asProxy();
+		var intakeCmd = intake.intake().withTimeout(intakeTimeout).asProxy();
+		return Commands.parallel(intakeCmd, shootCmd);
 	}
 }

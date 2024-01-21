@@ -7,4 +7,5 @@ public class Paths {
     public static final PathPlannerPath simpleThingPath = PathPlannerPath.fromChoreoTrajectory("simpleThing");
     public static final PathPlannerPath fourPcPath = PathPlannerPath.fromChoreoTrajectory("4pc");
     public static final PathPlannerPath fivePcPath = PathPlannerPath.fromChoreoTrajectory("5pc");
+    // public static final PathPlannerPath thing = PathPlannerPath.fromPathFile("New Path");
 }

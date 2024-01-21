@@ -44,7 +44,7 @@ public class Constants {
             new PIDConstants(kPX),
             new PIDConstants(kPTheta),
             5,
-            Math.sqrt(Math.pow(10.3125, 12.375)),
+            Math.sqrt(Math.pow(Math.pow(10.3125, 2) + Math.pow(12.375, 2), 2)),
             new ReplanningConfig());
     }
 
