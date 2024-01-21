@@ -178,16 +178,8 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			if (alliance.isPresent() && alliance.get() == Alliance.Red) {
 				correctedPath = path.flipPath();
 			}
-
-			// var thatThing = correctedPath.getPoint(0);
-			var correctedPose = correctedPath.getPreviewStartingHolonomicPose();
-			var thingy = correctedPath.getAllPathPoints();
-			var thingypt2 = thingy.get(0);
-			var thingypt3 = thingypt2.rotationTarget.getTarget();
-			correctedPose.rotateBy(thingypt3);
-
-			var newHeading = correctedPose.getRotation().getDegrees();
-			m_pigeon2.setYaw(newHeading);
+			var correctedTraj = correctedPath.getTrajectory(new ChassisSpeeds(), new Rotation2d());
+			var correctedPose = correctedTraj.getInitialTargetHolonomicPose();
 			seedFieldRelative(correctedPose);
 		});
 	}
