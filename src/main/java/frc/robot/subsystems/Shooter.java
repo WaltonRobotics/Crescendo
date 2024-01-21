@@ -68,7 +68,7 @@ public class Shooter extends SubsystemBase {
     public Command aimAtSpeaker(Swerve swerve) {
         var getAngleCmd = run(() -> {
             var translation = swerve.getPose().getTranslation();
-            Translation3d poseToSpeaker = m_speakerPose.minus(translation);
+            var poseToSpeaker = m_speakerPose.minus(translation);
             m_targetAngle = Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX()));
         });
         var toAngleCmd = toAngle(Math.toDegrees(m_targetAngle));

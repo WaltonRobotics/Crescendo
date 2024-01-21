@@ -5,7 +5,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
-import static frc.robot.auton.Trajectories.*;
 import static frc.robot.auton.Paths.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -15,49 +14,35 @@ public final class AutonFactory {
 	private static double intakeTimeout = 0.25;
 
 	public static Command oneMeter(Swerve swerve) {
-		return swerve.choreoSwerveCommand(oneMeter);
+		return AutoBuilder.followPath(oneMeter);
 	}
 
 	public static Command simpleThing(Swerve swerve) {
-		return swerve.choreoSwerveCommand(simpleThing);
+		return AutoBuilder.followPath(simpleThing);
 	}
 
-	// TODO make faster (robot should be able to shoot from farther away)
 	public static Command threePiece(Swerve swerve, Intake intake, Shooter shooter) {
-		var pathCmd1 = swerve.choreoSwerveCommand(threePc[0]).asProxy();
-		var shootCmd1 = shooter.shoot().asProxy();
-		var intakeCmd1 = intake.intake().asProxy();
-		var shootCmd2 = shooter.shoot().asProxy();
-		var pathCmd2 = swerve.choreoSwerveCommand(threePc[1]).asProxy();
-		var intakeCmd2 = intake.intake().asProxy();
-		var shootCmd3 = shooter.shoot().asProxy();
+		var pathCmd = AutoBuilder.followPath(threePc);
+		var shootCmd = shooter.shoot().asProxy();
 
 		return Commands.sequence(
-			shootCmd1,
+			shootCmd,
 			Commands.parallel(
-				pathCmd1,
+				pathCmd,
 				Commands.sequence(
-					Commands.waitSeconds(0.59),
-					intakeCmd1)),
-			shootCmd2,
-			Commands.parallel(
-				pathCmd2,
-				Commands.sequence(
-					Commands.waitSeconds(0.57),
-					intakeCmd2)),
-			shootCmd3);
+					Commands.waitSeconds(0.45),
+					intakeShotCycle(intake, shooter))),
+			intakeShotCycle(intake, shooter));
 	}
 
 	public static Command fourPiece(Swerve swerve, Intake intake, Shooter shooter) {
-		var resetPoseCmd = swerve.resetPose(fourPcPath);
-		var pathCmd = AutoBuilder.followPath(fourPcPath);
+		var resetPoseCmd = swerve.resetPose(fourPc);
+		var pathCmd = AutoBuilder.followPath(fourPc);
 		var shootCmd1 = shooter.shoot().withTimeout(shooterTimeout).asProxy();
 		var intakeCmd1 = intake.intake().withTimeout(intakeTimeout).asProxy();
 		var shootCmd2 = shooter.shoot().withTimeout(shooterTimeout).asProxy();
 		var intakeCmd2 = intake.intake().withTimeout(intakeTimeout).asProxy();
 		var shootCmd3 = shooter.shoot().withTimeout(shooterTimeout).asProxy();
-		var intakeCmd3 = intake.intake().withTimeout(intakeTimeout).asProxy();
-		var shootCmd4 = shooter.shoot().withTimeout(shooterTimeout).asProxy();
 
 		return Commands.sequence(
 			resetPoseCmd,
@@ -67,22 +52,20 @@ public final class AutonFactory {
 				Commands.sequence(
 					// TODO: check timing :(
 					Commands.waitSeconds(0.58),
-					intakeCmd1,
-					Commands.waitSeconds(0.29),
-					shootCmd2,
+					intakeShotCycle(intake, shooter),
 					Commands.waitSeconds(1.34),
-					intakeCmd2,
+					intakeCmd1,
 					Commands.waitSeconds(1.62),
-					shootCmd3,
+					shootCmd2,
 					Commands.waitSeconds(1.17),
-					intakeCmd3,
+					intakeCmd2,
 					Commands.waitSeconds(1.63),
-					shootCmd4)));
+					shootCmd3)));
 	}
 
 	public static Command fivePiece(Swerve swerve, Intake intake, Shooter shooter) {
-		var resetPoseCmd = swerve.resetPose(fivePcPath);
-		var pathCmd = AutoBuilder.followPath(fivePcPath);
+		var resetPoseCmd = swerve.resetPose(fivePc);
+		var pathCmd = AutoBuilder.followPath(fivePc);
 		var shootCmd1 = shooter.shoot().withTimeout(shooterTimeout).asProxy();
 		var finalIntake = intake.intake().withTimeout(intakeTimeout).asProxy();
 		var finalShot = shooter.shoot().withTimeout(shooterTimeout).asProxy();
