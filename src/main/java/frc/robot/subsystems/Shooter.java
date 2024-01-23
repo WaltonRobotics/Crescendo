@@ -3,7 +3,6 @@ package frc.robot.subsystems;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.math.controller.PIDController;
@@ -24,8 +23,7 @@ public class Shooter extends SubsystemBase {
 
     private final CANSparkMax m_conveyor = new CANSparkMax(kConveyorId, MotorType.kBrushless);
 
-    private final CANSparkMax m_aim = new CANSparkMax(kAimId, MotorType.kBrushless);
-    private final RelativeEncoder m_encoder = m_aim.getEncoder();
+    private final TalonFX m_aim = new TalonFX(kAimId);
     private final PIDController m_aimController = new PIDController(kPAim, 0, 0);
 
     private double m_targetAngle;
@@ -33,8 +31,8 @@ public class Shooter extends SubsystemBase {
 
     public Shooter() {
         m_left.setControl(m_follower);
-        m_encoder.setPositionConversionFactor(kConversion);
-        m_targetAngle = m_encoder.getPosition();
+        // TODO fix conversion
+        m_targetAngle = m_aim.getPosition().getValueAsDouble();
     }
 
     public Command shoot() {
@@ -47,7 +45,7 @@ public class Shooter extends SubsystemBase {
     public Command toAngle(double degrees) {
         var setupCmd = runOnce(() -> m_aimController.setSetpoint(degrees));
         var moveCmd = run(() -> {
-            double effort = m_aimController.calculate(m_encoder.getPosition());
+            double effort = m_aimController.calculate(m_aim.getPosition().getValueAsDouble());
             m_aim.setVoltage(effort);
         })
             .until(() -> m_aimController.atSetpoint())
