@@ -1,11 +1,13 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
-import edu.wpi.first.math.controller.PIDController;
+// import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -24,15 +26,35 @@ public class Shooter extends SubsystemBase {
     private final CANSparkMax m_conveyor = new CANSparkMax(kConveyorId, MotorType.kBrushless);
 
     private final TalonFX m_aim = new TalonFX(kAimId);
-    private final PIDController m_aimController = new PIDController(kPAim, 0, 0);
+    // private final PIDController m_aimController = new PIDController(kP, 0, 0);
+    private final MotionMagicExpoVoltage m_request = new MotionMagicExpoVoltage(0);
 
     private double m_targetAngle;
     private Translation3d m_speakerPose;
 
     public Shooter() {
         m_left.setControl(m_follower);
+        ctreConfigs();
         // TODO fix conversion
         m_targetAngle = m_aim.getPosition().getValueAsDouble();
+    }
+
+    private void ctreConfigs() {
+        var talonFxConfigs = new TalonFXConfiguration();
+        var slot0Configs = talonFxConfigs.Slot0;
+        slot0Configs.kS = kS;
+        slot0Configs.kV = kV;
+        slot0Configs.kA = kA;
+        slot0Configs.kP = kP;
+        slot0Configs.kI = 0;
+        slot0Configs.kD = kD;
+
+        var motionMagicConfigs = talonFxConfigs.MotionMagic;
+        motionMagicConfigs.MotionMagicCruiseVelocity = 0;
+        motionMagicConfigs.MotionMagicExpo_kV = 0.12;
+        motionMagicConfigs.MotionMagicExpo_kA = 0.1;
+
+        m_aim.getConfigurator().apply(talonFxConfigs);
     }
 
     public Command shoot() {
@@ -43,15 +65,17 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command toAngle(double degrees) {
-        var setupCmd = runOnce(() -> m_aimController.setSetpoint(degrees));
-        var moveCmd = run(() -> {
-            double effort = m_aimController.calculate(m_aim.getPosition().getValueAsDouble());
-            m_aim.setVoltage(effort);
-        })
-            .until(() -> m_aimController.atSetpoint())
-            .finallyDo(() -> m_aim.set(0));
+        // var setupCmd = runOnce(() -> m_aimController.setSetpoint(degrees));
+        // var moveCmd = run(() -> {
+        // double effort =
+        // m_aimController.calculate(m_aim.getPosition().getValueAsDouble());
+        // m_aim.setVoltage(effort);
+        // })
+        // .until(() -> m_aimController.atSetpoint())
+        // .finallyDo(() -> m_aim.set(0));
 
-        return Commands.sequence(setupCmd, moveCmd);
+        // return Commands.sequence(setupCmd, moveCmd);
+        return run(() -> m_aim.setControl(m_request.withPosition(degrees / 360)));
     }
 
     public void getSpeakerPose() {

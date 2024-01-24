@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.DriveRequestType;
 import com.pathplanner.lib.auto.NamedCommands;
@@ -17,6 +18,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.auton.AutonChooser;
 import frc.robot.auton.AutonChooser.AutonOption;
 import frc.robot.auton.AutonFactory;
@@ -90,6 +92,11 @@ public class Robot extends TimedRobot {
 
 		// shooter.setDefaultCommand(shooter.aimAtSpeaker(drivetrain));
 		climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
+
+		driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
+		driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
+		driver.start().and(driver.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
+		driver.start().and(driver.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 	}
 
 	public void mapAutonCommands() {
@@ -129,6 +136,7 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void disabledInit() {
+		SignalLogger.stop();
 	}
 
 	@Override
@@ -157,6 +165,7 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void teleopInit() {
+		SignalLogger.start();
 		if (m_autonomousCommand != null) {
 			m_autonomousCommand.cancel();
 		}
