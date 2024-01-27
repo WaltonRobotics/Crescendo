@@ -125,7 +125,7 @@ public class Robot extends TimedRobot {
 		mapAutonCommands();
 		registerCommands();
 		configureBindings();
-		// drivetrain.setTestMode();
+		drivetrain.setTestMode();
 	}
 
 	@Override

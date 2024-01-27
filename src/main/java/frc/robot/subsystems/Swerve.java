@@ -252,10 +252,10 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	}
 
 	public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
-		return m_sysIdRoutineTranslation.quasistatic(direction);
+		return m_sysIdRoutineSteer.quasistatic(direction);
 	}
 
 	public Command sysIdDynamic(SysIdRoutine.Direction direction) {
-		return m_sysIdRoutineTranslation.dynamic(direction);
+		return m_sysIdRoutineSteer.dynamic(direction);
 	}
 }
