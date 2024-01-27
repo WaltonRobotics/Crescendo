@@ -1,7 +1,6 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkMax;
@@ -21,7 +20,6 @@ import static frc.robot.Constants.ShooterK.*;
 public class Shooter extends SubsystemBase {
     private final TalonFX m_right = new TalonFX(kRightId);
     private final TalonFX m_left = new TalonFX(kLeftId);
-    private final Follower m_follower = new Follower(m_right.getDeviceID(), true);
 
     private final CANSparkMax m_conveyor = new CANSparkMax(kConveyorId, MotorType.kBrushless);
 
@@ -33,7 +31,6 @@ public class Shooter extends SubsystemBase {
     private Translation3d m_speakerPose;
 
     public Shooter() {
-        m_left.setControl(m_follower);
         ctreConfigs();
         // TODO fix conversion
         m_targetAngle = m_aim.getPosition().getValueAsDouble();
@@ -59,7 +56,9 @@ public class Shooter extends SubsystemBase {
 
     public Command shoot() {
         return run(() -> {
+            // TODO check values and stuff
             m_right.set(1);
+            m_left.set(1);
             m_conveyor.set(0.5);
         });
     }
