@@ -33,7 +33,7 @@ public class Shooter extends SubsystemBase {
     public Shooter() {
         ctreConfigs();
         // TODO fix conversion
-        m_targetAngle = m_aim.getPosition().getValueAsDouble();
+        m_targetAngle = m_aim.getPosition().getValueAsDouble() * 360;
     }
 
     private void ctreConfigs() {

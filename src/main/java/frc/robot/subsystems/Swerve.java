@@ -17,9 +17,9 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.ApplyChassisSpeeds;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SwerveDriveBrake;
-// import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SysIdSwerveRotation;
+import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SysIdSwerveRotation;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SysIdSwerveSteerGains;
-// import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SysIdSwerveTranslation;
+import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SysIdSwerveTranslation;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathPlannerPath;
@@ -63,32 +63,30 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final PIDController m_thetaController = new PIDController(kPTheta, 0.0, 0.0);
 	private final PhotonCamera m_cam = new PhotonCamera("cameraName");
 
-	// private final SysIdSwerveTranslation translationCharacterization = new
-	// SysIdSwerveTranslation();
-	// private final SysIdSwerveRotation rotationCharacterization = new
-	// SysIdSwerveRotation();
+	private final SysIdSwerveTranslation translationCharacterization = new SysIdSwerveTranslation();
+	private final SysIdSwerveRotation rotationCharacterization = new SysIdSwerveRotation();
 	private final SysIdSwerveSteerGains steerCharacterization = new SysIdSwerveSteerGains();
-	// private SysIdRoutine m_sysIdRoutineTranslation = new SysIdRoutine(
-	// new SysIdRoutine.Config(
-	// null,
-	// Volts.of(7),
-	// null,
-	// (state) -> SignalLogger.writeString("state", state.toString())),
-	// new SysIdRoutine.Mechanism(
-	// (volts) -> setControl(translationCharacterization.withVolts(volts)),
-	// null,
-	// this));
+	private SysIdRoutine m_sysIdRoutineTranslation = new SysIdRoutine(
+		new SysIdRoutine.Config(
+			null,
+			Volts.of(7),
+			null,
+			(state) -> SignalLogger.writeString("state", state.toString())),
+		new SysIdRoutine.Mechanism(
+			(volts) -> setControl(translationCharacterization.withVolts(volts)),
+			null,
+			this));
 
-	// private SysIdRoutine m_sysIdRoutineRotation = new SysIdRoutine(
-	// new SysIdRoutine.Config(
-	// null,
-	// Volts.of(7),
-	// null,
-	// (state) -> SignalLogger.writeString("state", state.toString())),
-	// new SysIdRoutine.Mechanism(
-	// (volts) -> setControl(rotationCharacterization.withVolts(volts)),
-	// null,
-	// this));
+	private SysIdRoutine m_sysIdRoutineRotation = new SysIdRoutine(
+		new SysIdRoutine.Config(
+			null,
+			Volts.of(7),
+			null,
+			(state) -> SignalLogger.writeString("state", state.toString())),
+		new SysIdRoutine.Mechanism(
+			(volts) -> setControl(rotationCharacterization.withVolts(volts)),
+			null,
+			this));
 	private SysIdRoutine m_sysIdRoutineSteer = new SysIdRoutine(
 		new SysIdRoutine.Config(
 			null,
@@ -254,10 +252,10 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	}
 
 	public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
-		return m_sysIdRoutineSteer.quasistatic(direction);
+		return m_sysIdRoutineTranslation.quasistatic(direction);
 	}
 
 	public Command sysIdDynamic(SysIdRoutine.Direction direction) {
-		return m_sysIdRoutineSteer.dynamic(direction);
+		return m_sysIdRoutineTranslation.dynamic(direction);
 	}
 }
