@@ -90,7 +90,7 @@ public class Robot extends TimedRobot {
 		}
 		drivetrain.registerTelemetry(logger::telemeterize);
 
-		// shooter.setDefaultCommand(shooter.aimAtSpeaker(drivetrain));
+		shooter.setDefaultCommand(shooter.teleopCmd(() -> -manipulator.getRightY()));
 		climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
 
 		// driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
@@ -194,5 +194,6 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void simulationPeriodic() {
+		shooter.simulationPeriodic();
 	}
 }

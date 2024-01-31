@@ -11,6 +11,7 @@
       "/FMSInfo": "FMSInfo",
       "/Pose": "Field2d",
       "/SmartDashboard/Auton Chooser": "String Chooser",
+      "/SmartDashboard/Mech2d": "Mechanism2d",
       "/SmartDashboard/Module 0": "Mechanism2d",
       "/SmartDashboard/Module 1": "Mechanism2d",
       "/SmartDashboard/Module 2": "Mechanism2d",
@@ -23,23 +24,22 @@
         }
       },
       "/Pose": {
-        "bottom": 544,
-        "builtin": "2024 Crescendo",
-        "height": 8.013679504394531,
-        "left": 46,
-        "right": 1088,
+        "bottom": 1476,
+        "height": 8.210550308227539,
+        "left": 150,
+        "right": 2961,
         "robotPose": {
           "length": 0.7620000243186951,
           "width": 0.7620000243186951
         },
-        "top": 36,
+        "top": 79,
         "units": "meters",
         "width": 16.541748046875,
         "window": {
           "visible": true
         }
       },
-      "/SmartDashboard/Auton Chooser": {
+      "/SmartDashboard/Mech2d": {
         "window": {
           "visible": true
         }
@@ -55,8 +55,13 @@
         "open": true
       },
       "SmartDashboard": {
-        "Auton Chooser": {
-          "open": true
+        "Mech2d": {
+          "AimPivot": {
+            "aim": {
+              "open": true
+            },
+            "open": true
+          }
         },
         "open": true
       }

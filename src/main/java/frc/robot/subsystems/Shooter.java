@@ -6,10 +6,19 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
-// import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Color;
+import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -17,6 +26,9 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import static frc.robot.Constants.FieldK.*;
 import static frc.robot.Constants.ShooterK.*;
 
+import java.util.function.DoubleSupplier;
+
+// TODO separate into two classes
 public class Shooter extends SubsystemBase {
     private final TalonFX m_right = new TalonFX(kRightId);
     private final TalonFX m_left = new TalonFX(kLeftId);
@@ -24,16 +36,30 @@ public class Shooter extends SubsystemBase {
     private final CANSparkMax m_conveyor = new CANSparkMax(kConveyorId, MotorType.kBrushless);
 
     private final TalonFX m_aim = new TalonFX(kAimId);
-    // private final PIDController m_aimController = new PIDController(kP, 0, 0);
-    private final MotionMagicExpoVoltage m_request = new MotionMagicExpoVoltage(0);
+    private final MotionMagicExpoVoltage m_request = new MotionMagicExpoVoltage(30.0 / 360);
+
+    private final DCMotor m_aimGearbox = DCMotor.getFalcon500(1);
+    private final SingleJointedArmSim m_aimSim = new SingleJointedArmSim(
+        m_aimGearbox, 0.5, 0.761, 0.5017,
+        Math.PI / 6, Units.degreesToRadians(80), true, Math.PI / 6);
+
+    private final Mechanism2d m_mech2d = new Mechanism2d(60, 60);
+    private final MechanismRoot2d m_aimPivot = m_mech2d.getRoot("AimPivot", 30, 30);
+    private final MechanismLigament2d m_aim2d = m_aimPivot.append(
+        new MechanismLigament2d(
+            "aim",
+            30,
+            Units.radiansToDegrees(m_aimSim.getAngleRads()),
+            6,
+            new Color8Bit(Color.kYellow)));
 
     private double m_targetAngle;
     private Translation3d m_speakerPose;
 
     public Shooter() {
         ctreConfigs();
-        // TODO fix conversion
-        m_targetAngle = m_aim.getPosition().getValueAsDouble() * 360;
+        m_targetAngle = 30;
+        SmartDashboard.putData("Mech2d", m_mech2d);
     }
 
     private void ctreConfigs() {
@@ -63,18 +89,10 @@ public class Shooter extends SubsystemBase {
         });
     }
 
-    public Command toAngle(double degrees) {
-        // var setupCmd = runOnce(() -> m_aimController.setSetpoint(degrees));
-        // var moveCmd = run(() -> {
-        // double effort =
-        // m_aimController.calculate(m_aim.getPosition().getValueAsDouble());
-        // m_aim.setVoltage(effort);
-        // })
-        // .until(() -> m_aimController.atSetpoint())
-        // .finallyDo(() -> m_aim.set(0));
-
-        // return Commands.sequence(setupCmd, moveCmd);
-        return run(() -> m_aim.setControl(m_request.withPosition(degrees / 360)));
+    private Command toAngle(double degrees) {
+        return run(() -> {
+            m_aim.setControl(m_request.withPosition(degrees / 360));
+        });
     }
 
     public void getSpeakerPose() {
@@ -84,6 +102,14 @@ public class Shooter extends SubsystemBase {
         } else {
             m_speakerPose = kRedSpeakerPose;
         }
+    }
+
+    public Command teleopCmd(DoubleSupplier power) {
+        return run(() -> {
+            double powerVal = MathUtil.applyDeadband(power.getAsDouble(), 0.01);
+            m_targetAngle += powerVal * 1.2;
+            m_aim.setControl(m_request.withPosition(m_targetAngle));
+        });
     }
 
     public Command aimAtSpeaker(Swerve swerve) {
@@ -97,5 +123,11 @@ public class Shooter extends SubsystemBase {
         return Commands.repeatingSequence(
             getAngleCmd,
             toAngleCmd);
+    }
+
+    public void simulationPeriodic() {
+        m_aimSim.setInput(m_aim.get() * 12);
+        m_aimSim.update(0.020);
+        m_aim2d.setAngle(Units.radiansToDegrees(m_aimSim.getAngleRads()));
     }
 }
