@@ -18,7 +18,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+// import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.auton.AutonChooser;
 import frc.robot.auton.AutonChooser.AutonOption;
 import frc.robot.auton.AutonFactory;
@@ -43,7 +43,7 @@ public class Robot extends TimedRobot {
 
 	private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
 		.withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
-		.withDriveRequestType(DriveRequestType.OpenLoopVoltage); // I want field-centric driving in open loop
+		.withDriveRequestType(DriveRequestType.Velocity); // I want field-centric driving in open loop
 	private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
 	private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 	private final Telemetry logger = new Telemetry(MaxSpeed);
@@ -93,10 +93,10 @@ public class Robot extends TimedRobot {
 		// shooter.setDefaultCommand(shooter.aimAtSpeaker(drivetrain));
 		climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
 
-		driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-		driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-		driver.start().and(driver.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-		driver.start().and(driver.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+		// driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
+		// driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
+		// driver.start().and(driver.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
+		// driver.start().and(driver.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 	}
 
 	public void mapAutonCommands() {
@@ -125,7 +125,7 @@ public class Robot extends TimedRobot {
 		mapAutonCommands();
 		registerCommands();
 		configureBindings();
-		drivetrain.setTestMode();
+		// drivetrain.setTestMode();
 	}
 
 	@Override
