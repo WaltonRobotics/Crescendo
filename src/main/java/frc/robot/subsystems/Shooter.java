@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.sim.TalonFXSimState;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
@@ -36,7 +37,8 @@ public class Shooter extends SubsystemBase {
     private final CANSparkMax m_conveyor = new CANSparkMax(kConveyorId, MotorType.kBrushless);
 
     private final TalonFX m_aim = new TalonFX(kAimId);
-    private final MotionMagicExpoVoltage m_request = new MotionMagicExpoVoltage(30.0 / 360);
+    private final TalonFXSimState m_talonFxSim = m_aim.getSimState();
+    private final MotionMagicExpoVoltage m_request = new MotionMagicExpoVoltage(0);
 
     private final DCMotor m_aimGearbox = DCMotor.getFalcon500(1);
     private final SingleJointedArmSim m_aimSim = new SingleJointedArmSim(
@@ -50,8 +52,8 @@ public class Shooter extends SubsystemBase {
             "aim",
             30,
             Units.radiansToDegrees(m_aimSim.getAngleRads()),
-            6,
-            new Color8Bit(Color.kYellow)));
+            10,
+            new Color8Bit(Color.kHotPink)));
 
     private double m_targetAngle;
     private Translation3d m_speakerPose;
@@ -91,7 +93,7 @@ public class Shooter extends SubsystemBase {
 
     private Command toAngle(double degrees) {
         return run(() -> {
-            m_aim.setControl(m_request.withPosition(degrees / 360));
+            m_aim.setControl(m_request.withPosition(degrees / 360.0));
         });
     }
 
@@ -106,9 +108,11 @@ public class Shooter extends SubsystemBase {
 
     public Command teleopCmd(DoubleSupplier power) {
         return run(() -> {
-            double powerVal = MathUtil.applyDeadband(power.getAsDouble(), 0.01);
+            double powerVal = MathUtil.applyDeadband(power.getAsDouble(), 0.1);
             m_targetAngle += powerVal * 1.2;
-            m_aim.setControl(m_request.withPosition(m_targetAngle));
+            m_aim.setControl(m_request.withPosition(m_targetAngle / 360.0));
+            SmartDashboard.putNumber("aim", m_aim.get());
+            SmartDashboard.putNumber("aim position", m_aim.getPosition().getValueAsDouble());
         });
     }
 
@@ -126,8 +130,17 @@ public class Shooter extends SubsystemBase {
     }
 
     public void simulationPeriodic() {
-        m_aimSim.setInput(m_aim.get() * 12);
+        m_talonFxSim.setSupplyVoltage(12);
+        var volts = m_talonFxSim.getMotorVoltage();
+        m_aimSim.setInput(volts);
+        SmartDashboard.putNumber("sim voltage", volts);
         m_aimSim.update(0.020);
-        m_aim2d.setAngle(Units.radiansToDegrees(m_aimSim.getAngleRads()));
+        var angle = Units.radiansToDegrees(m_aimSim.getAngleRads());
+        m_aim2d.setAngle(angle);
+        m_talonFxSim.setRawRotorPosition(angle / 360.0);
+        m_talonFxSim.setRotorVelocity(
+            Units.radiansToRotations(m_aimSim.getVelocityRadPerSec()));
+        SmartDashboard.putNumber("sim angle", angle);
+        SmartDashboard.putNumber("target", m_targetAngle);
     }
 }
