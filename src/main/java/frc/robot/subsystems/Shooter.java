@@ -42,7 +42,7 @@ public class Shooter extends SubsystemBase {
 
     private final DCMotor m_aimGearbox = DCMotor.getFalcon500(1);
     private final SingleJointedArmSim m_aimSim = new SingleJointedArmSim(
-        m_aimGearbox, 0.5, 0.761, 0.5017,
+        m_aimGearbox, 100.0, 1.332, 0.5017,
         Math.PI / 6, Units.degreesToRadians(80), true, Math.PI / 6);
 
     private final Mechanism2d m_mech2d = new Mechanism2d(60, 60);
@@ -61,6 +61,7 @@ public class Shooter extends SubsystemBase {
     public Shooter() {
         ctreConfigs();
         m_targetAngle = 30;
+        m_aim.setPosition(30.0 / 360.0);
         SmartDashboard.putData("Mech2d", m_mech2d);
     }
 
@@ -73,6 +74,7 @@ public class Shooter extends SubsystemBase {
         slot0Configs.kP = kP;
         slot0Configs.kI = 0;
         slot0Configs.kD = kD;
+        slot0Configs.kG = 1;
 
         var motionMagicConfigs = talonFxConfigs.MotionMagic;
         motionMagicConfigs.MotionMagicCruiseVelocity = 0;
@@ -110,6 +112,7 @@ public class Shooter extends SubsystemBase {
         return run(() -> {
             double powerVal = MathUtil.applyDeadband(power.getAsDouble(), 0.1);
             m_targetAngle += powerVal * 1.2;
+            m_targetAngle = MathUtil.clamp(m_targetAngle, 30, 75);
             m_aim.setControl(m_request.withPosition(m_targetAngle / 360.0));
             SmartDashboard.putNumber("aim", m_aim.get());
             SmartDashboard.putNumber("aim position", m_aim.getPosition().getValueAsDouble());
@@ -132,9 +135,10 @@ public class Shooter extends SubsystemBase {
     public void simulationPeriodic() {
         m_talonFxSim.setSupplyVoltage(12);
         var volts = m_talonFxSim.getMotorVoltage();
-        m_aimSim.setInput(volts);
+        m_aimSim.setInputVoltage(volts);
         SmartDashboard.putNumber("sim voltage", volts);
         m_aimSim.update(0.020);
+        SmartDashboard.putNumber("sim velocity", m_aimSim.getVelocityRadPerSec());
         var angle = Units.radiansToDegrees(m_aimSim.getAngleRads());
         m_aim2d.setAngle(angle);
         m_talonFxSim.setRawRotorPosition(angle / 360.0);
