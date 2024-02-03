@@ -68,12 +68,14 @@ public class Constants {
         public static final int kConveyorId = 14;
         public static final int kAimId = 15;
 
-        public static final double kConversion = 360 / 42;
-        public static final double kS = 0.25;
-        public static final double kV = 0.12;
-        public static final double kA = 0.01;
-        public static final double kP = 4.8;
-        public static final double kD = 0.1;
+        public static final double kGearRatio = 200;
+
+        public static final double kS = 0.89;
+        public static final double kV = 0.06; // V * s / deg
+        public static final double kA = 0; // V * s^2 / deg
+        public static final double kP = 10;
+        public static final double kD = 0;
+        public static final double kG = 0.37;
         public static final double kCruiseVelocity = 80;
         public static final double kAcceleration = 160;
         public static final double kJerk = 1600;
