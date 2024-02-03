@@ -90,11 +90,10 @@ public class Robot extends TimedRobot {
 		}
 		drivetrain.registerTelemetry(logger::telemeterize);
 
-		shooter.setDefaultCommand(shooter.teleopCmd(() -> -manipulator.getRightY()));
+		// shooter.setDefaultCommand(shooter.teleopCmd(() -> -manipulator.getRightY()));
+		manipulator.x().onTrue(shooter.goTo90());
+		manipulator.y().onTrue(shooter.goTo30());
 		climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
-
-		manipulator.x().onTrue(shooter.setTargetTo90());
-		manipulator.x().onFalse(shooter.setTargetTo0());
 
 		driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
 		driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
