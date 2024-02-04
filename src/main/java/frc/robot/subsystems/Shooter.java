@@ -11,7 +11,7 @@ import com.ctre.phoenix6.sim.TalonFXSimState;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
-// import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
@@ -31,10 +31,12 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import static frc.robot.Constants.FieldK.*;
 import static frc.robot.Constants.ShooterK.*;
 
-// import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 // TODO separate into two classes
 public class Shooter extends SubsystemBase {
+    private final Supplier<Pose3d> m_robotPoseSupplier;
+
     private final TalonFX m_right = new TalonFX(kRightId);
     private final TalonFX m_left = new TalonFX(kLeftId);
 
@@ -69,7 +71,8 @@ public class Shooter extends SubsystemBase {
     private double m_targetAngle;
     private Translation3d m_speakerPose;
 
-    public Shooter() {
+    public Shooter(Supplier<Pose3d> robotPoseSupplier) {
+        m_robotPoseSupplier = robotPoseSupplier;
         ctreConfigs();
         m_targetAngle = 0;
         SmartDashboard.putData("Mech2d", m_mech2d);
@@ -152,9 +155,9 @@ public class Shooter extends SubsystemBase {
         });
     }
 
-    public Command aimAtSpeaker(Swerve swerve) {
+    public Command aimAtSpeaker() {
         var getAngleCmd = run(() -> {
-            var translation = swerve.getPose().getTranslation();
+            var translation = m_robotPoseSupplier.get().getTranslation();
             var poseToSpeaker = m_speakerPose.minus(translation);
             m_targetAngle = Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX()));
         });
@@ -169,14 +172,14 @@ public class Shooter extends SubsystemBase {
         m_talonFxSim.setSupplyVoltage(12);
         var volts = m_talonFxSim.getMotorVoltage();
         m_aimSim.setInputVoltage(volts);
-        SmartDashboard.putNumber("sim voltage", volts);
         m_aimSim.update(0.020);
-        SmartDashboard.putNumber("sim velocity", m_aimSim.getVelocityRadPerSec());
         var angle = Units.radiansToDegrees(m_aimSim.getAngleRads());
-        m_aim2d.setAngle(angle);
+        m_aim2d.setAngle(angle); // TODO: make this render correctly with real robot too
         m_talonFxSim.setRawRotorPosition((angle / 360.0) * kGearRatio);
-        m_talonFxSim.setRotorVelocity(
-            Units.radiansToRotations(m_aimSim.getVelocityRadPerSec()) * kGearRatio);
+        m_talonFxSim.setRotorVelocity(Units.radiansToRotations(m_aimSim.getVelocityRadPerSec()) * kGearRatio);
+
+        SmartDashboard.putNumber("sim voltage", volts);
+        SmartDashboard.putNumber("sim velocity", m_aimSim.getVelocityRadPerSec());
         SmartDashboard.putNumber("sim angle", angle);
         SmartDashboard.putNumber("target", m_targetAngle);
     }

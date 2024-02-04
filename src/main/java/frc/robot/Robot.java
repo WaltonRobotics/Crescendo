@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import java.util.function.Supplier;
+
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.DriveRequestType;
@@ -11,8 +13,10 @@ import com.pathplanner.lib.auto.NamedCommands;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -36,9 +40,12 @@ public class Robot extends TimedRobot {
 	/* Setting up bindings for necessary control of the swerve drive platform */
 	private final CommandXboxController driver = new CommandXboxController(0); // My joystick
 	private final CommandXboxController manipulator = new CommandXboxController(1);
-	public final Swerve drivetrain = TunerConstants.DriveTrain; // My drivetrain
+
+	public final Swerve drivetrain = TunerConstants.DriveTrain;
+	public final Vision vision = new Vision(drivetrain::addVisionMeasurement);
+	public final Supplier<Pose3d> robotPoseSupplier = drivetrain::getPose3d;
+	public final Shooter shooter = new Shooter(robotPoseSupplier);
 	public final Intake intake = new Intake();
-	public final Shooter shooter = new Shooter();
 	public final Climber climber = new Climber();
 
 	private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -49,6 +56,14 @@ public class Robot extends TimedRobot {
 	private final Telemetry logger = new Telemetry(MaxSpeed);
 
 	private Command m_autonomousCommand;
+
+	public Robot() {
+		// disable joystick not found warnings when in sim
+		if (Robot.isSimulation()) {
+			DriverStation.silenceJoystickConnectionWarning(true);
+		}
+		addPeriodic(vision::run, 0.01);
+	}
 
 	private void registerCommands() {
 		NamedCommands.registerCommand("intake", intake.intake());

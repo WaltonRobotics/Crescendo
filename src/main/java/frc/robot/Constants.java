@@ -8,9 +8,10 @@ import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.ReplanningConfig;
 import edu.wpi.first.math.controller.ElevatorFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.Distance;
@@ -20,6 +21,14 @@ import edu.wpi.first.units.Measure;
 public class Constants {
     public static final double kStickDeadband = 0.1;
     public static final String kCanbus = "fd";
+
+    public class VisionK {
+        public static final Transform3d kFrontTagCamLocation = new Transform3d(
+            0.5, 0.5, 0.25, new Rotation3d());
+
+        public static final Transform3d kRearTagCamLocation = new Transform3d(
+            -0.5, 0.5, 0.25, new Rotation3d(0, 0, Units.degreesToRadians(180)));
+    }
 
     public class FieldK {
         public static final Measure<Distance> kFieldLength = Meters.of(16.54);
@@ -46,10 +55,6 @@ public class Constants {
             5,
             Math.sqrt(Math.pow(Math.pow(10.3125, 2) + Math.pow(12.375, 2), 2)),
             new ReplanningConfig());
-    }
-
-    public class VisionK {
-        public static final Transform3d kCamToRobot = new Transform3d();
     }
 
     public class ClimberK {

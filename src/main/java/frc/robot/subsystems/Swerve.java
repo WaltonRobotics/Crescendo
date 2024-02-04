@@ -4,9 +4,6 @@ import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
-import org.photonvision.PhotonCamera;
-import org.photonvision.PhotonUtils;
-
 import com.choreo.lib.Choreo;
 import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.SignalLogger;
@@ -39,13 +36,13 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Vision.VisionMeasurement;
 import frc.robot.auton.AutonChooser;
 import frc.util.AdvantageScopeUtil;
 
 import static frc.robot.Constants.FieldK.*;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.AutoK.*;
-import static frc.robot.Constants.VisionK.*;
 
 /**
  * Class that extends the Phoenix SwerveDrivetrain class and implements
@@ -61,7 +58,6 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final PIDController m_xController = new PIDController(kPX, 0.0, 0.0);
 	private final PIDController m_yController = new PIDController(kPY, 0.0, 0.0);
 	private final PIDController m_thetaController = new PIDController(kPTheta, 0.0, 0.0);
-	private final PhotonCamera m_cam = new PhotonCamera("cameraName");
 
 	private final SysIdSwerveTranslation translationCharacterization = new SysIdSwerveTranslation();
 	// private final SysIdSwerveRotation rotationCharacterization = new
@@ -77,32 +73,17 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		new SysIdRoutine.Mechanism(
 			(volts) -> setControl(translationCharacterization.withVolts(volts)),
 			null,
-			this));
+			this)
+	);
 
-	// private SysIdRoutine m_sysIdRoutineRotation = new SysIdRoutine(
-	// new SysIdRoutine.Config(
-	// null,
-	// Volts.of(7),
-	// null,
-	// (state) -> SignalLogger.writeString("state", state.toString())),
-	// new SysIdRoutine.Mechanism(
-	// (volts) -> setControl(rotationCharacterization.withVolts(volts)),
-	// null,
-	// this));
-	// private SysIdRoutine m_sysIdRoutineSteer = new SysIdRoutine(
-	// new SysIdRoutine.Config(
-	// null,
-	// Volts.of(7),
-	// null,
-	// (state) -> SignalLogger.writeString("state", state.toString())),
-	// new SysIdRoutine.Mechanism(
-	// (volts) -> setControl(steerCharacterization.withVolts(volts)),
-	// null,
-	// this));
+
+	public void addVisionMeasurement(VisionMeasurement measurement) {
+		m_odometry.addVisionMeasurement(
+			measurement.measure(), measurement.latency(), measurement.stdDevs());
+	}
 
 	private void configureAutoBuilder() {
 		AutoBuilder.configureHolonomic(
-			// () -> getPose().toPose2d(),
 			() -> getState().Pose,
 			this::seedFieldRelative,
 			() -> m_kinematics.toChassisSpeeds(getState().ModuleStates),
@@ -206,12 +187,10 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		});
 	}
 
-	public Pose3d getPose() {
-		var result = m_cam.getLatestResult();
-		var target = result.getBestTarget();
-		var robotPose = PhotonUtils.estimateFieldToRobotAprilTag(target.getBestCameraToTarget(),
-			kFieldLayout.getTagPose(target.getFiducialId()).get(), kCamToRobot);
-		return robotPose;
+	public Pose3d getPose3d() {
+		var txr2d = getState().Pose.getTranslation();
+		// we're on the floor. I hope.
+		return new Pose3d(txr2d.getX(), txr2d.getY(), 0, getRotation3d());
 	}
 
 	public Command resetPose(PathPlannerPath path) {
