@@ -3,8 +3,9 @@ package frc.robot.auton;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.Intake;
-import frc.robot.subsystems.Shooter;
+
 import static frc.robot.auton.Paths.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;

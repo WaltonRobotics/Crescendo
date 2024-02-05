@@ -71,6 +71,9 @@ public class Constants {
         public static final int kLeftId = 12;
         public static final int kTiltId = 13;
         public static final int kConveyorId = 14;
+    }
+
+    public class AimK {
         public static final int kAimId = 15;
         public static final int kCancoderId = 16;
 

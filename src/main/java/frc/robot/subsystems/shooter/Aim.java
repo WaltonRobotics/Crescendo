@@ -1,15 +1,13 @@
-package frc.robot.subsystems;
+package frc.robot.subsystems.shooter;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 // import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
-import com.ctre.phoenix6.hardware.CANcoder;
+// import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 // import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.sim.TalonFXSimState;
-import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -29,18 +27,12 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import static frc.robot.Constants.FieldK.*;
-import static frc.robot.Constants.ShooterK.*;
+import static frc.robot.Constants.AimK.*;
 
 import java.util.function.Supplier;
 
-// TODO separate into two classes
-public class Shooter extends SubsystemBase {
+public class Aim extends SubsystemBase {
     private final Supplier<Pose3d> m_robotPoseSupplier;
-
-    private final TalonFX m_right = new TalonFX(kRightId);
-    private final TalonFX m_left = new TalonFX(kLeftId);
-
-    private final CANSparkMax m_conveyor = new CANSparkMax(kConveyorId, MotorType.kBrushless);
 
     private final TalonFX m_aim = new TalonFX(kAimId);
     // private final CANcoder m_cancoder = new CANcoder(kCancoderId);
@@ -71,7 +63,7 @@ public class Shooter extends SubsystemBase {
     private double m_targetAngle;
     private Translation3d m_speakerPose;
 
-    public Shooter(Supplier<Pose3d> robotPoseSupplier) {
+    public Aim(Supplier<Pose3d> robotPoseSupplier) {
         m_robotPoseSupplier = robotPoseSupplier;
         ctreConfigs();
         m_targetAngle = 0;
@@ -99,15 +91,6 @@ public class Shooter extends SubsystemBase {
         // motionMagicConfigs.MotionMagicExpo_kA = 0.12;
 
         m_aim.getConfigurator().apply(talonFxConfigs);
-    }
-
-    public Command shoot() {
-        return run(() -> {
-            // TODO check values and stuff
-            m_right.set(1);
-            m_left.set(1);
-            m_conveyor.set(0.5);
-        });
     }
 
     private Command toAngle(double degrees) {

@@ -29,9 +29,10 @@ import frc.robot.auton.AutonFactory;
 import frc.robot.auton.Trajectories;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.shooter.Aim;
+import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
-import frc.robot.subsystems.Shooter;
 
 public class Robot extends TimedRobot {
 	private double MaxSpeed = 5; // 6 meters per second desired top speed
@@ -44,7 +45,8 @@ public class Robot extends TimedRobot {
 	public final Swerve drivetrain = TunerConstants.DriveTrain;
 	public final Vision vision = new Vision(drivetrain::addVisionMeasurement);
 	public final Supplier<Pose3d> robotPoseSupplier = drivetrain::getPose3d;
-	public final Shooter shooter = new Shooter(robotPoseSupplier);
+	public final Shooter shooter = new Shooter();
+	public final Aim aim = new Aim(robotPoseSupplier);
 	public final Intake intake = new Intake();
 	public final Climber climber = new Climber();
 
@@ -106,8 +108,8 @@ public class Robot extends TimedRobot {
 		drivetrain.registerTelemetry(logger::telemeterize);
 
 		// shooter.setDefaultCommand(shooter.teleopCmd(() -> -manipulator.getRightY()));
-		manipulator.x().onTrue(shooter.goTo90());
-		manipulator.y().onTrue(shooter.goTo30());
+		manipulator.x().onTrue(aim.goTo90());
+		manipulator.y().onTrue(aim.goTo30());
 		climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
 
 		driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
@@ -138,7 +140,7 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void robotInit() {
-		shooter.getSpeakerPose();
+		aim.getSpeakerPose();
 		mapAutonCommands();
 		registerCommands();
 		configureBindings();
