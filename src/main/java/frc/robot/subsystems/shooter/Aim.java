@@ -29,6 +29,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import static frc.robot.Constants.FieldK.*;
 import static frc.robot.Constants.AimK.*;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 public class Aim extends SubsystemBase {
@@ -149,6 +150,65 @@ public class Aim extends SubsystemBase {
         return Commands.repeatingSequence(
             getAngleCmd,
             toAngleCmd);
+    }
+
+    /**
+     * IF RETURN 0, bad :(
+     * @return aprilTag ID of closest trap
+     */
+    public int getTrapId() {
+        double center;
+        double right;
+        double left;
+
+        if(DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(Alliance.Blue)) {
+            Translation3d centerTag = kFieldLayout.getTagPose(kBlueCenterTrapID).get().getTranslation();
+            Translation3d rightTag = kFieldLayout.getTagPose(kBlueRightTrapID).get().getTranslation();
+            Translation3d leftTag = kFieldLayout.getTagPose(kBlueLeftTrapID).get().getTranslation();
+
+            center = centerTag.getDistance(m_robotPoseSupplier.get().getTranslation());
+            right = rightTag.getDistance(m_robotPoseSupplier.get().getTranslation());
+            left = leftTag.getDistance(m_robotPoseSupplier.get().getTranslation());
+
+            if(center < right && center < left) {
+                return kBlueCenterTrapID;
+            } else if(right < center && right < left) {
+                return kBlueRightTrapID;
+            } else {
+                return kBlueLeftTrapID;
+            }
+        } else if(DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(Alliance.Red)) {
+            Translation3d centerTag = kFieldLayout.getTagPose(kRedCenterTrapID).get().getTranslation();
+            Translation3d rightTag = kFieldLayout.getTagPose(kRedRightTrapID).get().getTranslation();
+            Translation3d leftTag = kFieldLayout.getTagPose(kRedLeftTrapID).get().getTranslation();
+
+            center = centerTag.getDistance(m_robotPoseSupplier.get().getTranslation());
+            right = rightTag.getDistance(m_robotPoseSupplier.get().getTranslation());
+            left = leftTag.getDistance(m_robotPoseSupplier.get().getTranslation());
+
+            if(center < right && center < left) {
+                return kRedCenterTrapID;
+            } else if(right < center && right < left) {
+                return kRedRightTrapID;
+            } else {
+                return kRedLeftTrapID;
+            }
+        }
+        return 0;
+    }
+
+    public Command aimAtTrap() {
+        var getAngleCmd = run(() -> {
+            var translation = m_robotPoseSupplier.get();
+            var poseToTrap = kFieldLayout.getTagPose(getTrapId()).get().minus(translation);
+            m_targetAngle = Math.atan((poseToTrap.getZ()) / (poseToTrap.getX()));
+        });
+        var toAngleCmd = toAngle(Math.toDegrees(m_targetAngle));
+
+        return Commands.repeatingSequence(
+            getAngleCmd,
+            toAngleCmd
+        );
     }
 
     public void simulationPeriodic() {
