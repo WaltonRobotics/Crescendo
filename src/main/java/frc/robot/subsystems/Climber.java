@@ -50,7 +50,7 @@ public class Climber extends SubsystemBase {
             }).until(m_lowerLimitTrigger));
     }
 
-    public Command teleopCmd(DoubleSupplier power) {
+    public Command teleop(DoubleSupplier power) {
         return run(() -> {
             double dir = Math.signum(power.getAsDouble());
             double output = 0;

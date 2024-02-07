@@ -1,12 +1,8 @@
 package frc.robot.subsystems.shooter;
 
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
-// import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
-import com.ctre.phoenix6.controls.PositionVoltage;
-// import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
-// import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 
 import edu.wpi.first.math.geometry.Pose3d;
@@ -25,6 +21,7 @@ import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.CtreConfigs;
 
 import static frc.robot.Constants.FieldK.*;
 import static frc.robot.Constants.AimK.*;
@@ -36,15 +33,11 @@ public class Aim extends SubsystemBase {
     private final Supplier<Pose3d> m_robotPoseSupplier;
 
     private final TalonFX m_aim = new TalonFX(kAimId);
-    // private final CANcoder m_cancoder = new CANcoder(kCancoderId);
+    private final CANcoder m_cancoder = new CANcoder(kCancoderId);
     private final TalonFXSimState m_talonFxSim = m_aim.getSimState();
-    // private final MotionMagicExpoVoltage m_request = new
-    // MotionMagicExpoVoltage(0);
-    private final PositionVoltage m_request = new PositionVoltage(0)
-        .withSlot(0)
-        .withUpdateFreqHz(100)
-        .withEnableFOC(true)
-        .withFeedForward(0);
+    // private final CANcoderSimState m_cancoderSim = new
+    // CANcoderSimState(m_cancoder);
+    private final MotionMagicExpoVoltage m_request = new MotionMagicExpoVoltage(0);
 
     private final DCMotor m_aimGearbox = DCMotor.getFalcon500(1);
     private final SingleJointedArmSim m_aimSim = new SingleJointedArmSim(
@@ -66,38 +59,16 @@ public class Aim extends SubsystemBase {
 
     public Aim(Supplier<Pose3d> robotPoseSupplier) {
         m_robotPoseSupplier = robotPoseSupplier;
-        ctreConfigs();
+        m_aim.getConfigurator().apply(CtreConfigs.get().m_aimConfigs);
+        m_cancoder.getConfigurator().apply(CtreConfigs.get().m_cancoderConfigs);
         m_targetAngle = 0;
         SmartDashboard.putData("Mech2d", m_mech2d);
-    }
-
-    private void ctreConfigs() {
-        var talonFxConfigs = new TalonFXConfiguration();
-        talonFxConfigs.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
-        talonFxConfigs.Feedback.SensorToMechanismRatio = kGearRatio;
-        var slot0Configs = talonFxConfigs.Slot0;
-        // slot0Configs.GravityType = GravityTypeValue.Arm_Cosine;
-        // slot0Configs.kS = kS;
-        // slot0Configs.kV = kV;
-        // slot0Configs.kA = kA;
-        slot0Configs.kP = kP;
-        slot0Configs.kI = 0;
-        slot0Configs.kD = 0;
-        // slot0Configs.kG = kG;
-
-        // var motionMagicConfigs = talonFxConfigs.MotionMagic;
-        // motionMagicConfigs.MotionMagicCruiseVelocity = 0;
-        // // motionMagicConfigs.MotionMagicAcceleration = kAcceleration;
-        // motionMagicConfigs.MotionMagicExpo_kV = kV;
-        // motionMagicConfigs.MotionMagicExpo_kA = 0.12;
-
-        m_aim.getConfigurator().apply(talonFxConfigs);
     }
 
     private Command toAngle(double degrees) {
         return run(() -> {
             m_aim.setControl(m_request.withPosition(degrees / 360.0));
-        });
+        }).until(() -> m_cancoder.getPosition().getValueAsDouble() == degrees);
     }
 
     public void getSpeakerPose() {
@@ -109,20 +80,15 @@ public class Aim extends SubsystemBase {
         }
     }
 
-    // public Command teleopCmd(DoubleSupplier power) {
+    // public Command teleop(DoubleSupplier power) {
     // return run(() -> {
     // double powerVal = MathUtil.applyDeadband(power.getAsDouble(), 0.1);
     // m_targetAngle += powerVal * 1.2;
-    // m_targetAngle = MathUtil.clamp(m_targetAngle, 30, 80);
-    // if (powerVal == 0) {
-    // m_aim.setControl(m_holdRequest.withPosition(m_targetAngle / 360.0));
-    // } else {
+    // m_targetAngle = MathUtil.clamp(m_targetAngle, 30, 130);
     // m_aim.setControl(m_request.withPosition(m_targetAngle / 360.0));
-    // }
     // SmartDashboard.putNumber("aim", m_aim.get());
     // SmartDashboard.putNumber("aim position",
-    // m_aim.getPosition().getValueAsDouble());
-    // });
+    // Units.rotationsToDegrees(m_aim.getPosition().getValueAsDouble()));
     // }
 
     public Command goTo90() {
@@ -140,16 +106,16 @@ public class Aim extends SubsystemBase {
     }
 
     public Command aimAtSpeaker() {
-        var getAngleCmd = run(() -> {
+        var getTarget = run(() -> {
             var translation = m_robotPoseSupplier.get().getTranslation();
             var poseToSpeaker = m_speakerPose.minus(translation);
             m_targetAngle = Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX()));
         });
-        var toAngleCmd = toAngle(Math.toDegrees(m_targetAngle));
+        var toTarget = toAngle(Math.toDegrees(m_targetAngle));
 
-        return Commands.repeatingSequence(
-            getAngleCmd,
-            toAngleCmd);
+        return Commands.sequence(
+            getTarget,
+            toTarget);
     }
 
     /**
@@ -214,13 +180,20 @@ public class Aim extends SubsystemBase {
     public void simulationPeriodic() {
         m_talonFxSim.setSupplyVoltage(12);
         var volts = m_talonFxSim.getMotorVoltage();
-        m_aimSim.setInputVoltage(volts);
+        m_aimSim.setState(Units.rotationsToRadians(m_cancoder.getPosition().getValueAsDouble()),
+            Units.rotationsToRadians(m_cancoder.getVelocity().getValueAsDouble()));
         m_aimSim.update(0.020);
-        var angle = Units.radiansToDegrees(m_aimSim.getAngleRads());
-        m_aim2d.setAngle(angle); // TODO: make this render correctly with real robot too
-        m_talonFxSim.setRawRotorPosition((angle / 360.0) * kGearRatio);
-        m_talonFxSim.setRotorVelocity(Units.radiansToRotations(m_aimSim.getVelocityRadPerSec()) * kGearRatio);
-
+        double angle = Units.radiansToDegrees(m_aimSim.getAngleRads());
+        m_aim2d.setAngle(Units.rotationsToDegrees(m_cancoder.getPosition().getValueAsDouble())); // TODO: make this
+                                                                                                 // render correctly
+                                                                                                 // with real robot too
+        // m_cancoderSim.setRawPosition(angle / 360.0);
+        // m_cancoderSim.setVelocity(Units.radiansToRotations((m_aimSim.getVelocityRadPerSec()))
+        // / 360.0);
+        // m_talonFxSim.setRawRotorPosition((angle / 360.0));
+        // m_talonFxSim.setRotorVelocity(Units.radiansToRotations(m_aimSim.getVelocityRadPerSec()));
+        SmartDashboard.putNumber("cancoder position",
+            m_cancoder.getPosition().getValueAsDouble());
         SmartDashboard.putNumber("sim voltage", volts);
         SmartDashboard.putNumber("sim velocity", m_aimSim.getVelocityRadPerSec());
         SmartDashboard.putNumber("sim angle", angle);
