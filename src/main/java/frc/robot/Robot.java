@@ -75,14 +75,7 @@ public class Robot extends TimedRobot {
 	private void configureBindings() {
 		drivetrain.setDefaultCommand(drivetrain.applyRequest(() -> {
 			double leftY = -driver.getLeftY();
-			double leftYSig = Math.signum(leftY);
-			leftY *= leftY;
-			leftY *= leftYSig;
-
 			double leftX = -driver.getLeftX();
-			double leftXSig = Math.signum(leftX);
-			leftX *= leftX;
-			leftX *= leftXSig;
 			return drive
 				.withVelocityX(leftY * MaxSpeed)
 				.withVelocityY(leftX * MaxSpeed)
@@ -110,7 +103,8 @@ public class Robot extends TimedRobot {
 		// shooter.setDefaultCommand(shooter.teleopCmd(() -> -manipulator.getRightY()));
 		manipulator.x().onTrue(aim.goTo90());
 		manipulator.y().onTrue(aim.goTo30());
-		climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
+		// climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
+		aim.setDefaultCommand(aim.teleop(() -> -manipulator.getLeftY()));
 
 		driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
 		driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
