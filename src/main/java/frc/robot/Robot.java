@@ -104,7 +104,7 @@ public class Robot extends TimedRobot {
 		manipulator.x().onTrue(aim.goTo90());
 		manipulator.y().onTrue(aim.goTo30());
 		// climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
-		aim.setDefaultCommand(aim.teleop(() -> -manipulator.getLeftY()));
+		// aim.setDefaultCommand(aim.teleop(() -> -manipulator.getLeftY()));
 
 		driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
 		driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
@@ -119,10 +119,10 @@ public class Robot extends TimedRobot {
 			Trajectories.oneMeter.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.SIMPLE_THING, AutonFactory.simpleThing(drivetrain),
 			Trajectories.simpleThing.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.THREE_PC, AutonFactory.threePiece(drivetrain, intake, shooter),
+		AutonChooser.assignAutonCommand(AutonOption.THREE_PC, AutonFactory.threePiece(drivetrain, intake, shooter, aim),
 			Trajectories.threePc.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.FOUR_PC, AutonFactory.fourPiece(drivetrain, intake, shooter));
-		AutonChooser.assignAutonCommand(AutonOption.FIVE_PC, AutonFactory.fivePiece(drivetrain, intake, shooter),
+		AutonChooser.assignAutonCommand(AutonOption.FOUR_PC, AutonFactory.fourPiece(drivetrain, intake, shooter, aim));
+		AutonChooser.assignAutonCommand(AutonOption.FIVE_PC, AutonFactory.fivePiece(drivetrain, intake, shooter, aim),
 			Trajectories.fivePc.getInitialPose());
 		// AutonChooser.assignAutonCommand(AutonOption.THING,
 		// AutonFactory.thing(drivetrain));
