@@ -156,7 +156,7 @@ public class Aim extends SubsystemBase {
         var volts = m_talonFxSim.getMotorVoltage();
         m_aimSim.setInputVoltage(volts);
         m_aimSim.update(0.020);
-        var angle = Units.radiansToDegrees(m_aimSim.getAngleRads());
+        double angle = Units.radiansToDegrees(m_aimSim.getAngleRads());
         m_aim2d.setAngle(angle); // TODO: make this render correctly with real robot too
         m_talonFxSim.setRawRotorPosition((angle / 360.0) * kGearRatio);
         m_talonFxSim.setRotorVelocity(Units.radiansToRotations(m_aimSim.getVelocityRadPerSec()) * kGearRatio);
