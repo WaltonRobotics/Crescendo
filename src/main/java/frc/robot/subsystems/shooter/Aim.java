@@ -56,6 +56,7 @@ public class Aim extends SubsystemBase {
 
     private double m_targetAngle;
     private Translation3d m_speakerPose;
+    private Translation3d m_ampPose;
 
     public Aim(Supplier<Pose3d> robotPoseSupplier) {
         m_robotPoseSupplier = robotPoseSupplier;
@@ -110,6 +111,19 @@ public class Aim extends SubsystemBase {
             var translation = m_robotPoseSupplier.get().getTranslation();
             var poseToSpeaker = m_speakerPose.minus(translation);
             m_targetAngle = Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX()));
+        });
+        var toTarget = toAngle(Math.toDegrees(m_targetAngle));
+
+        return Commands.sequence(
+            getTarget,
+            toTarget);
+    }
+
+    public Command aimAtAmp() {
+        var getTarget = run(() -> {
+            var translation = m_robotPoseSupplier.get().getTranslation();
+            var poseToAmp = m_ampPose.minus(translation);
+            m_targetAngle = Math.atan((poseToAmp.getZ()) / (poseToAmp.getX()));
         });
         var toTarget = toAngle(Math.toDegrees(m_targetAngle));
 

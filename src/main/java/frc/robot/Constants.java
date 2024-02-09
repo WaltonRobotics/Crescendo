@@ -37,10 +37,19 @@ public class Constants {
         public static final Measure<Distance> kXToSpeaker = Inches.of(46.50);
         public static final Measure<Distance> kZToSpeaker = Inches.of(98.13);
         public static final Translation3d kBlueSpeakerPose = new Translation3d(
-            -kXToSpeaker.baseUnitMagnitude(), 5.5, kZToSpeaker.baseUnitMagnitude());
+            kXToSpeaker.baseUnitMagnitude(), 5.5, kZToSpeaker.baseUnitMagnitude());
         public static final Translation3d kRedSpeakerPose = new Translation3d(
-            kFieldLength.magnitude() + kXToSpeaker.baseUnitMagnitude(), kFieldWidth.magnitude() - 5.5,
+            kFieldLength.magnitude() - kXToSpeaker.baseUnitMagnitude(), kFieldWidth.magnitude() - 5.5,
             kZToSpeaker.baseUnitMagnitude());
+
+        public static final Measure<Distance> kXToAmp = Inches.of(49.5);
+        public static final Measure<Distance> kYToAmp = Inches.of(286.765);
+        public static final Measure<Distance> kZToAmp = Inches.of(35);
+        public static final Translation3d kBlueAmpPose = new Translation3d(
+            kXToAmp.baseUnitMagnitude(), kYToAmp.baseUnitMagnitude(), kZToSpeaker.magnitude());
+        public static final Translation3d kRedAmpPose = new Translation3d(
+            kFieldLength.magnitude() - kXToAmp.baseUnitMagnitude(), kFieldWidth.magnitude() - kYToAmp.baseUnitMagnitude(),
+            kZToAmp.baseUnitMagnitude());
         
         public static final int kBlueCenterTrapID = 14;
         public static final int kBlueLeftTrapID = 15;
