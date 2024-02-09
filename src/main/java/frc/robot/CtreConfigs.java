@@ -25,7 +25,7 @@ public class CtreConfigs {
         m_cancoderConfigs.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
         m_cancoderConfigs.MagnetSensor.MagnetOffset = 0.25;
 
-        m_aimConfigs.Feedback.SensorToMechanismRatio = AimK.kGearRatio;
+        // m_aimConfigs.Feedback.SensorToMechanismRatio = AimK.kGearRatio;
         m_aimConfigs.Feedback.RotorToSensorRatio = 1;
         m_aimConfigs.Feedback.FeedbackRemoteSensorID = AimK.kCancoderId;
         m_aimConfigs.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;

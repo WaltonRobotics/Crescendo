@@ -3,8 +3,8 @@ package frc.robot.subsystems.shooter;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.sim.TalonFXSimState;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -26,7 +26,7 @@ import frc.robot.CtreConfigs;
 import static frc.robot.Constants.FieldK.*;
 import static frc.robot.Constants.AimK.*;
 
-import java.util.Optional;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public class Aim extends SubsystemBase {
@@ -34,9 +34,6 @@ public class Aim extends SubsystemBase {
 
     private final TalonFX m_aim = new TalonFX(kAimId);
     private final CANcoder m_cancoder = new CANcoder(kCancoderId);
-    private final TalonFXSimState m_talonFxSim = m_aim.getSimState();
-    // private final CANcoderSimState m_cancoderSim = new
-    // CANcoderSimState(m_cancoder);
     private final MotionMagicExpoVoltage m_request = new MotionMagicExpoVoltage(0);
 
     private final DCMotor m_aimGearbox = DCMotor.getFalcon500(1);
@@ -80,16 +77,17 @@ public class Aim extends SubsystemBase {
         }
     }
 
-    // public Command teleop(DoubleSupplier power) {
-    // return run(() -> {
-    // double powerVal = MathUtil.applyDeadband(power.getAsDouble(), 0.1);
-    // m_targetAngle += powerVal * 1.2;
-    // m_targetAngle = MathUtil.clamp(m_targetAngle, 30, 130);
-    // m_aim.setControl(m_request.withPosition(m_targetAngle / 360.0));
-    // SmartDashboard.putNumber("aim", m_aim.get());
-    // SmartDashboard.putNumber("aim position",
-    // Units.rotationsToDegrees(m_aim.getPosition().getValueAsDouble()));
-    // }
+    public Command teleop(DoubleSupplier power) {
+        return run(() -> {
+            double powerVal = MathUtil.applyDeadband(power.getAsDouble(), 0.1);
+            m_targetAngle += powerVal * 1.2;
+            m_targetAngle = MathUtil.clamp(m_targetAngle, 0, 200);
+            m_aim.setControl(m_request.withPosition(m_targetAngle / 360.0));
+            SmartDashboard.putNumber("aim", m_aim.get());
+            SmartDashboard.putNumber("aim position",
+                Units.rotationsToDegrees(m_aim.getPosition().getValueAsDouble()));
+        });
+    }
 
     public Command goTo90() {
         return runOnce(() -> {
@@ -120,6 +118,7 @@ public class Aim extends SubsystemBase {
 
     /**
      * IF RETURN 0, bad :(
+     * 
      * @return aprilTag ID of closest trap
      */
     public int getTrapId() {
@@ -127,37 +126,37 @@ public class Aim extends SubsystemBase {
         double right;
         double left;
 
-        if(DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(Alliance.Blue)) {
-            Translation3d centerTag = kFieldLayout.getTagPose(kBlueCenterTrapID).get().getTranslation();
-            Translation3d rightTag = kFieldLayout.getTagPose(kBlueRightTrapID).get().getTranslation();
-            Translation3d leftTag = kFieldLayout.getTagPose(kBlueLeftTrapID).get().getTranslation();
+        if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(Alliance.Blue)) {
+            Translation3d centerTag = kFieldLayout.getTagPose(kBlueCenterTrapId).get().getTranslation();
+            Translation3d rightTag = kFieldLayout.getTagPose(kBlueRightTrapId).get().getTranslation();
+            Translation3d leftTag = kFieldLayout.getTagPose(kBlueLeftTrapId).get().getTranslation();
 
             center = centerTag.getDistance(m_robotPoseSupplier.get().getTranslation());
             right = rightTag.getDistance(m_robotPoseSupplier.get().getTranslation());
             left = leftTag.getDistance(m_robotPoseSupplier.get().getTranslation());
 
-            if(center < right && center < left) {
-                return kBlueCenterTrapID;
-            } else if(right < center && right < left) {
-                return kBlueRightTrapID;
+            if (center < right && center < left) {
+                return kBlueCenterTrapId;
+            } else if (right < center && right < left) {
+                return kBlueRightTrapId;
             } else {
-                return kBlueLeftTrapID;
+                return kBlueLeftTrapId;
             }
-        } else if(DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(Alliance.Red)) {
-            Translation3d centerTag = kFieldLayout.getTagPose(kRedCenterTrapID).get().getTranslation();
-            Translation3d rightTag = kFieldLayout.getTagPose(kRedRightTrapID).get().getTranslation();
-            Translation3d leftTag = kFieldLayout.getTagPose(kRedLeftTrapID).get().getTranslation();
+        } else if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(Alliance.Red)) {
+            Translation3d centerTag = kFieldLayout.getTagPose(kRedCenterTrapId).get().getTranslation();
+            Translation3d rightTag = kFieldLayout.getTagPose(kRedRightTrapId).get().getTranslation();
+            Translation3d leftTag = kFieldLayout.getTagPose(kRedLeftTrapId).get().getTranslation();
 
             center = centerTag.getDistance(m_robotPoseSupplier.get().getTranslation());
             right = rightTag.getDistance(m_robotPoseSupplier.get().getTranslation());
             left = leftTag.getDistance(m_robotPoseSupplier.get().getTranslation());
 
-            if(center < right && center < left) {
-                return kRedCenterTrapID;
-            } else if(right < center && right < left) {
-                return kRedRightTrapID;
+            if (center < right && center < left) {
+                return kRedCenterTrapId;
+            } else if (right < center && right < left) {
+                return kRedRightTrapId;
             } else {
-                return kRedLeftTrapID;
+                return kRedLeftTrapId;
             }
         }
         return 0;
@@ -173,25 +172,22 @@ public class Aim extends SubsystemBase {
 
         return Commands.repeatingSequence(
             getAngleCmd,
-            toAngleCmd
-        );
+            toAngleCmd);
     }
 
     public void simulationPeriodic() {
-        m_talonFxSim.setSupplyVoltage(12);
-        var volts = m_talonFxSim.getMotorVoltage();
-        m_aimSim.setState(Units.rotationsToRadians(m_cancoder.getPosition().getValueAsDouble()),
-            Units.rotationsToRadians(m_cancoder.getVelocity().getValueAsDouble()));
+        m_aim.getSimState().setSupplyVoltage(12);
+        var volts = m_aim.getSimState().getMotorVoltage();
+        m_aimSim.setInputVoltage(volts);
         m_aimSim.update(0.020);
-        double angle = Units.radiansToDegrees(m_aimSim.getAngleRads());
-        m_aim2d.setAngle(Units.rotationsToDegrees(m_cancoder.getPosition().getValueAsDouble())); // TODO: make this
-                                                                                                 // render correctly
-                                                                                                 // with real robot too
-        // m_cancoderSim.setRawPosition(angle / 360.0);
-        // m_cancoderSim.setVelocity(Units.radiansToRotations((m_aimSim.getVelocityRadPerSec()))
-        // / 360.0);
-        // m_talonFxSim.setRawRotorPosition((angle / 360.0));
-        // m_talonFxSim.setRotorVelocity(Units.radiansToRotations(m_aimSim.getVelocityRadPerSec()));
+        double angle = Units.radiansToRotations(m_aimSim.getAngleRads());
+        double velocity = Units.radiansToRotations(m_aimSim.getVelocityRadPerSec());
+        m_aim.getSimState().setRawRotorPosition(angle * kGearRatio);
+        m_aim.getSimState().setRotorVelocity(velocity * kGearRatio);
+        m_cancoder.getSimState().setRawPosition(angle);
+        m_cancoder.getSimState().setVelocity(velocity);
+        m_aim2d.setAngle(Units.rotationsToDegrees(
+            m_aim.getPosition().getValueAsDouble())); // TODO: make this render correctly with the real robot too
         SmartDashboard.putNumber("cancoder position",
             m_cancoder.getPosition().getValueAsDouble());
         SmartDashboard.putNumber("sim voltage", volts);

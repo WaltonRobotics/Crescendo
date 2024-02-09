@@ -41,15 +41,15 @@ public class Constants {
         public static final Translation3d kRedSpeakerPose = new Translation3d(
             kFieldLength.magnitude() + kXToSpeaker.baseUnitMagnitude(), kFieldWidth.magnitude() - 5.5,
             kZToSpeaker.baseUnitMagnitude());
-        
-        public static final int kBlueCenterTrapID = 14;
-        public static final int kBlueLeftTrapID = 15;
-        public static final int kBlueRightTrapID = 16;
 
-        public static final int kRedLeftTrapID = 11;
-        public static final int kRedRightTrapID = 12;
-        public static final int kRedCenterTrapID = 13;
-        
+        public static final int kBlueCenterTrapId = 14;
+        public static final int kBlueLeftTrapId = 15;
+        public static final int kBlueRightTrapId = 16;
+
+        public static final int kRedLeftTrapId = 11;
+        public static final int kRedRightTrapId = 12;
+        public static final int kRedCenterTrapId = 13;
+
     }
 
     public class AutoK {

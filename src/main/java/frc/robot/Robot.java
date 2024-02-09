@@ -104,7 +104,7 @@ public class Robot extends TimedRobot {
 		manipulator.x().onTrue(aim.goTo90());
 		manipulator.y().onTrue(aim.goTo30());
 		// climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
-		// aim.setDefaultCommand(aim.teleop(() -> -manipulator.getLeftY()));
+		aim.setDefaultCommand(aim.teleop(() -> -manipulator.getLeftY()));
 
 		driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
 		driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
