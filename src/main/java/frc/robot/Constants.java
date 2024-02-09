@@ -37,9 +37,9 @@ public class Constants {
         public static final Measure<Distance> kXToSpeaker = Inches.of(46.50);
         public static final Measure<Distance> kZToSpeaker = Inches.of(98.13);
         public static final Translation3d kBlueSpeakerPose = new Translation3d(
-            kXToSpeaker.baseUnitMagnitude(), 5.5, kZToSpeaker.baseUnitMagnitude());
+            -kXToSpeaker.baseUnitMagnitude(), 5.5, kZToSpeaker.baseUnitMagnitude());
         public static final Translation3d kRedSpeakerPose = new Translation3d(
-            kFieldLength.magnitude() - kXToSpeaker.baseUnitMagnitude(), kFieldWidth.magnitude() - 5.5,
+            kFieldLength.magnitude() + kXToSpeaker.baseUnitMagnitude(), kFieldWidth.magnitude() - 5.5,
             kZToSpeaker.baseUnitMagnitude());
 
         public static final Measure<Distance> kXToAmp = Inches.of(49.5);
