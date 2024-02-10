@@ -91,6 +91,9 @@ public class Constants {
         public static final int kRightId = 11;
         public static final int kLeftId = 12;
         public static final int kTiltId = 13;
+    }
+
+    public class ConveyerK {
         public static final int kConveyorId = 14;
     }
 
