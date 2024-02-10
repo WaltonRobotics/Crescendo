@@ -1,5 +1,6 @@
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 
@@ -12,6 +13,7 @@ import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 
@@ -34,7 +36,10 @@ public class Constants {
 
         public static final AprilTagFieldLayout kFieldLayout = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
 
+        // where the speaker target is relative to the edge of the field (negative on
+        // blue side)
         public static final Measure<Distance> kXToSpeaker = Inches.of(46.50);
+        // where the speaker target is relative to the floor
         public static final Measure<Distance> kZToSpeaker = Inches.of(98.13);
         public static final Translation3d kBlueSpeakerPose = new Translation3d(
             -kXToSpeaker.baseUnitMagnitude(), 5.5, kZToSpeaker.baseUnitMagnitude());
@@ -109,5 +114,9 @@ public class Constants {
         public static final double kP = 100; // idk
         public static final double kG = 0.37;
         public static final double kAcceleration = 160;
+
+        public static final Measure<Distance> kLength = Inches.of(19.75);
+        public static final Measure<Angle> kMinAngle = Degrees.of(30);
+        public static final Measure<Angle> kMaxAngle = Degrees.of(150);
     }
 }

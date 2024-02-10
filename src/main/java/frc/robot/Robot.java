@@ -4,8 +4,11 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Inches;
+
 import java.util.function.Supplier;
 
+import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.DriveRequestType;
@@ -15,14 +18,19 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import frc.robot.Constants.AimK;
 import frc.robot.auton.AutonChooser;
 import frc.robot.auton.AutonChooser.AutonOption;
 import frc.robot.auton.AutonFactory;
@@ -43,7 +51,7 @@ public class Robot extends TimedRobot {
 	private final CommandXboxController driver = new CommandXboxController(0); // My joystick
 	private final CommandXboxController manipulator = new CommandXboxController(1);
 
-	public final Swerve drivetrain = TunerConstants.DriveTrain;
+	public final Swerve drivetrain = TunerConstants.Drivetrain;
 	public final Vision vision = new Vision(drivetrain::addVisionMeasurement);
 	public final Supplier<Pose3d> robotPoseSupplier = drivetrain::getPose3d;
 	public final Shooter shooter = new Shooter();
@@ -51,6 +59,8 @@ public class Robot extends TimedRobot {
 	public final Intake intake = new Intake();
 	public final Climber climber = new Climber();
 	public final Conveyor conveyor = new Conveyor();
+
+	public static final Field2d field2d = new Field2d();
 
 	private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
 		.withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
@@ -106,7 +116,7 @@ public class Robot extends TimedRobot {
 		manipulator.x().onTrue(aim.goTo90());
 		manipulator.y().onTrue(aim.goTo30());
 		// climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
-		aim.setDefaultCommand(aim.teleop(() -> -manipulator.getLeftY()));
+		// aim.setDefaultCommand(aim.teleop(() -> -manipulator.getLeftY()));
 
 		driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
 		driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
@@ -139,6 +149,7 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void robotInit() {
+		SmartDashboard.putData(field2d);
 		aim.getSpeakerPose();
 		mapAutonCommands();
 		registerCommands();
@@ -210,8 +221,32 @@ public class Robot extends TimedRobot {
 	public void testExit() {
 	}
 
+	private void getTrajLines() {
+		var traj = AutonChooser.getChosenTrajectory();
+		var alliance = DriverStation.getAlliance();
+		ChoreoTrajectory realTraj;
+		if (alliance.isPresent() && alliance.get().equals(Alliance.Red)) {
+			realTraj = traj.flipped();
+		} else {
+			realTraj = traj;
+		}
+		field2d.getObject("trajectory").setPoses(realTraj.getPoses());
+	}
+
+	private void simulateAim() {
+		// TODO make better work good
+		var drivePose = drivetrain.getState().Pose;
+		var y = Inches.of(Math.sin(drivePose.getRotation().getRadians()))
+			.times(AimK.kLength.magnitude());
+		var endPose = drivePose
+			.plus(new Transform2d(new Translation2d(AimK.kLength.negate(), y), new Rotation2d()));
+		field2d.getObject("aimPose").setPoses(drivePose, endPose);
+		field2d.getRobotObject().setPose(drivePose);
+	}
+
 	@Override
 	public void simulationPeriodic() {
-		shooter.simulationPeriodic();
+		getTrajLines();
+		simulateAim();
 	}
 }

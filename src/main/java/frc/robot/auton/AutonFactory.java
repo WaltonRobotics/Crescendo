@@ -13,7 +13,7 @@ import static frc.robot.auton.Paths.*;
 import com.pathplanner.lib.auto.AutoBuilder;
 
 public final class AutonFactory {
-	private static double spinUpTimeout = 0.25; // TODO check
+	// private static double spinUpTimeout = 0.25; // TODO check
 	private static double conveyorTimeout = 0.25;
 	private static double shooterTimeout = 0.25;
 	private static double intakeTimeout = 0.25;
@@ -27,10 +27,12 @@ public final class AutonFactory {
 	}
 
 	public static Command threePiece(Swerve swerve, Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
+		var resetPoseCmd = swerve.resetPose(threePc);
 		var pathCmd = AutoBuilder.followPath(threePc);
-		var shootCmd = shooter.shoot().asProxy();
+		var shootCmd = shooter.shoot().withTimeout(shooterTimeout).asProxy();
 
 		return Commands.sequence(
+			resetPoseCmd,
 			shootCmd,
 			Commands.parallel(
 				pathCmd,
@@ -71,12 +73,14 @@ public final class AutonFactory {
 	public static Command fivePiece(Swerve swerve, Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
 		var resetPoseCmd = swerve.resetPose(fivePc);
 		var pathCmd = AutoBuilder.followPath(fivePc);
+		var aimCmd = aim.aimAtSpeaker().asProxy();
 		var shootCmd1 = shooter.shoot().withTimeout(shooterTimeout).asProxy();
 		var finalIntake = intake.intake().withTimeout(intakeTimeout).asProxy();
 		var finalShot = shooter.shoot().withTimeout(shooterTimeout).asProxy();
 
 		return Commands.sequence(
 			resetPoseCmd,
+			aimCmd,
 			shootCmd1,
 			intakeShotCycle(intake, shooter, aim, conveyor),
 			Commands.parallel(
@@ -101,12 +105,13 @@ public final class AutonFactory {
 
 	private static Command intakeShotCycle(Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
 		var conveyCmd = conveyor.convey().withTimeout(conveyorTimeout).asProxy();
-		var spinUpCmd = Commands.race(
-			aim.aimAtSpeaker(),
-			shooter.shoot().withTimeout(spinUpTimeout)).asProxy();
+		// var spinUpCmd = Commands.race(
+		// aim.aimAtSpeaker(),
+		// shooter.shoot().withTimeout(spinUpTimeout)).asProxy();
+		var aimCmd = aim.aimAtSpeaker().asProxy(); // for now
 		var shootCmd = shooter.shoot().withTimeout(shooterTimeout).asProxy();
-		var spinUpAndShoot = Commands.sequence(spinUpCmd, shootCmd).asProxy();
+		var aimAndShoot = Commands.sequence(aimCmd, shootCmd).asProxy();
 		var intakeCmd = intake.intake().withTimeout(intakeTimeout).asProxy();
-		return Commands.parallel(conveyCmd, intakeCmd, spinUpAndShoot);
+		return Commands.parallel(conveyCmd, intakeCmd, aimAndShoot);
 	}
 }

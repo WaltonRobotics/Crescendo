@@ -73,9 +73,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		new SysIdRoutine.Mechanism(
 			(volts) -> setControl(translationCharacterization.withVolts(volts)),
 			null,
-			this)
-	);
-
+			this));
 
 	public void addVisionMeasurement(VisionMeasurement measurement) {
 		m_odometry.addVisionMeasurement(
@@ -189,7 +187,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	public Pose3d getPose3d() {
 		var txr2d = getState().Pose.getTranslation();
-		// we're on the floor. I hope.
+		// we're on the floor. I hope. (i'm going to make the robot fly! >:D)
 		return new Pose3d(txr2d.getX(), txr2d.getY(), 0, getRotation3d());
 	}
 

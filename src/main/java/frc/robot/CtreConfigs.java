@@ -25,8 +25,9 @@ public class CtreConfigs {
         m_cancoderConfigs.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
         m_cancoderConfigs.MagnetSensor.MagnetOffset = 0.25;
 
-        // m_aimConfigs.Feedback.SensorToMechanismRatio = AimK.kGearRatio;
-        m_aimConfigs.Feedback.RotorToSensorRatio = 1;
+        // it feels like these should be switched but that doesn't work???
+        m_aimConfigs.Feedback.SensorToMechanismRatio = 1;
+        m_aimConfigs.Feedback.RotorToSensorRatio = AimK.kGearRatio;
         m_aimConfigs.Feedback.FeedbackRemoteSensorID = AimK.kCancoderId;
         m_aimConfigs.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
         var slot0Configs = m_aimConfigs.Slot0;

@@ -5,6 +5,9 @@
         "header": {
           "open": true
         }
+      },
+      "window": {
+        "visible": false
       }
     },
     "Timing": {
@@ -18,6 +21,7 @@
       "/FMSInfo": "FMSInfo",
       "/Pose": "Field2d",
       "/SmartDashboard/Auton Chooser": "String Chooser",
+      "/SmartDashboard/Field": "Field2d",
       "/SmartDashboard/Mech2d": "Mechanism2d",
       "/SmartDashboard/Module 0": "Mechanism2d",
       "/SmartDashboard/Module 1": "Mechanism2d",
@@ -41,6 +45,53 @@
         },
         "top": 79,
         "units": "meters",
+        "width": 16.541748046875,
+        "window": {
+          "visible": true
+        }
+      },
+      "/SmartDashboard/Auton Chooser": {
+        "window": {
+          "visible": true
+        }
+      },
+      "/SmartDashboard/Field": {
+        "aim": {
+          "style": "Line"
+        },
+        "aimEnd": {
+          "style": "Line"
+        },
+        "aimPose": {
+          "arrowSize": 0,
+          "arrows": false,
+          "color": [
+            1.0,
+            0.47257381677627563,
+            0.993323802947998,
+            255.0
+          ],
+          "style": "Line"
+        },
+        "aimStart": {
+          "style": "Line"
+        },
+        "bottom": 1476,
+        "height": 8.210550308227539,
+        "left": 150,
+        "right": 2961,
+        "top": 79,
+        "trajectory": {
+          "arrows": false,
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            255.0
+          ],
+          "style": "Line",
+          "weight": 2.0
+        },
         "width": 16.541748046875,
         "window": {
           "visible": true
@@ -90,7 +141,7 @@
             0.0,
             0.8500000238418579
           ],
-          "height": 317,
+          "height": 311,
           "series": [
             {
               "color": [

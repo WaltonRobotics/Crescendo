@@ -136,7 +136,7 @@ public class TunerConstants {
 		Units.inchesToMeters(kBackRightXPosInches), Units.inchesToMeters(kBackRightYPosInches),
 		kInvertRightSide);
 
-	public static final Swerve DriveTrain = new Swerve(DrivetrainConstants,
+	public static final Swerve Drivetrain = new Swerve(DrivetrainConstants,
 		FrontLeft,
 		FrontRight, BackLeft, BackRight);
 }

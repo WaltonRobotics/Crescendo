@@ -3,6 +3,8 @@ package frc.robot.auton;
 import java.util.EnumMap;
 import java.util.Optional;
 
+import com.choreo.lib.ChoreoTrajectory;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -11,18 +13,20 @@ import edu.wpi.first.wpilibj2.command.Commands;
 
 public class AutonChooser {
     public enum AutonOption {
-        DO_NOTHING("0 - do nothing"),
-        ONE_METER("0 - one meter"),
-        SIMPLE_THING("0 - simple thing"),
-        THREE_PC("3 - speaker"),
-        FOUR_PC("4 - speaker"),
-        FIVE_PC("5 - speaker");
+        DO_NOTHING("0 - do nothing", new ChoreoTrajectory()),
+        ONE_METER("0 - one meter", Trajectories.oneMeter),
+        SIMPLE_THING("0 - simple thing", Trajectories.simpleThing),
+        THREE_PC("3 - speaker", Trajectories.threePc),
+        FOUR_PC("4 - speaker", Trajectories.fourPc),
+        FIVE_PC("5 - speaker", Trajectories.fivePc);
         // THING("0 - pathplanner yayy");
 
         public final String m_description;
+        public final ChoreoTrajectory m_traj;
 
-        AutonOption(String description) {
+        AutonOption(String description, ChoreoTrajectory traj) {
             m_description = description;
+            m_traj = traj;
         }
 
         @Override
@@ -68,6 +72,10 @@ public class AutonChooser {
         return result;
     }
 
+    public static ChoreoTrajectory getTrajectory(AutonOption auton) {
+        return auton.m_traj;
+    }
+
     public static Command getChosenAutonCmd() {
         return getAuton(autonNTChooser.getSelected());
     }
@@ -80,5 +88,10 @@ public class AutonChooser {
         }
 
         return getAutonInitPose(selected);
+    }
+
+    public static ChoreoTrajectory getChosenTrajectory() {
+        var selected = AutonChooser.autonNTChooser.getSelected();
+        return selected.m_traj;
     }
 }
