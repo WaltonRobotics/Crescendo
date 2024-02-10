@@ -30,6 +30,7 @@ import frc.robot.auton.Trajectories;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.shooter.Aim;
+import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
@@ -49,6 +50,7 @@ public class Robot extends TimedRobot {
 	public final Aim aim = new Aim(robotPoseSupplier);
 	public final Intake intake = new Intake();
 	public final Climber climber = new Climber();
+	public final Conveyor conveyor = new Conveyor();
 
 	private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
 		.withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
@@ -119,10 +121,13 @@ public class Robot extends TimedRobot {
 			Trajectories.oneMeter.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.SIMPLE_THING, AutonFactory.simpleThing(drivetrain),
 			Trajectories.simpleThing.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.THREE_PC, AutonFactory.threePiece(drivetrain, intake, shooter, aim),
+		AutonChooser.assignAutonCommand(AutonOption.THREE_PC,
+			AutonFactory.threePiece(drivetrain, intake, shooter, aim, conveyor),
 			Trajectories.threePc.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.FOUR_PC, AutonFactory.fourPiece(drivetrain, intake, shooter, aim));
-		AutonChooser.assignAutonCommand(AutonOption.FIVE_PC, AutonFactory.fivePiece(drivetrain, intake, shooter, aim),
+		AutonChooser.assignAutonCommand(AutonOption.FOUR_PC,
+			AutonFactory.fourPiece(drivetrain, intake, shooter, aim, conveyor));
+		AutonChooser.assignAutonCommand(AutonOption.FIVE_PC,
+			AutonFactory.fivePiece(drivetrain, intake, shooter, aim, conveyor),
 			Trajectories.fivePc.getInitialPose());
 		// AutonChooser.assignAutonCommand(AutonOption.THING,
 		// AutonFactory.thing(drivetrain));
