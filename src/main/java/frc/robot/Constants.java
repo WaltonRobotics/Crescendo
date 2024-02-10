@@ -93,7 +93,7 @@ public class Constants {
         public static final int kTiltId = 13;
     }
 
-    public class ConveyerK {
+    public class ConveyorK {
         public static final int kConveyorId = 14;
     }
 
