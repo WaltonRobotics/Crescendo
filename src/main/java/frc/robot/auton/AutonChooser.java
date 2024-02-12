@@ -19,7 +19,6 @@ public class AutonChooser {
         THREE_PC("3 - speaker", Trajectories.threePc),
         FOUR_PC("4 - speaker", Trajectories.fourPc),
         FIVE_PC("5 - speaker", Trajectories.fivePc);
-        // THING("0 - pathplanner yayy");
 
         public final String m_description;
         public final ChoreoTrajectory m_traj;
@@ -44,7 +43,7 @@ public class AutonChooser {
     private static final SendableChooser<AutonOption> autonNTChooser = new SendableChooser<AutonOption>();
 
     static {
-        SmartDashboard.putData("Auton Chooser", autonNTChooser);
+        SmartDashboard.putData("AutonChooser", autonNTChooser);
     }
 
     public static void assignAutonCommand(AutonOption auton, Command command, Pose2d holonomicStartPose) {
@@ -63,8 +62,8 @@ public class AutonChooser {
     }
 
     public static Command getAuton(AutonOption auton) {
-        return autonChooserMap.computeIfAbsent(auton, a -> Commands.print("========WARNING: Empty Auton!!!========")
-            .withName("InvalidAuton"));
+        return autonChooserMap.computeIfAbsent(auton, a -> Commands.print("warning: empty auton!")
+            .withName("invalidAuton"));
     }
 
     public static Optional<Pose2d> getAutonInitPose(AutonOption auton) {

@@ -13,7 +13,7 @@ import static frc.robot.auton.Paths.*;
 import com.pathplanner.lib.auto.AutoBuilder;
 
 public final class AutonFactory {
-	// private static double spinUpTimeout = 0.25; // TODO check
+	// TODO check
 	private static double conveyorTimeout = 0.25;
 	private static double shooterTimeout = 0.25;
 	private static double intakeTimeout = 0.25;
@@ -97,21 +97,14 @@ public final class AutonFactory {
 			finalShot);
 	}
 
-	// public static Command thing(Swerve swerve) {
-	// var resetPoseCmd = swerve.resetPose(thing);
-	// var pathCmd = AutoBuilder.followPath(thing);
-	// return Commands.sequence(resetPoseCmd, pathCmd);
-	// }
-
 	private static Command intakeShotCycle(Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
 		var conveyCmd = conveyor.convey().withTimeout(conveyorTimeout).asProxy();
-		// var spinUpCmd = Commands.race(
-		// aim.aimAtSpeaker(),
-		// shooter.shoot().withTimeout(spinUpTimeout)).asProxy();
-		var aimCmd = aim.aimAtSpeaker().asProxy(); // for now
+		var spinUpCmd = Commands.race(
+			aim.aimAtSpeaker(),
+			shooter.shoot()).asProxy();
 		var shootCmd = shooter.shoot().withTimeout(shooterTimeout).asProxy();
-		var aimAndShoot = Commands.sequence(aimCmd, shootCmd).asProxy();
+		var spinUpAndShoot = Commands.sequence(spinUpCmd, shootCmd).asProxy();
 		var intakeCmd = intake.intake().withTimeout(intakeTimeout).asProxy();
-		return Commands.parallel(conveyCmd, intakeCmd, aimAndShoot);
+		return Commands.parallel(conveyCmd, intakeCmd, spinUpAndShoot);
 	}
 }

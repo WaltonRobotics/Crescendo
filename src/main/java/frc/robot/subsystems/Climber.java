@@ -38,7 +38,7 @@ public class Climber extends SubsystemBase {
 
     private double getHeight() {
         double pos = m_left.getRotorPosition().getValueAsDouble();
-        return pos * kMetersPerRotation;
+        return pos * kMetersPerRotation.baseUnitMagnitude();
     }
 
     public Command autoHome() {

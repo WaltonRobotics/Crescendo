@@ -18,4 +18,11 @@ public class Shooter extends SubsystemBase {
             m_left.set(1);
         });
     }
+
+    public Command slowShot() {
+        return run(() -> {
+            m_right.set(0.5);
+            m_left.set(0.5);
+        });
+    }
 }

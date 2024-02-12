@@ -47,10 +47,10 @@ public class Aim extends SubsystemBase {
         kMinAngle.in(Radians), kMaxAngle.in(Radians), true, Units.degreesToRadians(0));
 
     private final Mechanism2d m_mech2d = new Mechanism2d(60, 60);
-    private final MechanismRoot2d m_aimPivot = m_mech2d.getRoot("AimPivot", 30, 30);
+    private final MechanismRoot2d m_aimPivot = m_mech2d.getRoot("aimPivot", 30, 30);
     private final MechanismLigament2d m_aim2d = m_aimPivot.append(
         new MechanismLigament2d(
-            "aim",
+            "aim2d",
             30,
             Units.radiansToDegrees(m_aimSim.getAngleRads()),
             10,
@@ -62,10 +62,14 @@ public class Aim extends SubsystemBase {
 
     public Aim(Supplier<Pose3d> robotPoseSupplier) {
         m_robotPoseSupplier = robotPoseSupplier;
-        m_aim.getConfigurator().apply(CtreConfigs.get().m_aimConfigs);
-        m_cancoder.getConfigurator().apply(CtreConfigs.get().m_cancoderConfigs);
+
+        CtreConfigs configs = CtreConfigs.get();
+        m_aim.getConfigurator().apply(configs.m_aimConfigs);
+        m_cancoder.getConfigurator().apply(configs.m_cancoderConfigs);
+
         m_targetAngle = Degrees.of(0);
-        SmartDashboard.putData("Mech2d", m_mech2d);
+
+        SmartDashboard.putData("mech2d", m_mech2d);
     }
 
     private Command toAngle(Measure<Angle> angle) {
@@ -89,9 +93,11 @@ public class Aim extends SubsystemBase {
             m_targetAngle = m_targetAngle.plus(Degrees.of(powerVal * 1.2));
             m_targetAngle = Degrees
                 .of(MathUtil.clamp(m_targetAngle.magnitude(), kMinAngle.magnitude(), kMaxAngle.magnitude()));
+
             m_aim.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
-            SmartDashboard.putNumber("aim", m_aim.get());
-            SmartDashboard.putNumber("aim position",
+
+            SmartDashboard.putNumber("aimSpeed", m_aim.get());
+            SmartDashboard.putNumber("aimPos",
                 Units.rotationsToDegrees(m_aim.getPosition().getValueAsDouble()));
         });
     }
@@ -99,6 +105,7 @@ public class Aim extends SubsystemBase {
     public Command goTo90() {
         return runOnce(() -> {
             m_targetAngle = Degrees.of(90);
+
             m_aim.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
         });
     }
@@ -106,6 +113,7 @@ public class Aim extends SubsystemBase {
     public Command goTo30() {
         return runOnce(() -> {
             m_targetAngle = Degrees.of(30);
+
             m_aim.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
         });
     }
@@ -115,14 +123,9 @@ public class Aim extends SubsystemBase {
             var translation = m_robotPoseSupplier.get().getTranslation();
             var poseToSpeaker = m_speakerPose.minus(translation);
             m_targetAngle = Radians.of(Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX())));
+
             m_aim.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
         });
-        // var toTarget = runOnce(() ->
-        // m_aim.setControl(m_request.withPosition(m_targetAngle.in(Rotations))));
-
-        // return Commands.sequence(
-        // getTarget,
-        // toTarget);
     }
 
     public Command aimAtAmp() {
@@ -138,11 +141,6 @@ public class Aim extends SubsystemBase {
             toTarget);
     }
 
-    /**
-     * IF RETURN 0, bad :(
-     * 
-     * @return aprilTag ID of closest trap
-     */
     public int getTrapId() {
         double center;
         double right;
@@ -187,7 +185,11 @@ public class Aim extends SubsystemBase {
     public Command aimAtTrap() {
         var getAngleCmd = run(() -> {
             var translation = m_robotPoseSupplier.get();
-            var poseToTrap = kFieldLayout.getTagPose(getTrapId()).get().minus(translation);
+            int trapId = getTrapId();
+            if (trapId == 0) {
+                return; // or something like that i just don't want robot code to crash 😭
+            }
+            var poseToTrap = kFieldLayout.getTagPose(trapId).get().minus(translation);
             m_targetAngle = Radians.of(Math.atan((poseToTrap.getZ()) / (poseToTrap.getX())));
         });
         var toAngleCmd = toAngle(m_targetAngle);
@@ -201,20 +203,24 @@ public class Aim extends SubsystemBase {
         m_aim.getSimState().setSupplyVoltage(12);
         var volts = m_aim.getSimState().getMotorVoltage();
         m_aimSim.setInputVoltage(volts);
-        m_aimSim.update(0.020);
+
         double angle = Units.radiansToRotations(m_aimSim.getAngleRads());
         double velocity = Units.radiansToRotations(m_aimSim.getVelocityRadPerSec());
         m_aim.getSimState().setRawRotorPosition(angle);
         m_aim.getSimState().setRotorVelocity(velocity);
         m_cancoder.getSimState().setRawPosition(angle);
         m_cancoder.getSimState().setVelocity(velocity);
+
         m_aim2d.setAngle(Units.rotationsToDegrees(
             m_aim.getPosition().getValueAsDouble())); // TODO: make this render correctly with the real robot too
-        SmartDashboard.putNumber("cancoder position",
+
+        SmartDashboard.putNumber("cancoderPos",
             m_cancoder.getPosition().getValueAsDouble());
-        SmartDashboard.putNumber("sim voltage", volts);
-        SmartDashboard.putNumber("sim velocity", m_aimSim.getVelocityRadPerSec());
-        SmartDashboard.putNumber("sim angle", angle);
-        SmartDashboard.putNumber("target", m_targetAngle.in(Degrees));
+        SmartDashboard.putNumber("simVoltage", volts);
+        SmartDashboard.putNumber("simVelo", m_aimSim.getVelocityRadPerSec());
+        SmartDashboard.putNumber("simAngle", angle);
+        SmartDashboard.putNumber("targetAngle", m_targetAngle.in(Degrees));
+
+        m_aimSim.update(0.020);
     }
 }

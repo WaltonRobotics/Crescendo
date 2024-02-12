@@ -44,8 +44,8 @@ import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 
 public class Robot extends TimedRobot {
-	private double MaxSpeed = 5; // 6 meters per second desired top speed
-	private double MaxAngularRate = 1.5 * Math.PI; // 3/4 of a rotation per second max angular velocity
+	private final double maxSpeed = 5; // 5 meters per second desired top speed
+	private final double maxAngularRate = 1.5 * Math.PI; // 3/4 of a rotation per second max angular velocity
 
 	/* Setting up bindings for necessary control of the swerve drive platform */
 	private final CommandXboxController driver = new CommandXboxController(0); // My joystick
@@ -63,11 +63,11 @@ public class Robot extends TimedRobot {
 	public static final Field2d field2d = new Field2d();
 
 	private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-		.withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
+		.withDeadband(maxSpeed * 0.1).withRotationalDeadband(maxAngularRate * 0.1) // Add a 10% deadband
 		.withDriveRequestType(DriveRequestType.Velocity); // I want field-centric driving in open loop
 	private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
 	private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
-	private final Telemetry logger = new Telemetry(MaxSpeed);
+	private final Telemetry logger = new Telemetry(maxSpeed);
 
 	private Command m_autonomousCommand;
 
@@ -81,6 +81,7 @@ public class Robot extends TimedRobot {
 
 	private void registerCommands() {
 		NamedCommands.registerCommand("intake", intake.intake());
+		NamedCommands.registerCommand("aim", aim.aimAtSpeaker());
 		NamedCommands.registerCommand("shoot", shooter.shoot());
 	}
 
@@ -89,9 +90,9 @@ public class Robot extends TimedRobot {
 			double leftY = -driver.getLeftY();
 			double leftX = -driver.getLeftX();
 			return drive
-				.withVelocityX(leftY * MaxSpeed)
-				.withVelocityY(leftX * MaxSpeed)
-				.withRotationalRate(-driver.getRightX() * MaxAngularRate);
+				.withVelocityX(leftY * maxSpeed)
+				.withVelocityY(leftX * maxSpeed)
+				.withRotationalRate(-driver.getRightX() * maxAngularRate);
 		}));
 
 		driver.a().whileTrue(drivetrain.applyRequest(() -> brake));
@@ -139,8 +140,6 @@ public class Robot extends TimedRobot {
 		AutonChooser.assignAutonCommand(AutonOption.FIVE_PC,
 			AutonFactory.fivePiece(drivetrain, intake, shooter, aim, conveyor),
 			Trajectories.fivePc.getInitialPose());
-		// AutonChooser.assignAutonCommand(AutonOption.THING,
-		// AutonFactory.thing(drivetrain));
 	}
 
 	private Command getAutonomousCommand() {

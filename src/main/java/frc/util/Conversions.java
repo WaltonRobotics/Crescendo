@@ -1,5 +1,5 @@
-package frc.lib;
+package frc.util;
 
 public class Conversions {
-    
+
 }

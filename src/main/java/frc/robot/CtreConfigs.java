@@ -30,19 +30,14 @@ public class CtreConfigs {
         m_aimConfigs.Feedback.RotorToSensorRatio = AimK.kGearRatio;
         m_aimConfigs.Feedback.FeedbackRemoteSensorID = AimK.kCancoderId;
         m_aimConfigs.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+        
         var slot0Configs = m_aimConfigs.Slot0;
-        // slot0Configs.GravityType = GravityTypeValue.Arm_Cosine;
-        // slot0Configs.kS = AimK.kS;
-        // slot0Configs.kV = AimK.kV;
-        // slot0Configs.kA = AimK.kA;
         slot0Configs.kP = AimK.kP;
         slot0Configs.kI = 0;
         slot0Configs.kD = 0;
-        // slot0Configs.kG = AimK.kG;
 
         var motionMagicConfigs = m_aimConfigs.MotionMagic;
         motionMagicConfigs.MotionMagicCruiseVelocity = 0;
-        // motionMagicConfigs.MotionMagicAcceleration = AimK.kAcceleration;
         motionMagicConfigs.MotionMagicExpo_kV = AimK.kV;
         motionMagicConfigs.MotionMagicExpo_kA = 0.12;
     }

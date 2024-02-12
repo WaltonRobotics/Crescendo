@@ -36,31 +36,29 @@ public class Constants {
 
         public static final AprilTagFieldLayout kFieldLayout = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
 
-        // where the speaker target is relative to the edge of the field (negative on
-        // blue side)
+        /* speaker constants */
         public static final Measure<Distance> kXToSpeaker = Inches.of(46.50);
-        // where the speaker target is relative to the floor
+        public static final Measure<Distance> kYToSpeaker = Inches.of(23.82);
         public static final Measure<Distance> kZToSpeaker = Inches.of(98.13);
-        public static final Translation3d kBlueSpeakerPose = new Translation3d(
-            -kXToSpeaker.baseUnitMagnitude(), 5.5, kZToSpeaker.baseUnitMagnitude());
-        public static final Translation3d kRedSpeakerPose = new Translation3d(
-            kFieldLength.magnitude() + kXToSpeaker.baseUnitMagnitude(), kFieldWidth.magnitude() - 5.5,
-            kZToSpeaker.baseUnitMagnitude());
 
+        public static final Translation3d kBlueSpeakerPose = new Translation3d(
+            kXToSpeaker.negate(), kYToSpeaker, kZToSpeaker);
+
+        public static final Translation3d kRedSpeakerPose = new Translation3d(
+            kFieldLength.plus(kXToSpeaker), kFieldWidth.minus(kYToSpeaker), kZToSpeaker);
+
+        /* amp constants */
         public static final Measure<Distance> kXToAmp = Inches.of(49.5);
         public static final Measure<Distance> kYToAmp = Inches.of(286.765);
         public static final Measure<Distance> kZToAmp = Inches.of(35);
+
         public static final Translation3d kBlueAmpPose = new Translation3d(
-            kXToAmp.baseUnitMagnitude(), kYToAmp.baseUnitMagnitude(), kZToSpeaker.magnitude());
+            kXToAmp, kYToAmp, kZToSpeaker);
+
         public static final Translation3d kRedAmpPose = new Translation3d(
-            kFieldLength.magnitude() - kXToAmp.baseUnitMagnitude(),
-            kFieldWidth.magnitude() - kYToAmp.baseUnitMagnitude(),
-            kZToAmp.baseUnitMagnitude());
+            kFieldLength.minus(kXToAmp), kFieldWidth.minus(kYToAmp), kZToAmp);
 
-        public static final int kBlueCenterTrapID = 14;
-        public static final int kBlueLeftTrapID = 15;
-        public static final int kBlueRightTrapID = 16;
-
+        /* trap constants */
         public static final int kBlueCenterTrapId = 14;
         public static final int kBlueLeftTrapId = 15;
         public static final int kBlueRightTrapId = 16;
@@ -68,7 +66,6 @@ public class Constants {
         public static final int kRedLeftTrapId = 11;
         public static final int kRedRightTrapId = 12;
         public static final int kRedCenterTrapId = 13;
-
     }
 
     public class AutoK {
@@ -87,9 +84,11 @@ public class Constants {
         public static final int kLeftId = 31;
         public static final int kRightId = 32;
         public static final int kLimitSwitchId = 1;
-        public static final double kMetersPerRotation = 0.3;
-        public static final double kP = 3.25;
+
+        public static final Measure<Distance> kMetersPerRotation = Meters.of(0.3);
         public static final Measure<Distance> kMaxHeight = Inches.of(56);
+
+        public static final double kP = 3.25;
     }
 
     public class ShooterK {
@@ -107,6 +106,9 @@ public class Constants {
         public static final int kCancoderId = 16;
 
         public static final double kGearRatio = 200;
+        public static final Measure<Distance> kLength = Inches.of(19.75);
+        public static final Measure<Angle> kMinAngle = Degrees.of(30);
+        public static final Measure<Angle> kMaxAngle = Degrees.of(150);
 
         public static final double kS = 0.89;
         public static final double kV = 22.57; // V * s / rot
@@ -115,8 +117,5 @@ public class Constants {
         public static final double kG = 0.37;
         public static final double kAcceleration = 160;
 
-        public static final Measure<Distance> kLength = Inches.of(19.75);
-        public static final Measure<Angle> kMinAngle = Degrees.of(30);
-        public static final Measure<Angle> kMaxAngle = Degrees.of(150);
     }
 }

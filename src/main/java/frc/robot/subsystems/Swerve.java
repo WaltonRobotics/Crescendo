@@ -135,7 +135,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	public void logModulePositions() {
 		for (int i = 0; i < Modules.length; i++) {
-			SmartDashboard.putNumber("Module " + i + "/Position",
+			SmartDashboard.putNumber("Module" + i + "/position",
 				getModule(i).getDriveMotor().getPosition().getValueAsDouble());
 		}
 	}
@@ -171,7 +171,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 					pose = bluePose.get();
 				}
 
-				SmartDashboard.putNumberArray("desired pose", AdvantageScopeUtil.toDoubleArr(pose));
+				SmartDashboard.putNumberArray("desiredPose", AdvantageScopeUtil.toDoubleArr(pose));
 
 				var curPose = getState().Pose;
 				var xSpeed = m_xController.calculate(curPose.getX(), pose.getX());
@@ -227,7 +227,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 		var brakeCmd = runOnce(() -> setControl(m_brake));
 
-		return Commands.sequence(resetPoseCmd, choreoFollowCmd, brakeCmd).withName("ChoreoFollower");
+		return Commands.sequence(resetPoseCmd, choreoFollowCmd, brakeCmd).withName("choreoFollower");
 	}
 
 	public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
