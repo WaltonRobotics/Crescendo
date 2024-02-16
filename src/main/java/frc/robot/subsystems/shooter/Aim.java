@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.CtreConfigs;
+import frc.robot.subsystems.Swerve;
 
 import static frc.robot.Constants.FieldK.*;
 import static edu.wpi.first.units.Units.Degrees;
@@ -123,6 +124,19 @@ public class Aim extends SubsystemBase {
             var translation = m_robotPoseSupplier.get().getTranslation();
             var poseToSpeaker = m_speakerPose.minus(translation);
             m_targetAngle = Radians.of(Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX())));
+
+            m_aim.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
+        });
+    }
+
+    public Command shootOnTheMove(Swerve swerve) {
+        return runOnce(() -> {
+            var translation = m_robotPoseSupplier.get().getTranslation();
+            var poseToSpeaker = m_speakerPose.minus(translation);
+            var offsetPose = poseToSpeaker.plus(new Translation3d(
+                // TODO figure out how long it takes to shoot and multiply
+                swerve.getState().speeds.vxMetersPerSecond, swerve.getState().speeds.vyMetersPerSecond, 0));
+            m_targetAngle = Radians.of(Math.atan((offsetPose.getZ()) / (offsetPose.getX())));
 
             m_aim.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
         });
