@@ -38,8 +38,8 @@ public final class AutonFactory {
 				pathCmd,
 				Commands.sequence(
 					Commands.waitSeconds(0.45),
-					intakeShotCycle(intake, shooter, aim, conveyor))),
-			intakeShotCycle(intake, shooter, aim, conveyor));
+					intakeShotCycle(intake, shooter, conveyor))),
+			intakeShotCycle(intake, shooter, conveyor));
 	}
 
 	public static Command fourPiece(Swerve swerve, Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
@@ -59,7 +59,7 @@ public final class AutonFactory {
 				Commands.sequence(
 					// TODO: check timing :(
 					Commands.waitSeconds(0.58),
-					intakeShotCycle(intake, shooter, aim, conveyor),
+					intakeShotCycle(intake, shooter, conveyor),
 					Commands.waitSeconds(1.34),
 					intakeCmd1,
 					Commands.waitSeconds(1.62),
@@ -73,38 +73,42 @@ public final class AutonFactory {
 	public static Command fivePiece(Swerve swerve, Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
 		var resetPoseCmd = swerve.resetPose(fivePc);
 		var pathCmd = AutoBuilder.followPath(fivePc);
-		var aimCmd = aim.aimAtSpeaker().asProxy();
-		var shootCmd1 = shooter.shoot().withTimeout(shooterTimeout).asProxy();
+		// var aimCmd = aim.aimAtSpeaker().asProxy();
+		var shootCmd = shooter.shoot().withTimeout(shooterTimeout).asProxy();
 		var finalIntake = intake.intake().withTimeout(intakeTimeout).asProxy();
 		var finalShot = shooter.shoot().withTimeout(shooterTimeout).asProxy();
 
 		return Commands.sequence(
 			resetPoseCmd,
-			aimCmd,
-			shootCmd1,
-			intakeShotCycle(intake, shooter, aim, conveyor),
+			aim.aimAtSpeaker().asProxy(),
+			shootCmd,
+			Commands.parallel(
+				aim.aimAtSpeaker().asProxy(),
+				intakeShotCycle(intake, shooter, conveyor)),
 			Commands.parallel(
 				pathCmd,
 				Commands.sequence(
 					Commands.waitSeconds(0.52),
-					intakeShotCycle(intake, shooter, aim, conveyor)),
+					Commands.parallel(
+						aim.aimAtSpeaker().asProxy(),
+						intakeShotCycle(intake, shooter, conveyor))),
 				Commands.sequence(
 					Commands.waitSeconds(1.38),
-					intakeShotCycle(intake, shooter, aim, conveyor)),
+					Commands.parallel(
+						aim.aimAtSpeaker().asProxy(),
+						intakeShotCycle(intake, shooter, conveyor))),
 				Commands.sequence(
 					Commands.waitSeconds(2.86),
 					finalIntake)),
+			aim.aimAtSpeaker().asProxy(),
 			finalShot);
 	}
 
-	private static Command intakeShotCycle(Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
+	private static Command intakeShotCycle(Intake intake, Shooter shooter, Conveyor conveyor) {
+		// TODO add spinup
 		var conveyCmd = conveyor.convey().withTimeout(conveyorTimeout).asProxy();
-		var spinUpCmd = Commands.race(
-			aim.aimAtSpeaker(),
-			shooter.shoot()).asProxy();
 		var shootCmd = shooter.shoot().withTimeout(shooterTimeout).asProxy();
-		var spinUpAndShoot = Commands.sequence(spinUpCmd, shootCmd).asProxy();
 		var intakeCmd = intake.intake().withTimeout(intakeTimeout).asProxy();
-		return Commands.parallel(conveyCmd, intakeCmd, spinUpAndShoot);
+		return Commands.parallel(conveyCmd, intakeCmd, shootCmd);
 	}
 }

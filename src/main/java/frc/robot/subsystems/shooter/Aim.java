@@ -116,13 +116,19 @@ public class Aim extends SubsystemBase {
     }
 
     public Command aimAtSpeaker() {
-        return runOnce(() -> {
-            var translation = m_robotPoseSupplier.get().getTranslation();
-            var poseToSpeaker = m_speakerPose.minus(translation);
+        var getPose = runOnce(() -> {
+            var translation = AllianceFlipUtil.apply(m_robotPoseSupplier.get().getTranslation());
+            System.out.println("robot z: " + translation.getZ());
+            System.out.println("robot x: " + translation.getX());
+            var poseToSpeaker = m_speakerPose.plus(translation);
             m_targetAngle = Radians.of(Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX())));
-
-            m_aim.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
+            System.out.println("z: " + poseToSpeaker.getZ());
+            System.out.println("x: " + poseToSpeaker.getX());
+            System.out.println("target angle: " + m_targetAngle.in(Degrees));
         });
+        var aimAtPose = run(() -> m_aim.setControl(m_request.withPosition(m_targetAngle.in(Rotations))))
+            .until(() -> m_cancoder.getPosition().getValueAsDouble() == m_targetAngle.in(Rotations));
+        return getPose.andThen(aimAtPose).withTimeout(1);
     }
 
     public Command shootOnTheMove(Swerve swerve) {

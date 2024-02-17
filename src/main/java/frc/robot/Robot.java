@@ -238,7 +238,7 @@ public class Robot extends TimedRobot {
 		// TODO make better work good
 		var drivePose = drivetrain.getState().Pose;
 		var y = Inches.of(Math.sin(drivePose.getRotation().getRadians()));
-		
+
 		var speakerPose2d = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpeningPose3d.toPose2d());
 		var endPose = drivePose
 			.plus(new Transform2d(new Translation2d(AimK.kLength.negate(), y), new Rotation2d()));
