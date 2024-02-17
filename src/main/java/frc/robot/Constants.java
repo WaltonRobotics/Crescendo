@@ -97,6 +97,17 @@ public class Constants {
         public static final int kRedLeftTrapId = 11;
         public static final int kRedRightTrapId = 12;
         public static final int kRedCenterTrapId = 13;
+
+        /* stage constants */
+        public static final double kBlueStageClearanceDS = Units.inchesToMeters(188.5);
+        public static final double kBlueStageClearanceRight = Units.inchesToMeters(88.3);
+        public static final double kBlueStageClearanceCenter = Units.inchesToMeters(243.2);
+        public static final double kBlueStageClearanceLeft = Units.inchesToMeters(234.9);
+
+        public static final double kRedStageClearanceDS = Units.inchesToMeters(542.2);
+        public static final double kRedStageClearanceRight = Units.inchesToMeters(88.3);
+        public static final double kRedStageClearanceCenter = Units.inchesToMeters(407.9);
+        public static final double kRedStageClearanceLeft = Units.inchesToMeters(234.9);
     }
 
     public class AutoK {
@@ -138,6 +149,8 @@ public class Constants {
 
         public static final double kGearRatio = 200;
         public static final Measure<Distance> kLength = Inches.of(19.75);
+        public static final Measure<Angle> kStageClearance = Degrees.of(47.097); // asin((22 -
+                                                                                 // kHeightTilShooter)/kLength)
         public static final Measure<Angle> kMinAngle = Degrees.of(0);
         public static final Measure<Angle> kMaxAngle = Degrees.of(150);
 
@@ -148,5 +161,9 @@ public class Constants {
         public static final double kG = 0.37;
         public static final double kAcceleration = 160;
 
+    }
+
+    public class RobotK {
+        public static final double kHeightTilShooter = 7.533; // in inches ! height until the pivot point of shooter
     }
 }

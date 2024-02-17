@@ -93,6 +93,8 @@ public class Aim extends SubsystemBase {
 
             m_aim.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
 
+            stageMode();
+
             SmartDashboard.putNumber("aimSpeed", m_aim.get());
             SmartDashboard.putNumber("aimPos",
                 Units.rotationsToDegrees(m_aim.getPosition().getValueAsDouble()));
@@ -213,6 +215,18 @@ public class Aim extends SubsystemBase {
         return Commands.repeatingSequence(
             getAngleCmd,
             toAngleCmd);
+    }
+
+    public Command stageMode() {
+        Pose3d pose = m_robotPoseSupplier.get();
+        if(pose.getY() > kBlueStageClearanceRight && pose.getY() < kBlueStageClearanceLeft) {
+            if(pose.getX() > kBlueStageClearanceDS && pose.getX() < kBlueStageClearanceCenter) {
+                return toAngle(kStageClearance);
+            } else if(pose.getX() > kRedStageClearanceDS && pose.getX() < kRedStageClearanceCenter) {
+                return toAngle(kStageClearance);
+            }
+        }
+        return Commands.none();
     }
 
     public void simulationPeriodic() {
