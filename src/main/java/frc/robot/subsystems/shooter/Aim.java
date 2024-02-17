@@ -117,20 +117,19 @@ public class Aim extends SubsystemBase {
         });
     }
 
-    public Command aimAtSpeaker() {
-        var getPose = runOnce(() -> {
-            var translation = AllianceFlipUtil.apply(m_robotPoseSupplier.get().getTranslation());
-            System.out.println("robot z: " + translation.getZ());
-            System.out.println("robot x: " + translation.getX());
-            var poseToSpeaker = m_speakerPose.plus(translation);
-            m_targetAngle = Radians.of(Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX())));
-            System.out.println("z: " + poseToSpeaker.getZ());
-            System.out.println("x: " + poseToSpeaker.getX());
-            System.out.println("target angle: " + m_targetAngle.in(Degrees));
-        });
-        var aimAtPose = run(() -> m_aim.setControl(m_request.withPosition(m_targetAngle.in(Rotations))))
-            .until(() -> m_cancoder.getPosition().getValueAsDouble() == m_targetAngle.in(Rotations));
-        return getPose.andThen(aimAtPose).withTimeout(1);
+    public Command toTarget() {
+        return run(() -> m_aim.setControl(m_request.withPosition(m_targetAngle.in(Rotations))));
+    }
+
+    public void aimAtSpeaker() {
+        var translation = AllianceFlipUtil.apply(m_robotPoseSupplier.get().getTranslation());
+        System.out.println("robot z: " + translation.getZ());
+        System.out.println("robot x: " + translation.getX());
+        var poseToSpeaker = m_speakerPose.plus(translation);
+        m_targetAngle = Radians.of(Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX())));
+        System.out.println("z: " + poseToSpeaker.getZ());
+        System.out.println("x: " + poseToSpeaker.getX());
+        System.out.println("target angle: " + m_targetAngle.in(Degrees));
     }
 
     public Command shootOnTheMove(Swerve swerve) {
@@ -219,10 +218,10 @@ public class Aim extends SubsystemBase {
 
     public Command stageMode() {
         Pose3d pose = m_robotPoseSupplier.get();
-        if(pose.getY() > kBlueStageClearanceRight && pose.getY() < kBlueStageClearanceLeft) {
-            if(pose.getX() > kBlueStageClearanceDS && pose.getX() < kBlueStageClearanceCenter) {
+        if (pose.getY() > kBlueStageClearanceRight && pose.getY() < kBlueStageClearanceLeft) {
+            if (pose.getX() > kBlueStageClearanceDS && pose.getX() < kBlueStageClearanceCenter) {
                 return toAngle(kStageClearance);
-            } else if(pose.getX() > kRedStageClearanceDS && pose.getX() < kRedStageClearanceCenter) {
+            } else if (pose.getX() > kRedStageClearanceDS && pose.getX() < kRedStageClearanceCenter) {
                 return toAngle(kStageClearance);
             }
         }

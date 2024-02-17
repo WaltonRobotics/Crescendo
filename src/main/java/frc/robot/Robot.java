@@ -83,7 +83,6 @@ public class Robot extends TimedRobot {
 
 	private void registerCommands() {
 		NamedCommands.registerCommand("intake", intake.intake());
-		NamedCommands.registerCommand("aim", aim.aimAtSpeaker());
 		NamedCommands.registerCommand("shoot", shooter.spinUp());
 	}
 
