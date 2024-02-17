@@ -128,6 +128,23 @@ public class Constants {
         public static final int kRightId = 11;
         public static final int kLeftId = 12;
         public static final int kTiltId = 13;
+
+        public static final class FlywheelSimK {
+            // ~THIS IS FOR A FALCON 500 IF THIS IS WRONG WE NEED TO REDO THIS SECTION
+            // public static final double kNominalVoltage = 12; // Volts
+            // public static final double kStallTorque = 4.69; // Newton Meters
+            // public static final double kStallCurrent = 257; // Amps
+            // public static final double kFreeCurrent = 1.5; // Amps
+            // public static final double kFreeSpeed = 668.1120369; // rad per sec
+
+            public static final double kGearRatio = 200; // TODO: find actual value (we asked build and they were confused)
+
+            // TODO: find the real value
+            public static final double kInterval = 0.020;
+            public static final double kTargetRPM = 10;
+
+            public static final double kMOI = 0.056699046875; // kg meters^2
+        }   
     }
 
     public class ConveyorK {
