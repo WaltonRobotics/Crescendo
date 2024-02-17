@@ -255,6 +255,7 @@ public class Robot extends TimedRobot {
 	private final FlywheelSim m_flywheelSim = new FlywheelSim(DCMotor.getFalcon500(1), kGearRatio, kMOI);
 
     public void simulateFlywheel() {
+		// TODO: check voltage
         m_flywheelSim.setInputVoltage(12);
         
         if (m_flywheelSim.getAngularVelocityRPM() >= kTargetRPM && !found) {
