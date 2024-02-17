@@ -41,6 +41,11 @@ public class Constants {
         // taken from 6328. All in blue alliance origin.
         /* speaker constants */
         public static final class SpeakerK {
+            public static final int kRedSpeakerRightId = 3;
+            public static final int kRedSpeakerId = 4;
+            public static final int kBlueSpeakerRightId = 8;
+            public static final int kBlueSpeakerId = 7;
+            
             private static final Measure<Distance> kTopX = Inches.of(18.055);
             private static final Measure<Distance> kTopZ = Inches.of(83.091);
             private static final Translation3d kTopRight = new Translation3d(

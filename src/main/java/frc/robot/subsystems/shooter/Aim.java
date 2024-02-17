@@ -6,6 +6,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
@@ -32,6 +33,7 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.Rotations;
 import static frc.robot.Constants.AimK.*;
+import static frc.robot.Constants.FieldK.SpeakerK.*;
 
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -130,6 +132,39 @@ public class Aim extends SubsystemBase {
         System.out.println("z: " + poseToSpeaker.getZ());
         System.out.println("x: " + poseToSpeaker.getX());
         System.out.println("target angle: " + m_targetAngle.in(Degrees));
+    }
+
+    /**
+     *  if the robot is to the right of the speaker center, shoot to the left corner of the speaker and vice versa
+     *  @return a custom target angle based on the position of the robot
+     */
+    public Command aimSpeakerDynamic() {
+        var blueCenter = kFieldLayout.getTagPose(kBlueSpeakerId).get();
+        var blueRight = kFieldLayout.getTagPose(kBlueSpeakerRightId).get();
+
+        var diff = blueCenter.getY() - m_robotPoseSupplier.get().getTranslation().getY(); // find robot pose relative to the middle of the speaker
+        var rightTrans = blueRight.getTranslation(); // translation if the robot is to the left
+        var lefTrans = new Translation3d(
+            blueCenter.getX(), 
+            blueCenter.getY() + (blueCenter.getY() - blueRight.getY()), 
+            blueCenter.getZ());
+
+        var poseToSpeaker = m_speakerPose.minus(m_robotPoseSupplier.get().getTranslation());
+
+        if(diff < -23.125) {
+            var poseToSpeakerRight = rightTrans.minus(m_robotPoseSupplier.get().getTranslation());
+            return runOnce(() -> {
+                m_targetAngle = Radians.of(Math.atan((poseToSpeakerRight.getZ()) / (poseToSpeakerRight.getX())));
+            });
+        } else if(diff > 23.125) {
+            var poseToSpeakerLeft = lefTrans.minus(m_robotPoseSupplier.get().getTranslation());
+            return runOnce(() -> {
+                m_targetAngle = Radians.of(Math.atan((poseToSpeakerLeft.getZ()) / (poseToSpeakerLeft.getX())));
+            });
+        }
+        return runOnce(() -> {
+            m_targetAngle = Radians.of(Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX())));
+        });
     }
 
     public Command shootOnTheMove(Swerve swerve) {
