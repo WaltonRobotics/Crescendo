@@ -34,7 +34,6 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.AimK;
 import frc.robot.Constants.FieldK.SpeakerK;
-import static frc.robot.Constants.ShooterK.FlywheelSimK.*;
 import frc.robot.auton.AutonChooser;
 import frc.robot.auton.AutonChooser.AutonOption;
 import frc.robot.auton.AutonFactory;
@@ -241,7 +240,7 @@ public class Robot extends TimedRobot {
 		// TODO make better work good
 		var drivePose = drivetrain.getState().Pose;
 		var y = Inches.of(Math.sin(drivePose.getRotation().getRadians()));
-		
+
 		var speakerPose2d = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpeningPose3d.toPose2d());
 		var endPose = drivePose
 			.plus(new Transform2d(new Translation2d(AimK.kLength.negate(), y), new Rotation2d()));
@@ -250,27 +249,9 @@ public class Robot extends TimedRobot {
 		field2d.getRobotObject().setPose(drivePose);
 	}
 
-	private double time = 0;
-    private boolean found = false;
-	private final FlywheelSim m_flywheelSim = new FlywheelSim(DCMotor.getFalcon500(1), kGearRatio, kMOI);
-
-    public void simulateFlywheel() {
-		// TODO: check voltage
-        m_flywheelSim.setInputVoltage(12);
-        
-        if (m_flywheelSim.getAngularVelocityRPM() >= kTargetRPM && !found) {
-            System.out.println("found it at " + time + " seconds");
-            found = true;
-        }
-
-        time += kInterval;
-        m_flywheelSim.update(kInterval);
-    }
-
 	@Override
 	public void simulationPeriodic() {
 		getTrajLines();
 		simulateAim();
-		simulateFlywheel();
 	}
 }
