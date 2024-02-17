@@ -14,6 +14,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 
 public final class AutonFactory {
 	// TODO check
+	private static double spinUpTimeout = 0.25;
 	private static double conveyorTimeout = 0.25;
 	private static double shooterTimeout = 0.25;
 	private static double intakeTimeout = 0.25;
@@ -29,7 +30,7 @@ public final class AutonFactory {
 	public static Command threePiece(Swerve swerve, Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
 		var resetPoseCmd = swerve.resetPose(threePc);
 		var pathCmd = AutoBuilder.followPath(threePc);
-		var shootCmd = shooter.shoot().withTimeout(shooterTimeout).asProxy();
+		var shootCmd = shooter.spinUp().withTimeout(shooterTimeout).asProxy();
 
 		return Commands.sequence(
 			resetPoseCmd,
@@ -45,11 +46,11 @@ public final class AutonFactory {
 	public static Command fourPiece(Swerve swerve, Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
 		var resetPoseCmd = swerve.resetPose(fourPc);
 		var pathCmd = AutoBuilder.followPath(fourPc);
-		var shootCmd1 = shooter.shoot().withTimeout(shooterTimeout).asProxy();
+		var shootCmd1 = shooter.spinUp().withTimeout(shooterTimeout).asProxy();
 		var intakeCmd1 = intake.intake().withTimeout(intakeTimeout).asProxy();
-		var shootCmd2 = shooter.shoot().withTimeout(shooterTimeout).asProxy();
+		var shootCmd2 = shooter.spinUp().withTimeout(shooterTimeout).asProxy();
 		var intakeCmd2 = intake.intake().withTimeout(intakeTimeout).asProxy();
-		var shootCmd3 = shooter.shoot().withTimeout(shooterTimeout).asProxy();
+		var shootCmd3 = shooter.spinUp().withTimeout(shooterTimeout).asProxy();
 
 		return Commands.sequence(
 			resetPoseCmd,
@@ -73,10 +74,9 @@ public final class AutonFactory {
 	public static Command fivePiece(Swerve swerve, Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
 		var resetPoseCmd = swerve.resetPose(fivePc);
 		var pathCmd = AutoBuilder.followPath(fivePc);
-		// var aimCmd = aim.aimAtSpeaker().asProxy();
 		var shootCmd = shooter.shoot().withTimeout(shooterTimeout).asProxy();
 		var finalIntake = intake.intake().withTimeout(intakeTimeout).asProxy();
-		var finalShot = shooter.shoot().withTimeout(shooterTimeout).asProxy();
+		var finalShot = shooter.spinUp().withTimeout(shooterTimeout).asProxy();
 
 		return Commands.sequence(
 			resetPoseCmd,
@@ -107,8 +107,10 @@ public final class AutonFactory {
 	private static Command intakeShotCycle(Intake intake, Shooter shooter, Conveyor conveyor) {
 		// TODO add spinup
 		var conveyCmd = conveyor.convey().withTimeout(conveyorTimeout).asProxy();
+		var spinUpCmd = shooter.spinUp().withTimeout(spinUpTimeout).asProxy();
 		var shootCmd = shooter.shoot().withTimeout(shooterTimeout).asProxy();
+		var spinUpAndShoot = Commands.sequence(spinUpCmd, shootCmd).asProxy();
 		var intakeCmd = intake.intake().withTimeout(intakeTimeout).asProxy();
-		return Commands.parallel(conveyCmd, intakeCmd, shootCmd);
+		return Commands.parallel(conveyCmd, intakeCmd, spinUpAndShoot);
 	}
 }

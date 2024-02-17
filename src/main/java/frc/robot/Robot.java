@@ -84,7 +84,7 @@ public class Robot extends TimedRobot {
 	private void registerCommands() {
 		NamedCommands.registerCommand("intake", intake.intake());
 		NamedCommands.registerCommand("aim", aim.aimAtSpeaker());
-		NamedCommands.registerCommand("shoot", shooter.shoot());
+		NamedCommands.registerCommand("shoot", shooter.spinUp());
 	}
 
 	private void configureBindings() {
@@ -106,7 +106,7 @@ public class Robot extends TimedRobot {
 		// reset the field-centric heading on left bumper press
 		driver.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
 		driver.rightBumper().onTrue(drivetrain.resetPoseToSpeaker());
-		driver.rightTrigger().whileTrue(shooter.shoot());
+		driver.rightTrigger().whileTrue(shooter.spinUp());
 
 		manipulator.rightBumper().whileTrue(intake.intake());
 
