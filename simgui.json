@@ -21,12 +21,14 @@
       "/FMSInfo": "FMSInfo",
       "/Pose": "Field2d",
       "/SmartDashboard/Auton Chooser": "String Chooser",
+      "/SmartDashboard/AutonChooser": "String Chooser",
       "/SmartDashboard/Field": "Field2d",
       "/SmartDashboard/Mech2d": "Mechanism2d",
       "/SmartDashboard/Module 0": "Mechanism2d",
       "/SmartDashboard/Module 1": "Mechanism2d",
       "/SmartDashboard/Module 2": "Mechanism2d",
-      "/SmartDashboard/Module 3": "Mechanism2d"
+      "/SmartDashboard/Module 3": "Mechanism2d",
+      "/SmartDashboard/mech2d": "Mechanism2d"
     },
     "windows": {
       "/FMSInfo": {
@@ -50,7 +52,7 @@
           "visible": true
         }
       },
-      "/SmartDashboard/Auton Chooser": {
+      "/SmartDashboard/AutonChooser": {
         "window": {
           "visible": true
         }
@@ -97,7 +99,7 @@
           "visible": true
         }
       },
-      "/SmartDashboard/Mech2d": {
+      "/SmartDashboard/mech2d": {
         "window": {
           "visible": true
         }
@@ -127,9 +129,11 @@
   },
   "NetworkTables Info": {
     "Server": {
+      "Publishers": {
+        "open": true
+      },
       "open": true
-    },
-    "visible": true
+    }
   },
   "Plot": {
     "Plot <0>": {

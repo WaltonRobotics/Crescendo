@@ -235,8 +235,7 @@ public class Robot extends TimedRobot {
 	private void simulateAim() {
 		// TODO make better work good
 		var drivePose = drivetrain.getState().Pose;
-		var y = Inches.of(Math.sin(drivePose.getRotation().getRadians()))
-			.times(AimK.kLength.magnitude());
+		var y = Inches.of(Math.sin(drivePose.getRotation().getRadians()));
 		var endPose = drivePose
 			.plus(new Transform2d(new Translation2d(AimK.kLength.negate(), y), new Rotation2d()));
 		field2d.getObject("aimPose").setPoses(drivePose, endPose);

@@ -106,7 +106,8 @@ public class Constants {
         public static final int kCancoderId = 16;
 
         public static final double kGearRatio = 200;
-        public static final Measure<Distance> kLength = Inches.of(19.75);
+        // public static final Measure<Distance> kLength = Inches.of(19.75);
+        public static final Measure<Distance> kLength = Inches.of(50);
         public static final Measure<Angle> kMinAngle = Degrees.of(30);
         public static final Measure<Angle> kMaxAngle = Degrees.of(150);
 
