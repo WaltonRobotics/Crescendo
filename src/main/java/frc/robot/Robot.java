@@ -31,6 +31,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.AimK;
+import frc.robot.Constants.FieldK.SpeakerK;
 import frc.robot.auton.AutonChooser;
 import frc.robot.auton.AutonChooser.AutonOption;
 import frc.robot.auton.AutonFactory;
@@ -40,6 +41,7 @@ import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.util.AllianceFlipUtil;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 
@@ -236,8 +238,11 @@ public class Robot extends TimedRobot {
 		// TODO make better work good
 		var drivePose = drivetrain.getState().Pose;
 		var y = Inches.of(Math.sin(drivePose.getRotation().getRadians()));
+		
+		var speakerPose2d = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpeningPose3d.toPose2d());
 		var endPose = drivePose
 			.plus(new Transform2d(new Translation2d(AimK.kLength.negate(), y), new Rotation2d()));
+		field2d.getObject("desAimPose").setPoses(drivePose, speakerPose2d);
 		field2d.getObject("aimPose").setPoses(drivePose, endPose);
 		field2d.getRobotObject().setPose(drivePose);
 	}

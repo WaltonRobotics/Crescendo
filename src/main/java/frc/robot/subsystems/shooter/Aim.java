@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.CtreConfigs;
 import frc.robot.subsystems.Swerve;
+import frc.util.AllianceFlipUtil;
 
 import static frc.robot.Constants.FieldK.*;
 import static edu.wpi.first.units.Units.Degrees;
@@ -80,12 +81,7 @@ public class Aim extends SubsystemBase {
     }
 
     public void getSpeakerPose() {
-        var alliance = DriverStation.getAlliance();
-        if (alliance.isPresent() && alliance.get() == Alliance.Blue) {
-            m_speakerPose = kBlueSpeakerPose;
-        } else {
-            m_speakerPose = kRedSpeakerPose;
-        }
+        m_speakerPose = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpening);
     }
 
     public Command teleop(DoubleSupplier power) {

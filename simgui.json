@@ -58,6 +58,13 @@
         }
       },
       "/SmartDashboard/Field": {
+        "BlueSpeaker": {
+          "style": "Box/Image"
+        },
+        "RedSpeaker": {
+          "arrows": false,
+          "style": "Line"
+        },
         "aim": {
           "style": "Line"
         },
@@ -65,7 +72,7 @@
           "style": "Line"
         },
         "aimPose": {
-          "arrowSize": 0,
+          "arrowSize": 19,
           "arrows": false,
           "color": [
             1.0,
@@ -73,12 +80,22 @@
             0.7058823704719543,
             255.0
           ],
-          "style": "Line"
+          "style": "Track"
         },
         "aimStart": {
           "style": "Line"
         },
         "bottom": 1476,
+        "desAimPose": {
+          "arrows": false,
+          "color": [
+            0.0,
+            255.0,
+            179.99998474121094,
+            255.0
+          ],
+          "style": "Line"
+        },
         "height": 8.210550308227539,
         "left": 150,
         "right": 2961,
@@ -133,7 +150,8 @@
         "open": true
       },
       "open": true
-    }
+    },
+    "visible": true
   },
   "Plot": {
     "Plot <0>": {
@@ -145,7 +163,7 @@
             0.0,
             0.8500000238418579
           ],
-          "height": 390,
+          "height": 257,
           "series": [
             {
               "color": [
