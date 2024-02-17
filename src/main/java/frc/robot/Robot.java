@@ -20,6 +20,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -56,11 +57,13 @@ public class Robot extends TimedRobot {
 	public final Swerve drivetrain = TunerConstants.Drivetrain;
 	public final Vision vision = new Vision(drivetrain::addVisionMeasurement);
 	public final Supplier<Pose3d> robotPoseSupplier = drivetrain::getPose3d;
-	public final Shooter shooter = new Shooter();
+	public final Shooter shooter = new Shooter(robotPoseSupplier);
 	public final Aim aim = new Aim(robotPoseSupplier);
 	public final Intake intake = new Intake();
 	public final Climber climber = new Climber();
 	public final Conveyor conveyor = new Conveyor();
+
+	public static Translation3d speakerPose;
 
 	public static final Field2d field2d = new Field2d();
 
@@ -150,7 +153,7 @@ public class Robot extends TimedRobot {
 	@Override
 	public void robotInit() {
 		SmartDashboard.putData(field2d);
-		aim.getSpeakerPose();
+		speakerPose = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpening);
 		mapAutonCommands();
 		registerCommands();
 		configureBindings();

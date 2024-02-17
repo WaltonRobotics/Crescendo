@@ -63,7 +63,7 @@ public class AutonChooser {
 
     public static Command getAuton(AutonOption auton) {
         return autonChooserMap.computeIfAbsent(auton, a -> Commands.print("warning: empty auton!")
-            .withName("invalidAuton"));
+            .withName("InvalidAuton"));
     }
 
     public static Optional<Pose2d> getAutonInitPose(AutonOption auton) {

@@ -227,7 +227,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 		var brakeCmd = runOnce(() -> setControl(m_brake));
 
-		return Commands.sequence(resetPoseCmd, choreoFollowCmd, brakeCmd).withName("choreoFollower");
+		return Commands.sequence(resetPoseCmd, choreoFollowCmd, brakeCmd).withName("ChoreoFollower");
 	}
 
 	public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {

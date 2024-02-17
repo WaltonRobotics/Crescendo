@@ -50,13 +50,13 @@ public class Constants {
             private static final Measure<Distance> kTopZ = Inches.of(83.091);
             private static final Translation3d kTopRight = new Translation3d(
                 kTopX, Inches.of(238.815), kTopZ);
-            private static final Translation3d kTopLeft = new Translation3d(
-                kTopX, Inches.of(197.765), kTopZ);
+            // private static final Translation3d kTopLeft = new Translation3d(
+            // kTopX, Inches.of(197.765), kTopZ);
 
             private static final Measure<Distance> kBotX = Inches.of(0);
             private static final Measure<Distance> kBotZ = Inches.of(78.324);
-            private static final Translation3d kBotRight = new Translation3d(
-                kBotX, Inches.of(238.815), kBotZ);
+            // private static final Translation3d kBotRight = new Translation3d(
+            // kBotX, Inches.of(238.815), kBotZ);
             private static final Translation3d kBotLeft = new Translation3d(
                 kBotX, Inches.of(197.765), kBotZ);
 
@@ -66,20 +66,6 @@ public class Constants {
             public static final Translation3d kRedCenterOpening = AllianceFlipUtil.flip(kBlueCenterOpening);
             public static final Pose3d kRedCenterOpeningPose3d = new Pose3d(
                 kRedCenterOpening, new Rotation3d());
-            // public static final Measure<Distance> kXToSpeaker = Inches.of(46.50);
-            // public static final Measure<Distance> kYToSpeaker = Inches.of(23.82);
-
-            // public static final Translation3d kBlueSpeakerTr3d = new Translation3d(
-            // kXToSpeaker.negate(), kYToSpeaker, kZToSpeaker);
-
-            // public static final Pose3d kBlueSpeakerPose3d = new Pose3d(
-            // kBlueSpeakerTr3d, new Rotation3d(0, 0, 0));
-
-            // public static final Translation3d kRedSpeakerTr3d = new Translation3d(
-            // kFieldLength.plus(kXToSpeaker), kFieldWidth.minus(kYToSpeaker), kZToSpeaker);
-
-            // public static final Pose3d kRedSpeakerPose3d = new Pose3d(
-            // kRedSpeakerTr3d, new Rotation3d(0, 0, 0));
         }
 
         /* amp constants */

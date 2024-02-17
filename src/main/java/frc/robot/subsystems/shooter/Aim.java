@@ -6,7 +6,6 @@ import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
@@ -25,6 +24,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.CtreConfigs;
+import frc.robot.Robot;
 import frc.robot.subsystems.Swerve;
 import frc.util.AllianceFlipUtil;
 
@@ -61,7 +61,6 @@ public class Aim extends SubsystemBase {
             new Color8Bit(Color.kHotPink)));
 
     private Measure<Angle> m_targetAngle;
-    private Translation3d m_speakerPose;
     private Translation3d m_ampPose;
 
     public Aim(Supplier<Pose3d> robotPoseSupplier) {
@@ -73,17 +72,13 @@ public class Aim extends SubsystemBase {
 
         m_targetAngle = Degrees.of(0);
 
-        SmartDashboard.putData("mech2d", m_mech2d);
+        SmartDashboard.putData("Mech2d", m_mech2d);
     }
 
     private Command toAngle(Measure<Angle> angle) {
         return run(() -> {
             m_aim.setControl(m_request.withPosition(angle.in(Rotations)));
         }).until(() -> m_cancoder.getPosition().getValueAsDouble() == angle.in(Rotations));
-    }
-
-    public void getSpeakerPose() {
-        m_speakerPose = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpening);
     }
 
     public Command teleop(DoubleSupplier power) {
@@ -127,7 +122,7 @@ public class Aim extends SubsystemBase {
         var translation = AllianceFlipUtil.apply(m_robotPoseSupplier.get().getTranslation());
         System.out.println("robot z: " + translation.getZ());
         System.out.println("robot x: " + translation.getX());
-        var poseToSpeaker = m_speakerPose.plus(translation);
+        var poseToSpeaker = Robot.speakerPose.plus(translation);
         m_targetAngle = Radians.of(Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX())));
         System.out.println("z: " + poseToSpeaker.getZ());
         System.out.println("x: " + poseToSpeaker.getX());
@@ -135,28 +130,31 @@ public class Aim extends SubsystemBase {
     }
 
     /**
-     *  if the robot is to the right of the speaker center, shoot to the left corner of the speaker and vice versa
-     *  @return a custom target angle based on the position of the robot
+     * if the robot is to the right of the speaker center, shoot to the left corner
+     * of the speaker and vice versa
+     * 
+     * @return a custom target angle based on the position of the robot
      */
     public Command aimSpeakerDynamic() {
         var blueCenter = kFieldLayout.getTagPose(kBlueSpeakerId).get();
         var blueRight = kFieldLayout.getTagPose(kBlueSpeakerRightId).get();
 
-        var diff = blueCenter.getY() - m_robotPoseSupplier.get().getTranslation().getY(); // find robot pose relative to the middle of the speaker
+        var diff = blueCenter.getY() - m_robotPoseSupplier.get().getTranslation().getY(); // find robot pose relative to
+                                                                                          // the middle of the speaker
         var rightTrans = blueRight.getTranslation(); // translation if the robot is to the left
         var lefTrans = new Translation3d(
-            blueCenter.getX(), 
-            blueCenter.getY() + (blueCenter.getY() - blueRight.getY()), 
+            blueCenter.getX(),
+            blueCenter.getY() + (blueCenter.getY() - blueRight.getY()),
             blueCenter.getZ());
 
-        var poseToSpeaker = m_speakerPose.minus(m_robotPoseSupplier.get().getTranslation());
+        var poseToSpeaker = Robot.speakerPose.minus(m_robotPoseSupplier.get().getTranslation());
 
-        if(diff < -23.125) {
+        if (diff < -23.125) {
             var poseToSpeakerRight = rightTrans.minus(m_robotPoseSupplier.get().getTranslation());
             return runOnce(() -> {
                 m_targetAngle = Radians.of(Math.atan((poseToSpeakerRight.getZ()) / (poseToSpeakerRight.getX())));
             });
-        } else if(diff > 23.125) {
+        } else if (diff > 23.125) {
             var poseToSpeakerLeft = lefTrans.minus(m_robotPoseSupplier.get().getTranslation());
             return runOnce(() -> {
                 m_targetAngle = Radians.of(Math.atan((poseToSpeakerLeft.getZ()) / (poseToSpeakerLeft.getX())));
@@ -170,7 +168,7 @@ public class Aim extends SubsystemBase {
     public Command shootOnTheMove(Swerve swerve) {
         return runOnce(() -> {
             var translation = m_robotPoseSupplier.get().getTranslation();
-            var poseToSpeaker = m_speakerPose.minus(translation);
+            var poseToSpeaker = Robot.speakerPose.minus(translation);
             var offsetPose = poseToSpeaker.plus(new Translation3d(
                 // TODO figure out how long it takes to shoot and multiply
                 swerve.getState().speeds.vxMetersPerSecond, swerve.getState().speeds.vyMetersPerSecond, 0));

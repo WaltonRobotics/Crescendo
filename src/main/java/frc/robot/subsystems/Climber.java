@@ -72,7 +72,7 @@ public class Climber extends SubsystemBase {
                 m_right.setVoltage(holdEffort);
             }
         })
-            .withName("teleop");
+            .withName("Teleop");
     }
 
     public Command toHeight(double height) {
