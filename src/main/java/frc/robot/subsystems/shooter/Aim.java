@@ -24,7 +24,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.CtreConfigs;
-import frc.robot.Robot;
 import frc.robot.subsystems.Swerve;
 import frc.util.AllianceFlipUtil;
 
@@ -34,6 +33,7 @@ import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.Rotations;
 import static frc.robot.Constants.AimK.*;
 import static frc.robot.Constants.FieldK.SpeakerK.*;
+import static frc.robot.Robot.*;
 
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -122,7 +122,7 @@ public class Aim extends SubsystemBase {
         var translation = AllianceFlipUtil.apply(m_robotPoseSupplier.get().getTranslation());
         System.out.println("robot z: " + translation.getZ());
         System.out.println("robot x: " + translation.getX());
-        var poseToSpeaker = Robot.speakerPose.plus(translation);
+        var poseToSpeaker = speakerPose.plus(translation);
         m_targetAngle = Radians.of(Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX())));
         System.out.println("z: " + poseToSpeaker.getZ());
         System.out.println("x: " + poseToSpeaker.getX());
@@ -147,7 +147,7 @@ public class Aim extends SubsystemBase {
             blueCenter.getY() + (blueCenter.getY() - blueRight.getY()),
             blueCenter.getZ());
 
-        var poseToSpeaker = Robot.speakerPose.minus(m_robotPoseSupplier.get().getTranslation());
+        var poseToSpeaker = speakerPose.minus(m_robotPoseSupplier.get().getTranslation());
 
         if (diff < -23.125) {
             var poseToSpeakerRight = rightTrans.minus(m_robotPoseSupplier.get().getTranslation());
@@ -165,16 +165,20 @@ public class Aim extends SubsystemBase {
         });
     }
 
+    /**
+     * calculates the offset pose of the robot and does nothing else cuz i need to
+     * figure out what to do with that information
+     * 
+     * @param swerve used to get the chassis speeds
+     * @return a command that does nothing
+     */
     public Command shootOnTheMove(Swerve swerve) {
         return runOnce(() -> {
             var translation = m_robotPoseSupplier.get().getTranslation();
-            var poseToSpeaker = Robot.speakerPose.minus(translation);
+            var poseToSpeaker = speakerPose.minus(translation);
             var offsetPose = poseToSpeaker.plus(new Translation3d(
                 // TODO figure out how long it takes to shoot and multiply
                 swerve.getState().speeds.vxMetersPerSecond, swerve.getState().speeds.vyMetersPerSecond, 0));
-            m_targetAngle = Radians.of(Math.atan((offsetPose.getZ()) / (offsetPose.getX())));
-
-            m_aim.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
         });
     }
 

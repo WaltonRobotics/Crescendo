@@ -57,7 +57,7 @@ public class Robot extends TimedRobot {
 	public final Swerve drivetrain = TunerConstants.Drivetrain;
 	public final Vision vision = new Vision(drivetrain::addVisionMeasurement);
 	public final Supplier<Pose3d> robotPoseSupplier = drivetrain::getPose3d;
-	public final Shooter shooter = new Shooter(robotPoseSupplier);
+	public final Shooter shooter = new Shooter();
 	public final Aim aim = new Aim(robotPoseSupplier);
 	public final Intake intake = new Intake();
 	public final Climber climber = new Climber();
