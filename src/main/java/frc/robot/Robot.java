@@ -47,8 +47,8 @@ import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 
 public class Robot extends TimedRobot {
-	private final double maxSpeed = 5; // 5 meters per second desired top speed
-	private final double maxAngularRate = 1.5 * Math.PI; // 3/4 of a rotation per second max angular velocity
+	public static final double maxSpeed = 5; // 5 meters per second desired top speed
+	public static final double maxAngularRate = 1.5 * Math.PI; // 3/4 of a rotation per second max angular velocity
 
 	/* Setting up bindings for necessary control of the swerve drive platform */
 	private final CommandXboxController driver = new CommandXboxController(0); // My joystick
@@ -122,6 +122,8 @@ public class Robot extends TimedRobot {
 		manipulator.y().onTrue(aim.goTo30());
 		// climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
 		aim.setDefaultCommand(aim.teleop(() -> -manipulator.getLeftY()));
+		manipulator.rightTrigger().whileTrue(shooter.spinUp());
+		manipulator.leftBumper().whileTrue(conveyor.convey());
 
 		driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
 		driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));

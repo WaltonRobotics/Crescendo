@@ -45,7 +45,7 @@ public class Constants {
             public static final int kRedSpeakerId = 4;
             public static final int kBlueSpeakerRightId = 8;
             public static final int kBlueSpeakerId = 7;
-            
+
             private static final Measure<Distance> kTopX = Inches.of(18.055);
             private static final Measure<Distance> kTopZ = Inches.of(83.091);
             private static final Translation3d kTopRight = new Translation3d(
@@ -138,13 +138,16 @@ public class Constants {
             // public static final double kFreeSpeed = 668.1120369; // rad per sec
 
             public static final double kGearRatio = 200; // TODO: find actual value (we asked build and they were
-                                                         // confused)
+                                                         // confused) lol???
 
             // TODO: find the real value
             public static final double kInterval = 0.020;
-            public static final double kTargetRpm = 10;
 
             public static final double kMoi = 0.056699046875; // kg meters^2
+
+            // basically just how much faster the wheels have to spin for 1 meter more of
+            // distance idk how this will work
+            public static final double kRpmFactor = 100; // TODO fix this i just chose a random value
         }
     }
 

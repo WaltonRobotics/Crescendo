@@ -24,7 +24,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.CtreConfigs;
-import frc.robot.subsystems.Swerve;
 import frc.util.AllianceFlipUtil;
 
 import static frc.robot.Constants.FieldK.*;
@@ -162,23 +161,6 @@ public class Aim extends SubsystemBase {
         }
         return runOnce(() -> {
             m_targetAngle = Radians.of(Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX())));
-        });
-    }
-
-    /**
-     * calculates the offset pose of the robot and does nothing else cuz i need to
-     * figure out what to do with that information
-     * 
-     * @param swerve used to get the chassis speeds
-     * @return a command that does nothing
-     */
-    public Command shootOnTheMove(Swerve swerve) {
-        return runOnce(() -> {
-            var translation = m_robotPoseSupplier.get().getTranslation();
-            var poseToSpeaker = speakerPose.minus(translation);
-            var offsetPose = poseToSpeaker.plus(new Translation3d(
-                // TODO figure out how long it takes to shoot and multiply
-                swerve.getState().speeds.vxMetersPerSecond, swerve.getState().speeds.vyMetersPerSecond, 0));
         });
     }
 
