@@ -129,7 +129,7 @@ public class Aim extends SubsystemBase {
         return run(() -> m_aim.setControl(m_request.withPosition(m_targetAngle.in(Rotations))));
     }
 
-    public void aimAtSpeaker() {
+    public void setAimTarget() {
         var translation = AllianceFlipUtil.apply(m_robotPoseSupplier.get().getTranslation());
         System.out.println("robot z: " + translation.getZ());
         System.out.println("robot x: " + translation.getX());
