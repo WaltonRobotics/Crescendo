@@ -1,11 +1,15 @@
 package frc.robot.auton;
 
+import static edu.wpi.first.units.Units.Degrees;
+
 import java.util.EnumMap;
 import java.util.Optional;
 
 import com.choreo.lib.ChoreoTrajectory;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.units.Angle;
+import edu.wpi.first.units.Measure;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -13,19 +17,22 @@ import edu.wpi.first.wpilibj2.command.Commands;
 
 public class AutonChooser {
     public enum AutonOption {
-        DO_NOTHING("0 - do nothing", new ChoreoTrajectory()),
-        ONE_METER("0 - one meter", Trajectories.oneMeter),
-        SIMPLE_THING("0 - simple thing", Trajectories.simpleThing),
-        THREE_PC("3 - speaker", Trajectories.threePc),
-        FOUR_PC("4 - speaker", Trajectories.fourPc),
-        FIVE_PC("5 - speaker", Trajectories.fivePc);
+        // TODO fix startAngle
+        DO_NOTHING("0 - do nothing", new ChoreoTrajectory(), Degrees.of(0)),
+        ONE_METER("0 - one meter", Trajectories.oneMeter, Degrees.of(0)),
+        SIMPLE_THING("0 - simple thing", Trajectories.simpleThing, Degrees.of(0)),
+        THREE_PC("3 - speaker", Trajectories.threePc, Degrees.of(30)),
+        FOUR_PC("4 - speaker", Trajectories.fourPc, Degrees.of(30)),
+        FIVE_PC("5 - speaker", Trajectories.fivePc, Degrees.of(30));
 
         public final String m_description;
         public final ChoreoTrajectory m_traj;
+        public final Measure<Angle> m_startAngle;
 
-        AutonOption(String description, ChoreoTrajectory traj) {
+        AutonOption(String description, ChoreoTrajectory traj, Measure<Angle> startAngle) {
             m_description = description;
             m_traj = traj;
+            m_startAngle = startAngle;
         }
 
         @Override
@@ -92,5 +99,10 @@ public class AutonChooser {
     public static ChoreoTrajectory getChosenTrajectory() {
         var selected = AutonChooser.autonNTChooser.getSelected();
         return selected.m_traj;
+    }
+
+    public static Measure<Angle> getChosenAutonAimInit() {
+        var selected = AutonChooser.autonNTChooser.getSelected();
+        return selected.m_startAngle;
     }
 }

@@ -158,6 +158,7 @@ public class Constants {
     public class AimK {
         public static final int kAimId = 15;
         public static final int kCancoderId = 16;
+        public static final int kHomeSwitch = 0; // TODO check
 
         public static final double kGearRatio = 200;
         public static final Measure<Distance> kLength = Inches.of(19.75);

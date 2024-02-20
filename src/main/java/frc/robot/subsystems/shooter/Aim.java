@@ -1,8 +1,8 @@
 package frc.robot.subsystems.shooter;
 
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
-import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -11,6 +11,7 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
@@ -23,7 +24,9 @@ import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.CtreConfigs;
+import frc.robot.auton.AutonChooser;
 import frc.util.AllianceFlipUtil;
 
 import static frc.robot.Constants.FieldK.*;
@@ -41,7 +44,6 @@ public class Aim extends SubsystemBase {
     private final Supplier<Pose3d> m_robotPoseSupplier;
 
     private final TalonFX m_aim = new TalonFX(kAimId);
-    private final CANcoder m_cancoder = new CANcoder(kCancoderId);
     private final MotionMagicExpoVoltage m_request = new MotionMagicExpoVoltage(0);
 
     private final DCMotor m_aimGearbox = DCMotor.getFalcon500(1);
@@ -62,22 +64,32 @@ public class Aim extends SubsystemBase {
     private Measure<Angle> m_targetAngle;
     private Translation3d m_ampPose;
 
+    private final DigitalInput m_home = new DigitalInput(kHomeSwitch);
+    private final Trigger m_homeTrigger = new Trigger(m_home::get).negate();
+
+    private final Trigger m_atStart = new Trigger(
+        () -> m_aim.getPosition().getValueAsDouble() == AutonChooser.getChosenAutonAimInit().in(Rotations));
+
     public Aim(Supplier<Pose3d> robotPoseSupplier) {
         m_robotPoseSupplier = robotPoseSupplier;
 
         CtreConfigs configs = CtreConfigs.get();
         m_aim.getConfigurator().apply(configs.m_aimConfigs);
-        m_cancoder.getConfigurator().apply(configs.m_cancoderConfigs);
 
         m_targetAngle = Degrees.of(0);
 
         SmartDashboard.putData("Mech2d", m_mech2d);
+
+        // TODO check this value
+        m_homeTrigger.onTrue(Commands.runOnce(() -> m_aim.setPosition(30)).ignoringDisable(true));
+        m_atStart
+            .onTrue(Commands.runOnce(() -> m_aim.setNeutralMode(NeutralModeValue.Brake)).ignoringDisable(true));
     }
 
     private Command toAngle(Measure<Angle> angle) {
         return run(() -> {
             m_aim.setControl(m_request.withPosition(angle.in(Rotations)));
-        }).until(() -> m_cancoder.getPosition().getValueAsDouble() == angle.in(Rotations));
+        });
     }
 
     public Command teleop(DoubleSupplier power) {
@@ -247,6 +259,10 @@ public class Aim extends SubsystemBase {
         return Commands.none();
     }
 
+    public void coast() {
+        m_aim.setNeutralMode(NeutralModeValue.Coast);
+    }
+
     public void simulationPeriodic() {
         m_aim.getSimState().setSupplyVoltage(12);
         var volts = m_aim.getSimState().getMotorVoltage();
@@ -256,14 +272,10 @@ public class Aim extends SubsystemBase {
         double velocity = Units.radiansToRotations(m_aimSim.getVelocityRadPerSec());
         m_aim.getSimState().setRawRotorPosition(angle);
         m_aim.getSimState().setRotorVelocity(velocity);
-        m_cancoder.getSimState().setRawPosition(angle);
-        m_cancoder.getSimState().setVelocity(velocity);
 
         m_aim2d.setAngle(Units.rotationsToDegrees(
             m_aim.getPosition().getValueAsDouble())); // TODO: make this render correctly with the real robot too
 
-        SmartDashboard.putNumber("cancoderPos",
-            m_cancoder.getPosition().getValueAsDouble());
         SmartDashboard.putNumber("simVoltage", volts);
         SmartDashboard.putNumber("simVelo", m_aimSim.getVelocityRadPerSec());
         SmartDashboard.putNumber("simAngle", angle);
