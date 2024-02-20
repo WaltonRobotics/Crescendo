@@ -4,7 +4,7 @@ import static frc.robot.Constants.RobotK.kSimInterval;
 import static frc.robot.Constants.ShooterK.kLeftId;
 import static frc.robot.Constants.ShooterK.kRightId;
 
-import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.controls.VelocityDutyCycle;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.math.MathUtil;
@@ -22,6 +22,8 @@ import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.CtreConfigs;
+
 import static frc.robot.Constants.ShooterK.FlywheelSimK.*;
 import static edu.wpi.first.units.Units.Minute;
 import static edu.wpi.first.units.Units.Rotations;
@@ -35,7 +37,7 @@ import java.util.function.Supplier;
 public class Shooter extends SubsystemBase {
     private final TalonFX m_left = new TalonFX(kLeftId);
     private final TalonFX m_right = new TalonFX(kRightId);
-    private final VelocityVoltage m_request = new VelocityVoltage(0);
+    private final VelocityDutyCycle m_request = new VelocityDutyCycle(0);
 
     private double m_targetRpm;
 
@@ -51,6 +53,10 @@ public class Shooter extends SubsystemBase {
         SmartDashboard.putNumber("shotTime", 1.5);
         shotTime = SmartDashboard.getNumber("shotTime", 1.5);
         m_targetRpm = 1000;
+
+        CtreConfigs configs = CtreConfigs.get();
+        m_left.getConfigurator().apply(configs.m_shooterConfigs);
+        m_right.getConfigurator().apply(configs.m_shooterConfigs);
     }
 
     // TODO check the numbers for all of this they're just dummy values for now
