@@ -47,16 +47,16 @@ public class Constants {
 
             private static final Measure<Distance> kTopX = Inches.of(18.055);
             private static final Measure<Distance> kTopZ = Inches.of(83.091);
-            private static final Translation3d kTopRight = new Translation3d(
+            public static final Translation3d kTopRight = new Translation3d(
                 kTopX, Inches.of(238.815), kTopZ);
-            // private static final Translation3d kTopLeft = new Translation3d(
-            // kTopX, Inches.of(197.765), kTopZ);
+            public static final Translation3d kTopLeft = new Translation3d(
+                kTopX, Inches.of(197.765), kTopZ);
 
             private static final Measure<Distance> kBotX = Inches.of(0);
             private static final Measure<Distance> kBotZ = Inches.of(78.324);
             // private static final Translation3d kBotRight = new Translation3d(
             // kBotX, Inches.of(238.815), kBotZ);
-            private static final Translation3d kBotLeft = new Translation3d(
+            public static final Translation3d kBotLeft = new Translation3d(
                 kBotX, Inches.of(197.765), kBotZ);
 
             public static final Translation3d kBlueCenterOpening = kBotLeft.interpolate(kTopRight, 0.5);
@@ -65,6 +65,8 @@ public class Constants {
             public static final Translation3d kRedCenterOpening = AllianceFlipUtil.flip(kBlueCenterOpening);
             public static final Pose3d kRedCenterOpeningPose3d = new Pose3d(
                 kRedCenterOpening, new Rotation3d());
+
+            public static final Measure<Distance> kAimOffset = Inches.of(25);
         }
 
         /* amp constants */
@@ -78,15 +80,6 @@ public class Constants {
 
         public static final Translation3d kRedAmpPose = new Translation3d(
             kFieldLength.minus(kXToAmp), kFieldWidth.minus(kYToAmp), kZToAmp);
-
-        /* trap constants */
-        public static final int kBlueCenterTrapId = 14;
-        public static final int kBlueLeftTrapId = 15;
-        public static final int kBlueRightTrapId = 16;
-
-        public static final int kRedLeftTrapId = 11;
-        public static final int kRedRightTrapId = 12;
-        public static final int kRedCenterTrapId = 13;
 
         /* stage constants */
         public static final double kBlueStageClearanceDs = Units.inchesToMeters(188.5);
@@ -112,21 +105,18 @@ public class Constants {
             new ReplanningConfig());
     }
 
-    public class ClimberK {
-        public static final int kLeftId = 31;
-        public static final int kRightId = 32;
-        public static final int kLimitSwitchId = 1;
+    public class IntakeK {
+        public static final int kIntakeId = 10;
+        public static final int kFeederId = 11;
+    }
 
-        public static final Measure<Distance> kMetersPerRotation = Meters.of(0.3);
-        public static final Measure<Distance> kMaxHeight = Inches.of(56);
-
-        public static final double kP = 3.25;
+    public class ConveyorK {
+        public static final int kConveyorId = 12;
     }
 
     public class ShooterK {
-        public static final int kRightId = 11;
-        public static final int kLeftId = 12;
-        public static final int kTiltId = 13;
+        public static final int kRightId = 13;
+        public static final int kLeftId = 14;
 
         public static final class FlywheelSimK {
             public static final double kGearRatio = 200; // TODO: find actual value
@@ -142,24 +132,14 @@ public class Constants {
         }
     }
 
-    public class ConveyorK {
-        public static final int kConveyorId = 14;
-    }
-
-    public class IntakeK {
-        public static final int kIntakeId = 10;
-        public static final int kFeederId = 11;
-    }
-
     public class AimK {
         public static final int kAimId = 15;
-        public static final int kCancoderId = 16;
         public static final int kHomeSwitch = 0; // TODO check
 
         public static final double kGearRatio = 200;
         public static final Measure<Distance> kLength = Inches.of(19.75);
         public static final Measure<Angle> kStageClearance = Degrees.of(47.097); // asin((22 -
-                                                                                 // kHeightTilShooter)/kLength)
+        // kHeightTilShooter)/kLength)
         public static final Measure<Angle> kMinAngle = Degrees.of(0);
         public static final Measure<Angle> kMaxAngle = Degrees.of(150);
 
@@ -172,7 +152,19 @@ public class Constants {
 
     }
 
+    public class ClimberK {
+        public static final int kLeftId = 20;
+        public static final int kRightId = 21;
+        public static final int kLimitSwitchId = 1;
+
+        public static final Measure<Distance> kMetersPerRotation = Meters.of(0.3);
+        public static final Measure<Distance> kMaxHeight = Inches.of(56);
+
+        public static final double kP = 3.25;
+    }
+
     public class RobotK {
         public static final double kHeightTilShooter = 7.533; // in inches ! height until the pivot point of shooter
+        public static final boolean kTestMode = false;
     }
 }

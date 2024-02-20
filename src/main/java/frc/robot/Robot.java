@@ -46,6 +46,8 @@ import frc.util.AllianceFlipUtil;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 
+import static frc.robot.Constants.RobotK.*;
+
 public class Robot extends TimedRobot {
 	public static final double maxSpeed = 5; // 5 meters per second desired top speed
 	public static final double maxAngularRate = 1.5 * Math.PI; // 3/4 of a rotation per second max angular velocity
@@ -98,32 +100,28 @@ public class Robot extends TimedRobot {
 				.withVelocityY(leftX * maxSpeed)
 				.withRotationalRate(-driver.getRightX() * maxAngularRate);
 		}));
+		if (Utils.isSimulation()) {
+			drivetrain.seedFieldRelative(new Pose2d(new Translation2d(), Rotation2d.fromDegrees(90)));
+		}
+		drivetrain.registerTelemetry(logger::telemeterize);
 
 		driver.a().whileTrue(drivetrain.applyRequest(() -> brake));
 		driver.b().whileTrue(drivetrain
 			.applyRequest(
 				() -> point.withModuleDirection(new Rotation2d(-driver.getLeftY(), -driver.getLeftX()))));
 		driver.x().whileTrue(drivetrain.goToAutonPose());
-
 		// reset the field-centric heading on left bumper press
 		driver.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
 		driver.rightBumper().onTrue(drivetrain.resetPoseToSpeaker());
 		driver.rightTrigger().whileTrue(shooter.spinUp());
 
-		manipulator.rightBumper().whileTrue(intake.intake());
-
-		if (Utils.isSimulation()) {
-			drivetrain.seedFieldRelative(new Pose2d(new Translation2d(), Rotation2d.fromDegrees(90)));
-		}
-		drivetrain.registerTelemetry(logger::telemeterize);
-
-		// shooter.setDefaultCommand(shooter.teleopCmd(() -> -manipulator.getRightY()));
 		manipulator.x().onTrue(aim.goTo90());
 		manipulator.y().onTrue(aim.goTo30());
 		// climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
 		aim.setDefaultCommand(aim.teleop(() -> -manipulator.getLeftY()));
-		manipulator.rightTrigger().whileTrue(shooter.spinUp());
+		manipulator.rightBumper().whileTrue(intake.intake());
 		manipulator.leftBumper().whileTrue(conveyor.convey());
+		manipulator.rightTrigger().whileTrue(aim.aim()); // change to default cmd eventually
 
 		driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
 		driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
@@ -159,7 +157,9 @@ public class Robot extends TimedRobot {
 		mapAutonCommands();
 		registerCommands();
 		configureBindings();
-		// drivetrain.setTestMode();
+		if (kTestMode) {
+			drivetrain.setTestMode();
+		}
 	}
 
 	@Override
@@ -171,7 +171,7 @@ public class Robot extends TimedRobot {
 	@Override
 	public void disabledInit() {
 		SignalLogger.stop();
-		aim.coast();
+		aim.setCoast(true);
 	}
 
 	@Override
@@ -180,6 +180,7 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void disabledExit() {
+		aim.setCoast(false);
 	}
 
 	@Override

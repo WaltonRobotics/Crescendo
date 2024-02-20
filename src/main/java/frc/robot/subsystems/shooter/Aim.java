@@ -12,6 +12,8 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
@@ -90,6 +92,10 @@ public class Aim extends SubsystemBase {
         });
     }
 
+    public void setCoast(boolean coast) {
+        m_aim.setNeutralMode(coast ? NeutralModeValue.Coast : NeutralModeValue.Brake);
+    }
+
     public Command teleop(DoubleSupplier power) {
         return run(() -> {
             double powerVal = MathUtil.applyDeadband(power.getAsDouble(), 0.1);
@@ -107,66 +113,63 @@ public class Aim extends SubsystemBase {
         });
     }
 
-    public Command goTo90() {
-        return runOnce(() -> {
-            m_targetAngle = Degrees.of(90);
+    public Command aim() {
+        return setAimTarget().andThen(toTarget()).repeatedly();
+    }
 
-            m_aim.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
-        });
+    public Command goTo90() {
+        var setTargetCmd = runOnce(() -> m_targetAngle = Degrees.of(90));
+        return setTargetCmd.andThen(toTarget());
     }
 
     public Command goTo30() {
-        return runOnce(() -> {
-            m_targetAngle = Degrees.of(30);
-
-            m_aim.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
-        });
+        var setTargetCmd = runOnce(() -> m_targetAngle = Degrees.of(30));
+        return setTargetCmd.andThen(toTarget());
     }
 
     public Command toTarget() {
-        return run(() -> m_aim.setControl(m_request.withPosition(m_targetAngle.in(Rotations))));
-    }
-
-    public void setAimTarget() {
-        var translation = AllianceFlipUtil.apply(m_robotPoseSupplier.get().getTranslation());
-        var poseToSpeaker = speakerPose.plus(translation);
-        m_targetAngle = Radians.of(Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX())));
+        return toAngle(m_targetAngle);
     }
 
     /**
-     * if the robot is to the right of the speaker center, shoot to the left corner
+     * @return a command that changes the target angle of the shooter based on where it is relative to the speaker 
+     */
+    public Command setAimTarget() {
+        var translation = AllianceFlipUtil.apply(m_robotPoseSupplier.get().getTranslation());
+        var poseToSpeaker = speakerPose.plus(translation);
+        return runOnce(() -> m_targetAngle = Radians.of(Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX()))));
+    }
+
+    /**
+     * if the robot is to the right of the speaker center, aim at the left corner
      * of the speaker and vice versa
      * 
-     * @return a custom target angle based on the position of the robot
+     * @return a command that changes the target speaker pose based on the robot's position
      */
     public Command changeSpeakerTarget() {
-        var blueCenter = kFieldLayout.getTagPose(kBlueSpeakerId).get();
-        var blueRight = kFieldLayout.getTagPose(kBlueSpeakerRightId).get();
+        // TODO check math
+        var trans = m_robotPoseSupplier.get().getTranslation();
+        var alliance = DriverStation.getAlliance();
 
-        var diff = blueCenter.getY() - m_robotPoseSupplier.get().getTranslation().getY(); // find robot pose relative to
-                                                                                          // the middle of the speaker
-        var rightTrans = blueRight.getTranslation(); // translation if the robot is to the left
-        var lefTrans = new Translation3d(
-            blueCenter.getX(),
-            blueCenter.getY() + (blueCenter.getY() - blueRight.getY()),
-            blueCenter.getZ());
-
-        var poseToSpeaker = speakerPose.minus(m_robotPoseSupplier.get().getTranslation());
-
-        if (diff < -23.125) {
-            var poseToSpeakerRight = rightTrans.minus(m_robotPoseSupplier.get().getTranslation());
-            return runOnce(() -> {
-                m_targetAngle = Radians.of(Math.atan((poseToSpeakerRight.getZ()) / (poseToSpeakerRight.getX())));
-            });
-        } else if (diff > 23.125) {
-            var poseToSpeakerLeft = lefTrans.minus(m_robotPoseSupplier.get().getTranslation());
-            return runOnce(() -> {
-                m_targetAngle = Radians.of(Math.atan((poseToSpeakerLeft.getZ()) / (poseToSpeakerLeft.getX())));
-            });
+        if (alliance.isPresent() && alliance.get() == Alliance.Red) {
+            if (trans.getY() > (kRedCenterOpening.getY() + kAimOffset.baseUnitMagnitude())) {
+                return runOnce(() -> speakerPose = AllianceFlipUtil.apply(kTopRight));
+            } else if (trans.getY() < (kRedCenterOpening.getY() - kAimOffset.baseUnitMagnitude())) {
+                return runOnce(() -> speakerPose = AllianceFlipUtil.apply(kTopLeft));
+            } else {
+                return runOnce(() -> speakerPose = kRedCenterOpening);
+            }
+        } else if (alliance.isPresent() && alliance.get() == Alliance.Blue) {
+            if (trans.getY() < (kBlueCenterOpening.getY() + kAimOffset.baseUnitMagnitude())) {
+                return runOnce(() -> speakerPose = kTopRight);
+            } else if (trans.getY() > (kBlueCenterOpening.getY() - kAimOffset.baseUnitMagnitude())) {
+                return runOnce(() -> speakerPose = kTopLeft);
+            } else {
+                return runOnce(() -> speakerPose = kBlueCenterOpening);
+            }
         }
-        return runOnce(() -> {
-            m_targetAngle = Radians.of(Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX())));
-        });
+
+        return Commands.none();
     }
 
     public void aimAtAmp() {
@@ -175,8 +178,12 @@ public class Aim extends SubsystemBase {
         m_targetAngle = Radians.of(Math.atan((poseToAmp.getZ()) / (poseToAmp.getX())));
     }
 
+    /**
+     * @return a command that changes the angle of the shooter near the stage to avoid hitting it
+     */
     public Command stageMode() {
         Pose3d pose = m_robotPoseSupplier.get();
+
         if (pose.getY() > kBlueStageClearanceRight && pose.getY() < kBlueStageClearanceLeft) {
             if (pose.getX() > kBlueStageClearanceDs && pose.getX() < kBlueStageClearanceCenter) {
                 return toAngle(kStageClearance);
@@ -184,11 +191,8 @@ public class Aim extends SubsystemBase {
                 return toAngle(kStageClearance);
             }
         }
-        return Commands.none();
-    }
 
-    public void coast() {
-        m_aim.setNeutralMode(NeutralModeValue.Coast);
+        return Commands.none();
     }
 
     public void simulationPeriodic() {

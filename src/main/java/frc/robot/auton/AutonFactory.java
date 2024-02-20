@@ -30,11 +30,11 @@ public final class AutonFactory {
 	public static Command threePiece(Swerve swerve, Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
 		var toAngle = Commands.repeatingSequence(aim.toTarget());
 		var resetPoseCmd = swerve.resetPose(threePc);
-		var aimCmd1 = Commands.runOnce(() -> aim.setAimTarget());
+		var aimCmd1 = aim.setAimTarget().asProxy();
 		var shootCmd = shooter.spinUp().withTimeout(shooterTimeout).asProxy();
 		var pathCmd = AutoBuilder.followPath(threePc);
-		var aimCmd2 = Commands.runOnce(() -> aim.setAimTarget());
-		var aimCmd3 = Commands.runOnce(() -> aim.setAimTarget());
+		var aimCmd2 = aim.setAimTarget().asProxy();
+		var aimCmd3 = aim.setAimTarget().asProxy();
 
 		return Commands.parallel(
 			toAngle,
@@ -55,15 +55,15 @@ public final class AutonFactory {
 	public static Command fourPiece(Swerve swerve, Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
 		var toAngle = Commands.repeatingSequence(aim.toTarget());
 		var resetPoseCmd = swerve.resetPose(fourPc);
-		var aimCmd1 = Commands.runOnce(() -> aim.setAimTarget());
+		var aimCmd1 = aim.setAimTarget().asProxy();
 		var pathCmd = AutoBuilder.followPath(fourPc);
 		var shootCmd1 = shooter.spinUp().withTimeout(shooterTimeout).asProxy();
-		var aimCmd2 = Commands.runOnce(() -> aim.setAimTarget());
+		var aimCmd2 = aim.setAimTarget().asProxy();
 		var intakeCmd1 = intake.intake().withTimeout(intakeTimeout).asProxy();
-		var aimCmd3 = Commands.runOnce(() -> aim.setAimTarget());
+		var aimCmd3 = aim.setAimTarget().asProxy();
 		var shootCmd2 = shooter.spinUp().withTimeout(shooterTimeout).asProxy();
 		var intakeCmd2 = intake.intake().withTimeout(intakeTimeout).asProxy();
-		var aimCmd4 = Commands.runOnce(() -> aim.setAimTarget());
+		var aimCmd4 = aim.setAimTarget().asProxy();
 		var shootCmd3 = shooter.spinUp().withTimeout(shooterTimeout).asProxy();
 
 		return Commands.parallel(
@@ -94,14 +94,14 @@ public final class AutonFactory {
 	public static Command fivePiece(Swerve swerve, Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
 		var toAngle = Commands.repeatingSequence(aim.toTarget());
 		var resetPoseCmd = swerve.resetPose(fivePc);
-		var aimCmd1 = Commands.runOnce(() -> aim.setAimTarget());
-		var aimCmd2 = Commands.runOnce(() -> aim.setAimTarget());
+		var aimCmd1 = aim.setAimTarget().asProxy();
+		var aimCmd2 = aim.setAimTarget().asProxy();
 		var pathCmd = AutoBuilder.followPath(fivePc);
-		var aimCmd3 = Commands.runOnce(() -> aim.setAimTarget());
-		var aimCmd4 = Commands.runOnce(() -> aim.setAimTarget());
+		var aimCmd3 = aim.setAimTarget().asProxy();
+		var aimCmd4 = aim.setAimTarget().asProxy();
 		var shootCmd = shooter.shoot().withTimeout(shooterTimeout).asProxy();
 		var finalIntake = intake.intake().withTimeout(intakeTimeout).asProxy();
-		var aimCmd5 = Commands.runOnce(() -> aim.setAimTarget());
+		var aimCmd5 = aim.setAimTarget().asProxy();
 		var finalShot = shooter.spinUp().withTimeout(shooterTimeout).asProxy();
 
 		return Commands.parallel(
