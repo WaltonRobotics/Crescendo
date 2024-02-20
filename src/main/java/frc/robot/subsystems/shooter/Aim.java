@@ -79,9 +79,10 @@ public class Aim extends SubsystemBase {
         SmartDashboard.putData("Mech2d", m_mech2d);
 
         // TODO check this value
-        m_homeTrigger.onTrue(Commands.runOnce(() -> m_aim.setPosition(30)).ignoringDisable(true));
-        m_atStart
-            .onTrue(Commands.runOnce(() -> m_aim.setNeutralMode(NeutralModeValue.Brake)).ignoringDisable(true));
+        m_homeTrigger.onTrue(Commands.runOnce(() -> m_aim.setPosition(0))
+            .ignoringDisable(true));
+        m_atStart.onTrue(Commands.runOnce(() -> m_aim.setNeutralMode(NeutralModeValue.Brake))
+            .ignoringDisable(true));
     }
 
     private Command toAngle(Measure<Angle> angle) {
@@ -129,13 +130,8 @@ public class Aim extends SubsystemBase {
 
     public void setAimTarget() {
         var translation = AllianceFlipUtil.apply(m_robotPoseSupplier.get().getTranslation());
-        System.out.println("robot z: " + translation.getZ());
-        System.out.println("robot x: " + translation.getX());
         var poseToSpeaker = speakerPose.plus(translation);
         m_targetAngle = Radians.of(Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX())));
-        System.out.println("z: " + poseToSpeaker.getZ());
-        System.out.println("x: " + poseToSpeaker.getX());
-        System.out.println("target angle: " + m_targetAngle.in(Degrees));
     }
 
     /**
@@ -144,7 +140,7 @@ public class Aim extends SubsystemBase {
      * 
      * @return a custom target angle based on the position of the robot
      */
-    public Command aimSpeakerDynamic() {
+    public Command changeSpeakerTarget() {
         var blueCenter = kFieldLayout.getTagPose(kBlueSpeakerId).get();
         var blueRight = kFieldLayout.getTagPose(kBlueSpeakerRightId).get();
 
@@ -174,25 +170,18 @@ public class Aim extends SubsystemBase {
         });
     }
 
-    public Command aimAtAmp() {
-        var getTarget = runOnce(() -> {
-            var translation = m_robotPoseSupplier.get().getTranslation();
-            var poseToAmp = m_ampPose.minus(translation);
-            m_targetAngle = Radians.of(Math.atan((poseToAmp.getZ()) / (poseToAmp.getX())));
-        });
-        var toTarget = runOnce(() -> m_aim.setControl(m_request.withPosition(m_targetAngle.in(Rotations))));
-
-        return Commands.sequence(
-            getTarget,
-            toTarget);
+    public void aimAtAmp() {
+        var translation = m_robotPoseSupplier.get().getTranslation();
+        var poseToAmp = m_ampPose.minus(translation);
+        m_targetAngle = Radians.of(Math.atan((poseToAmp.getZ()) / (poseToAmp.getX())));
     }
 
     public Command stageMode() {
         Pose3d pose = m_robotPoseSupplier.get();
         if (pose.getY() > kBlueStageClearanceRight && pose.getY() < kBlueStageClearanceLeft) {
-            if (pose.getX() > kBlueStageClearanceDS && pose.getX() < kBlueStageClearanceCenter) {
+            if (pose.getX() > kBlueStageClearanceDs && pose.getX() < kBlueStageClearanceCenter) {
                 return toAngle(kStageClearance);
-            } else if (pose.getX() > kRedStageClearanceDS && pose.getX() < kRedStageClearanceCenter) {
+            } else if (pose.getX() > kRedStageClearanceDs && pose.getX() < kRedStageClearanceCenter) {
                 return toAngle(kStageClearance);
             }
         }

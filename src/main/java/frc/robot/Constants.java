@@ -19,7 +19,6 @@ import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 import frc.util.AllianceFlipUtil;
 
-// TODO fix everything in this class besides the field constants
 public class Constants {
     public static final double kStickDeadband = 0.1;
     public static final String kCanbus = "fd";
@@ -90,12 +89,12 @@ public class Constants {
         public static final int kRedCenterTrapId = 13;
 
         /* stage constants */
-        public static final double kBlueStageClearanceDS = Units.inchesToMeters(188.5);
+        public static final double kBlueStageClearanceDs = Units.inchesToMeters(188.5);
         public static final double kBlueStageClearanceRight = Units.inchesToMeters(88.3);
         public static final double kBlueStageClearanceCenter = Units.inchesToMeters(243.2);
         public static final double kBlueStageClearanceLeft = Units.inchesToMeters(234.9);
 
-        public static final double kRedStageClearanceDS = Units.inchesToMeters(542.2);
+        public static final double kRedStageClearanceDs = Units.inchesToMeters(542.2);
         public static final double kRedStageClearanceRight = Units.inchesToMeters(88.3);
         public static final double kRedStageClearanceCenter = Units.inchesToMeters(407.9);
         public static final double kRedStageClearanceLeft = Units.inchesToMeters(234.9);
@@ -109,7 +108,7 @@ public class Constants {
             new PIDConstants(kPX),
             new PIDConstants(kPTheta),
             5,
-            Math.sqrt(Math.pow(Math.pow(10.3125, 2) + Math.pow(12.375, 2), 2)),
+            Math.hypot(10.3125, 12.375),
             new ReplanningConfig());
     }
 
@@ -130,15 +129,7 @@ public class Constants {
         public static final int kTiltId = 13;
 
         public static final class FlywheelSimK {
-            // ~THIS IS FOR A FALCON 500 IF THIS IS WRONG WE NEED TO REDO THIS SECTION
-            // public static final double kNominalVoltage = 12; // Volts
-            // public static final double kStallTorque = 4.69; // Newton Meters
-            // public static final double kStallCurrent = 257; // Amps
-            // public static final double kFreeCurrent = 1.5; // Amps
-            // public static final double kFreeSpeed = 668.1120369; // rad per sec
-
-            public static final double kGearRatio = 200; // TODO: find actual value (we asked build and they were
-                                                         // confused) lol???
+            public static final double kGearRatio = 200; // TODO: find actual value
 
             // TODO: find the real value
             public static final double kInterval = 0.020;
