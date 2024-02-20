@@ -12,8 +12,6 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
@@ -187,64 +185,6 @@ public class Aim extends SubsystemBase {
         return Commands.sequence(
             getTarget,
             toTarget);
-    }
-
-    public int getTrapId() {
-        double center;
-        double right;
-        double left;
-
-        if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(Alliance.Blue)) {
-            Translation3d centerTag = kFieldLayout.getTagPose(kBlueCenterTrapId).get().getTranslation();
-            Translation3d rightTag = kFieldLayout.getTagPose(kBlueRightTrapId).get().getTranslation();
-            Translation3d leftTag = kFieldLayout.getTagPose(kBlueLeftTrapId).get().getTranslation();
-
-            center = centerTag.getDistance(m_robotPoseSupplier.get().getTranslation());
-            right = rightTag.getDistance(m_robotPoseSupplier.get().getTranslation());
-            left = leftTag.getDistance(m_robotPoseSupplier.get().getTranslation());
-
-            if (center < right && center < left) {
-                return kBlueCenterTrapId;
-            } else if (right < center && right < left) {
-                return kBlueRightTrapId;
-            } else {
-                return kBlueLeftTrapId;
-            }
-        } else if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(Alliance.Red)) {
-            Translation3d centerTag = kFieldLayout.getTagPose(kRedCenterTrapId).get().getTranslation();
-            Translation3d rightTag = kFieldLayout.getTagPose(kRedRightTrapId).get().getTranslation();
-            Translation3d leftTag = kFieldLayout.getTagPose(kRedLeftTrapId).get().getTranslation();
-
-            center = centerTag.getDistance(m_robotPoseSupplier.get().getTranslation());
-            right = rightTag.getDistance(m_robotPoseSupplier.get().getTranslation());
-            left = leftTag.getDistance(m_robotPoseSupplier.get().getTranslation());
-
-            if (center < right && center < left) {
-                return kRedCenterTrapId;
-            } else if (right < center && right < left) {
-                return kRedRightTrapId;
-            } else {
-                return kRedLeftTrapId;
-            }
-        }
-        return 0;
-    }
-
-    public Command aimAtTrap() {
-        var getAngleCmd = run(() -> {
-            var translation = m_robotPoseSupplier.get();
-            int trapId = getTrapId();
-            if (trapId == 0) {
-                return; // or something like that i just don't want robot code to crash 😭
-            }
-            var poseToTrap = kFieldLayout.getTagPose(trapId).get().minus(translation);
-            m_targetAngle = Radians.of(Math.atan((poseToTrap.getZ()) / (poseToTrap.getX())));
-        });
-        var toAngleCmd = toAngle(m_targetAngle);
-
-        return Commands.repeatingSequence(
-            getAngleCmd,
-            toAngleCmd);
     }
 
     public Command stageMode() {
