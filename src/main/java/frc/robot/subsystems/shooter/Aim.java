@@ -34,6 +34,7 @@ import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.Rotations;
 import static frc.robot.Constants.AimK.*;
 import static frc.robot.Constants.FieldK.SpeakerK.*;
+import static frc.robot.Constants.RobotK.kSimInterval;
 import static frc.robot.Robot.*;
 
 import java.util.function.DoubleSupplier;
@@ -54,7 +55,7 @@ public class Aim extends SubsystemBase {
     private final MechanismRoot2d m_aimPivot = m_mech2d.getRoot("aimPivot", 30, 30);
     private final MechanismLigament2d m_aim2d = m_aimPivot.append(
         new MechanismLigament2d(
-            "aim2d",
+            "Aim2d",
             30,
             Units.radiansToDegrees(m_aimSim.getAngleRads()),
             10,
@@ -66,6 +67,7 @@ public class Aim extends SubsystemBase {
     private final DigitalInput m_home = new DigitalInput(kHomeSwitch);
     private final Trigger m_homeTrigger = new Trigger(m_home::get).negate();
 
+    // TODO check
     private final Trigger m_atStart = new Trigger(
         () -> m_aim.getPosition().getValueAsDouble() == Units.degreesToRotations(40));
 
@@ -80,7 +82,7 @@ public class Aim extends SubsystemBase {
         SmartDashboard.putData("Mech2d", m_mech2d);
 
         // TODO check this value
-        m_homeTrigger.onTrue(Commands.runOnce(() -> m_aim.setPosition(Units.degreesToRotations(30)))
+        m_homeTrigger.onTrue(Commands.runOnce(() -> m_aim.setPosition(kMinAngle.in(Rotations)))
             .ignoringDisable(true));
         m_atStart.onTrue(Commands.runOnce(() -> m_aim.setNeutralMode(NeutralModeValue.Brake))
             .ignoringDisable(true));
@@ -137,7 +139,11 @@ public class Aim extends SubsystemBase {
     public Command setAimTarget() {
         var translation = AllianceFlipUtil.apply(m_robotPoseSupplier.get().getTranslation());
         var poseToSpeaker = speakerPose.plus(translation);
-        return runOnce(() -> m_targetAngle = Radians.of(Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX()))));
+        return runOnce(() -> {
+            m_targetAngle = Radians.of(Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX())));
+            m_targetAngle = Degrees
+                .of(MathUtil.clamp(m_targetAngle.in(Degrees), kMinAngle.magnitude(), kMaxAngle.magnitude()));
+        });
     }
 
     /**
@@ -176,6 +182,8 @@ public class Aim extends SubsystemBase {
         var translation = m_robotPoseSupplier.get().getTranslation();
         var poseToAmp = m_ampPose.minus(translation);
         m_targetAngle = Radians.of(Math.atan((poseToAmp.getZ()) / (poseToAmp.getX())));
+        m_targetAngle = Degrees
+            .of(MathUtil.clamp(m_targetAngle.in(Degrees), kMinAngle.magnitude(), kMaxAngle.magnitude()));
     }
 
     /**
@@ -213,6 +221,6 @@ public class Aim extends SubsystemBase {
         SmartDashboard.putNumber("simAngle", angle);
         SmartDashboard.putNumber("targetAngle", m_targetAngle.in(Degrees));
 
-        m_aimSim.update(0.020);
+        m_aimSim.update(kSimInterval);
     }
 }

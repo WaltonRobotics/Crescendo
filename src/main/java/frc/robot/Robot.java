@@ -12,7 +12,6 @@ import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.DriveRequestType;
-import com.pathplanner.lib.auto.NamedCommands;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -21,6 +20,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -46,6 +46,7 @@ import frc.util.AllianceFlipUtil;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 
+import static frc.robot.Constants.IntakeK.kVisiSightId;
 import static frc.robot.Constants.RobotK.*;
 
 public class Robot extends TimedRobot {
@@ -56,12 +57,14 @@ public class Robot extends TimedRobot {
 	private final CommandXboxController driver = new CommandXboxController(0); // My joystick
 	private final CommandXboxController manipulator = new CommandXboxController(1);
 
+	private final DigitalInput frontVisiSight = new DigitalInput(kVisiSightId);
+
 	public final Swerve drivetrain = TunerConstants.Drivetrain;
 	public final Vision vision = new Vision(drivetrain::addVisionMeasurement);
 	public final Supplier<Pose3d> robotPoseSupplier = drivetrain::getPose3d;
 	public final Shooter shooter = new Shooter();
 	public final Aim aim = new Aim(robotPoseSupplier);
-	public final Intake intake = new Intake();
+	public final Intake intake = new Intake(frontVisiSight);
 	public final Climber climber = new Climber();
 	public final Conveyor conveyor = new Conveyor();
 
@@ -86,50 +89,7 @@ public class Robot extends TimedRobot {
 		addPeriodic(vision::run, 0.01);
 	}
 
-	private void registerCommands() {
-		NamedCommands.registerCommand("intake", intake.intake());
-		NamedCommands.registerCommand("shoot", shooter.spinUp());
-	}
-
-	private void configureBindings() {
-		drivetrain.setDefaultCommand(drivetrain.applyRequest(() -> {
-			double leftY = -driver.getLeftY();
-			double leftX = -driver.getLeftX();
-			return drive
-				.withVelocityX(leftY * maxSpeed)
-				.withVelocityY(leftX * maxSpeed)
-				.withRotationalRate(-driver.getRightX() * maxAngularRate);
-		}));
-		if (Utils.isSimulation()) {
-			drivetrain.seedFieldRelative(new Pose2d(new Translation2d(), Rotation2d.fromDegrees(90)));
-		}
-		drivetrain.registerTelemetry(logger::telemeterize);
-
-		driver.a().whileTrue(drivetrain.applyRequest(() -> brake));
-		driver.b().whileTrue(drivetrain
-			.applyRequest(
-				() -> point.withModuleDirection(new Rotation2d(-driver.getLeftY(), -driver.getLeftX()))));
-		driver.x().whileTrue(drivetrain.goToAutonPose());
-		// reset the field-centric heading on left bumper press
-		driver.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
-		driver.rightBumper().onTrue(drivetrain.resetPoseToSpeaker());
-		driver.rightTrigger().whileTrue(shooter.spinUp());
-
-		manipulator.x().onTrue(aim.goTo90());
-		manipulator.y().onTrue(aim.goTo30());
-		// climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
-		aim.setDefaultCommand(aim.teleop(() -> -manipulator.getLeftY()));
-		manipulator.rightBumper().whileTrue(intake.intake());
-		manipulator.leftBumper().whileTrue(conveyor.convey());
-		manipulator.rightTrigger().whileTrue(aim.aim()); // change to default cmd eventually
-
-		driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-		driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-		driver.start().and(driver.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-		driver.start().and(driver.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
-	}
-
-	public void mapAutonCommands() {
+	private void mapAutonCommands() {
 		AutonChooser.setDefaultAuton(AutonOption.DO_NOTHING);
 		AutonChooser.assignAutonCommand(AutonOption.DO_NOTHING, Commands.none());
 		AutonChooser.assignAutonCommand(AutonOption.ONE_METER, AutonFactory.oneMeter(drivetrain),
@@ -146,6 +106,49 @@ public class Robot extends TimedRobot {
 			Trajectories.fivePc.getInitialPose());
 	}
 
+	private void configureBindings() {
+		/* drivetrain */
+		if (Utils.isSimulation()) {
+			drivetrain.seedFieldRelative(new Pose2d(new Translation2d(), Rotation2d.fromDegrees(90)));
+		}
+		drivetrain.registerTelemetry(logger::telemeterize);
+
+		/* driver controls */
+		drivetrain.setDefaultCommand(drivetrain.applyRequest(() -> {
+			double leftY = -driver.getLeftY();
+			double leftX = -driver.getLeftX();
+			return drive
+				.withVelocityX(leftY * maxSpeed)
+				.withVelocityY(leftX * maxSpeed)
+				.withRotationalRate(-driver.getRightX() * maxAngularRate);
+		}));
+		driver.a().whileTrue(drivetrain.applyRequest(() -> brake));
+		driver.b().whileTrue(drivetrain
+			.applyRequest(
+				() -> point.withModuleDirection(new Rotation2d(-driver.getLeftY(), -driver.getLeftX()))));
+		driver.x().whileTrue(drivetrain.goToAutonPose());
+		driver.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
+		driver.rightBumper().onTrue(drivetrain.resetPoseToSpeaker());
+		driver.rightTrigger().whileTrue(shooter.spinUp());
+
+		/* sysid buttons */
+		driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
+		driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
+		driver.start().and(driver.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
+		driver.start().and(driver.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+
+		/* manipulator controls */
+		aim.setDefaultCommand(aim.teleop(() -> -manipulator.getLeftY()));
+		manipulator.rightBumper().whileTrue(intake.intake());
+		manipulator.leftBumper().whileTrue(conveyor.convey());
+		manipulator.rightTrigger().whileTrue(aim.aim()); // change to default cmd eventually
+		// climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
+
+		/* testing buttons */
+		manipulator.x().onTrue(aim.goTo90());
+		manipulator.y().onTrue(aim.goTo30());
+	}
+
 	private Command getAutonomousCommand() {
 		return AutonChooser.getChosenAutonCmd();
 	}
@@ -155,7 +158,6 @@ public class Robot extends TimedRobot {
 		SmartDashboard.putData(field2d);
 		speakerPose = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpening);
 		mapAutonCommands();
-		registerCommands();
 		configureBindings();
 		if (kTestMode) {
 			drivetrain.setTestMode();
@@ -228,6 +230,12 @@ public class Robot extends TimedRobot {
 	public void testExit() {
 	}
 
+	@Override
+	public void simulationPeriodic() {
+		getTrajLines();
+		simulateAim();
+	}
+
 	private void getTrajLines() {
 		var traj = AutonChooser.getChosenTrajectory();
 		var alliance = DriverStation.getAlliance();
@@ -241,21 +249,13 @@ public class Robot extends TimedRobot {
 	}
 
 	private void simulateAim() {
-		// TODO make better work good
 		var drivePose = drivetrain.getState().Pose;
 		var y = Inches.of(Math.sin(drivePose.getRotation().getRadians()));
-
 		var speakerPose2d = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpeningPose3d.toPose2d());
 		var endPose = drivePose
 			.plus(new Transform2d(new Translation2d(AimK.kLength.negate(), y), new Rotation2d()));
 		field2d.getObject("desAimPose").setPoses(drivePose, speakerPose2d);
 		field2d.getObject("aimPose").setPoses(drivePose, endPose);
 		field2d.getRobotObject().setPose(drivePose);
-	}
-
-	@Override
-	public void simulationPeriodic() {
-		getTrajLines();
-		simulateAim();
 	}
 }

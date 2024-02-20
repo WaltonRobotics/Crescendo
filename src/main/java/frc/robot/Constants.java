@@ -40,11 +40,6 @@ public class Constants {
         // taken from 6328. All in blue alliance origin.
         /* speaker constants */
         public static final class SpeakerK {
-            public static final int kRedSpeakerRightId = 3;
-            public static final int kRedSpeakerId = 4;
-            public static final int kBlueSpeakerRightId = 8;
-            public static final int kBlueSpeakerId = 7;
-
             private static final Measure<Distance> kTopX = Inches.of(18.055);
             private static final Measure<Distance> kTopZ = Inches.of(83.091);
             public static final Translation3d kTopRight = new Translation3d(
@@ -108,6 +103,7 @@ public class Constants {
     public class IntakeK {
         public static final int kIntakeId = 10;
         public static final int kFeederId = 11;
+        public static final int kVisiSightId = 0;
     }
 
     public class ConveyorK {
@@ -120,10 +116,6 @@ public class Constants {
 
         public static final class FlywheelSimK {
             public static final double kGearRatio = 200; // TODO: find actual value
-
-            // TODO: find the real value
-            public static final double kInterval = 0.020;
-
             public static final double kMoi = 0.056699046875; // kg meters^2
 
             // basically just how much faster the wheels have to spin for 1 meter more of
@@ -134,12 +126,12 @@ public class Constants {
 
     public class AimK {
         public static final int kAimId = 15;
-        public static final int kHomeSwitch = 0; // TODO check
+        public static final int kHomeSwitch = 1;
 
         public static final double kGearRatio = 200;
         public static final Measure<Distance> kLength = Inches.of(19.75);
-        public static final Measure<Angle> kStageClearance = Degrees.of(47.097); // asin((22 -
-        // kHeightTilShooter)/kLength)
+        // asin((22 - kHeightTilShooter) / kLength)
+        public static final Measure<Angle> kStageClearance = Degrees.of(47.097);
         public static final Measure<Angle> kMinAngle = Degrees.of(0);
         public static final Measure<Angle> kMaxAngle = Degrees.of(150);
 
@@ -155,7 +147,7 @@ public class Constants {
     public class ClimberK {
         public static final int kLeftId = 20;
         public static final int kRightId = 21;
-        public static final int kLimitSwitchId = 1;
+        public static final int kLimitSwitchId = 2;
 
         public static final Measure<Distance> kMetersPerRotation = Meters.of(0.3);
         public static final Measure<Distance> kMaxHeight = Inches.of(56);
@@ -164,7 +156,8 @@ public class Constants {
     }
 
     public class RobotK {
-        public static final double kHeightTilShooter = 7.533; // in inches ! height until the pivot point of shooter
+        public static final Measure<Distance> kHeightTilShooter = Inches.of(7.533);
         public static final boolean kTestMode = false;
+        public static final double kSimInterval = 0.020;
     }
 }

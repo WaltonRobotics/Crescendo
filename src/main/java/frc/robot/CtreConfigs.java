@@ -23,6 +23,6 @@ public class CtreConfigs {
         var motionMagicConfigs = m_aimConfigs.MotionMagic;
         motionMagicConfigs.MotionMagicCruiseVelocity = 0;
         motionMagicConfigs.MotionMagicExpo_kV = AimK.kV;
-        motionMagicConfigs.MotionMagicExpo_kA = 0.12;
+        motionMagicConfigs.MotionMagicExpo_kA = AimK.kA;
     }
 }
