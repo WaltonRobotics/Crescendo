@@ -146,6 +146,11 @@ public class Constants {
         public static final int kConveyorId = 14;
     }
 
+    public class IntakeK {
+        public static final int kIntakeId = 10;
+        public static final int kFeederId = 11;
+    }
+
     public class AimK {
         public static final int kAimId = 15;
         public static final int kCancoderId = 16;
