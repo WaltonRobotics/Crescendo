@@ -24,7 +24,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.CtreConfigs;
-import frc.robot.auton.AutonChooser;
 import frc.util.AllianceFlipUtil;
 
 import static frc.robot.Constants.FieldK.*;
@@ -66,7 +65,7 @@ public class Aim extends SubsystemBase {
     private final Trigger m_homeTrigger = new Trigger(m_home::get).negate();
 
     private final Trigger m_atStart = new Trigger(
-        () -> m_aim.getPosition().getValueAsDouble() == AutonChooser.getChosenAutonAimInit().in(Rotations));
+        () -> m_aim.getPosition().getValueAsDouble() == Units.degreesToRotations(40));
 
     public Aim(Supplier<Pose3d> robotPoseSupplier) {
         m_robotPoseSupplier = robotPoseSupplier;
@@ -79,7 +78,7 @@ public class Aim extends SubsystemBase {
         SmartDashboard.putData("Mech2d", m_mech2d);
 
         // TODO check this value
-        m_homeTrigger.onTrue(Commands.runOnce(() -> m_aim.setPosition(0))
+        m_homeTrigger.onTrue(Commands.runOnce(() -> m_aim.setPosition(Units.degreesToRotations(30)))
             .ignoringDisable(true));
         m_atStart.onTrue(Commands.runOnce(() -> m_aim.setNeutralMode(NeutralModeValue.Brake))
             .ignoringDisable(true));
