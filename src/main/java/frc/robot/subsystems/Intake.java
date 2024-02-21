@@ -17,7 +17,7 @@ public class Intake extends SubsystemBase {
     private final Trigger m_sightTrigger;
 
     public Intake(DigitalInput visiSight) {
-        m_feeder.follow(m_motor);
+        m_feeder.follow(m_motor, true);
         m_sightTrigger = new Trigger(visiSight::get);
         m_sightTrigger.whileTrue(intake()); // FIXME
     }
@@ -26,6 +26,16 @@ public class Intake extends SubsystemBase {
         return Commands.run(
             () -> {
                 m_motor.set(-1);
+            });
+    }
+
+    public Command runMotor() {
+        return runEnd(
+            () -> {
+                m_motor.set(0.7);
+            },
+            () -> {
+                m_motor.set(0);
             });
     }
 }

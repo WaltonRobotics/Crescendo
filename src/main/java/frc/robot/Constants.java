@@ -103,7 +103,7 @@ public class Constants {
     public class IntakeK {
         public static final int kIntakeId = 10;
         public static final int kFeederId = 11;
-        public static final int kVisiSightId = 0;
+        public static final int kVisiSightId = 2;
     }
 
     public class ConveyorK {
@@ -115,6 +115,8 @@ public class Constants {
         public static final int kLeftId = 14;
 
         public static final double kP = 3;
+
+        public static final double kSpinAmt = 0.8;
 
         public static final class FlywheelSimK {
             public static final double kGearRatio = 200; // TODO: find actual value
@@ -130,32 +132,35 @@ public class Constants {
         public static final int kAimId = 15;
         public static final int kHomeSwitch = 1;
 
-        public static final double kGearRatio = 200;
+        // 125:1 MaxPlanetary, 24:60 belt drive, 312.5:1 total
+        public static final double kGearRatio = (125 * (60 / 24));
+
         public static final Measure<Distance> kLength = Inches.of(19.75);
         // asin((22 - kHeightTilShooter) / kLength)
         public static final Measure<Angle> kStageClearance = Degrees.of(47.097);
-        public static final Measure<Angle> kMinAngle = Degrees.of(0);
+        public static final Measure<Angle> kMinAngle = Degrees.of(22.5);
+        public static final Measure<Angle> kInitAngle = Degrees.of(90);
         public static final Measure<Angle> kMaxAngle = Degrees.of(150);
 
         public static final double kS = 0.89;
         public static final double kV = 22.57; // V * s / rot
         public static final double kA = 0.12; // V * s^2 / rot
-        public static final double kP = 100; // idk
+        public static final double kP = 30; // idk
         public static final double kG = 0.37;
         public static final double kAcceleration = 160;
 
     }
 
-    public class ClimberK {
-        public static final int kLeftId = 20;
-        public static final int kRightId = 21;
-        public static final int kLimitSwitchId = 2;
+    // public class ClimberK {
+    // public static final int kLeftId = 20;
+    // public static final int kRightId = 21;
+    // public static final int kLimitSwitchId = 2;
 
-        public static final Measure<Distance> kMetersPerRotation = Meters.of(0.3);
-        public static final Measure<Distance> kMaxHeight = Inches.of(56);
+    // public static final Measure<Distance> kMetersPerRotation = Meters.of(0.3);
+    // public static final Measure<Distance> kMaxHeight = Inches.of(56);
 
-        public static final double kP = 3.25;
-    }
+    // public static final double kP = 3.25;
+    // }
 
     public class RobotK {
         public static final Measure<Distance> kHeightTilShooter = Inches.of(7.533);

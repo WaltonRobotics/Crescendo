@@ -32,6 +32,7 @@ import static frc.robot.Constants.FieldK.*;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.Rotations;
+import static frc.robot.Constants.kCanbus;
 import static frc.robot.Constants.AimK.*;
 import static frc.robot.Constants.FieldK.SpeakerK.*;
 import static frc.robot.Constants.RobotK.kSimInterval;
@@ -43,7 +44,7 @@ import java.util.function.Supplier;
 public class Aim extends SubsystemBase {
     private final Supplier<Pose3d> m_robotPoseSupplier;
 
-    private final TalonFX m_aim = new TalonFX(kAimId);
+    private final TalonFX m_motor = new TalonFX(kAimId, kCanbus);
     private final MotionMagicExpoVoltage m_request = new MotionMagicExpoVoltage(0);
 
     private final DCMotor m_aimGearbox = DCMotor.getFalcon500(1);
@@ -67,35 +68,40 @@ public class Aim extends SubsystemBase {
     private final DigitalInput m_home = new DigitalInput(kHomeSwitch);
     private final Trigger m_homeTrigger = new Trigger(m_home::get).negate();
 
+    private boolean m_isCoast;
+
     // TODO check
-    private final Trigger m_atStart = new Trigger(
-        () -> m_aim.getPosition().getValueAsDouble() == Units.degreesToRotations(40));
+    // private final Trigger m_atStart = new Trigger(
+    // () -> m_motor.getPosition().getValueAsDouble() ==
+    // Units.degreesToRotations(40));
 
     public Aim(Supplier<Pose3d> robotPoseSupplier) {
         m_robotPoseSupplier = robotPoseSupplier;
-
+        SmartDashboard.putBoolean("shooterCoast", m_isCoast);
         CtreConfigs configs = CtreConfigs.get();
-        m_aim.getConfigurator().apply(configs.m_aimConfigs);
+        m_motor.getConfigurator().apply(configs.m_aimConfigs);
 
-        m_targetAngle = Degrees.of(0);
+        m_targetAngle = Degrees.of(180 - 0);
 
         SmartDashboard.putData("Mech2d", m_mech2d);
 
         // TODO check this value
-        m_homeTrigger.onTrue(Commands.runOnce(() -> m_aim.setPosition(kMinAngle.in(Rotations)))
+        m_homeTrigger.onTrue(Commands.runOnce(() -> m_motor.setPosition(kInitAngle.in(Rotations)))
             .ignoringDisable(true));
-        m_atStart.onTrue(Commands.runOnce(() -> m_aim.setNeutralMode(NeutralModeValue.Brake))
-            .ignoringDisable(true));
+        // m_atStart.onTrue(Commands.runOnce(() ->
+        // m_motor.setNeutralMode(NeutralModeValue.Brake))
+        // .ignoringDisable(true));
+
     }
 
     private Command toAngle(Measure<Angle> angle) {
         return run(() -> {
-            m_aim.setControl(m_request.withPosition(angle.in(Rotations)));
+            m_motor.setControl(m_request.withPosition(angle.in(Rotations)));
         });
     }
 
     public void setCoast(boolean coast) {
-        m_aim.setNeutralMode(coast ? NeutralModeValue.Coast : NeutralModeValue.Brake);
+        m_motor.setNeutralMode(coast ? NeutralModeValue.Coast : NeutralModeValue.Brake);
     }
 
     public Command teleop(DoubleSupplier power) {
@@ -105,18 +111,20 @@ public class Aim extends SubsystemBase {
             m_targetAngle = Degrees
                 .of(MathUtil.clamp(m_targetAngle.magnitude(), kMinAngle.magnitude(), kMaxAngle.magnitude()));
 
-            m_aim.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
-
-            stageMode();
-
-            SmartDashboard.putNumber("aimSpeed", m_aim.get());
-            SmartDashboard.putNumber("aimPos",
-                Units.rotationsToDegrees(m_aim.getPosition().getValueAsDouble()));
+            m_motor.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
         });
+    }
+
+    public Command runMotor() {
+        return runEnd(() -> m_motor.set(0.25), () -> m_motor.set(0));
     }
 
     public Command aim() {
         return setAimTarget().andThen(toTarget()).repeatedly();
+    }
+
+    public Command stop() {
+        return run(() -> m_motor.set(0));
     }
 
     public Command goTo90() {
@@ -131,6 +139,10 @@ public class Aim extends SubsystemBase {
 
     public Command toTarget() {
         return toAngle(m_targetAngle);
+    }
+
+    public Command beAt90() {
+        return runOnce(() -> m_motor.setPosition(Units.degreesToRotations(90)));
     }
 
     /**
@@ -178,6 +190,10 @@ public class Aim extends SubsystemBase {
         return Commands.none();
     }
 
+    public void clearTarget() {
+        m_targetAngle = Rotations.of(m_motor.getPosition().getValueAsDouble());
+    }
+
     public void aimAtAmp() {
         var translation = m_robotPoseSupplier.get().getTranslation();
         var poseToAmp = m_ampPose.minus(translation);
@@ -203,18 +219,32 @@ public class Aim extends SubsystemBase {
         return Commands.none();
     }
 
+    @Override
+    public void periodic() {
+        SmartDashboard.putNumber("aimSpeed", m_motor.get());
+        SmartDashboard.putNumber("aimPos",
+            Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()));
+
+        boolean dashCoast = SmartDashboard.getBoolean("shooterCoast", false);
+        if (dashCoast != m_isCoast) {
+            m_isCoast = dashCoast;
+            setCoast(m_isCoast);
+        }
+    }
+
+    @Override
     public void simulationPeriodic() {
-        m_aim.getSimState().setSupplyVoltage(12);
-        var volts = m_aim.getSimState().getMotorVoltage();
+        m_motor.getSimState().setSupplyVoltage(12);
+        var volts = m_motor.getSimState().getMotorVoltage();
         m_aimSim.setInputVoltage(volts);
 
         double angle = Units.radiansToRotations(m_aimSim.getAngleRads());
         double velocity = Units.radiansToRotations(m_aimSim.getVelocityRadPerSec());
-        m_aim.getSimState().setRawRotorPosition(angle);
-        m_aim.getSimState().setRotorVelocity(velocity);
+        m_motor.getSimState().setRawRotorPosition(angle);
+        m_motor.getSimState().setRotorVelocity(velocity);
 
         m_aim2d.setAngle(Units.rotationsToDegrees(
-            m_aim.getPosition().getValueAsDouble())); // TODO: make this render correctly with the real robot too
+            m_motor.getPosition().getValueAsDouble())); // TODO: make this render correctly with the real robot too
 
         SmartDashboard.putNumber("simVoltage", volts);
         SmartDashboard.putNumber("simVelo", m_aimSim.getVelocityRadPerSec());

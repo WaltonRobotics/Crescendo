@@ -1,10 +1,9 @@
 package frc.robot.subsystems.shooter;
 
 import static frc.robot.Constants.RobotK.kSimInterval;
-import static frc.robot.Constants.ShooterK.kLeftId;
-import static frc.robot.Constants.ShooterK.kRightId;
+import static frc.robot.Constants.ShooterK.*;
 
-import com.ctre.phoenix6.controls.VelocityDutyCycle;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.math.MathUtil;
@@ -28,6 +27,7 @@ import static frc.robot.Constants.ShooterK.FlywheelSimK.*;
 import static edu.wpi.first.units.Units.Minute;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static frc.robot.Constants.kCanbus;
 import static frc.robot.Constants.kStickDeadband;
 import static frc.robot.Robot.*;
 
@@ -35,9 +35,11 @@ import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public class Shooter extends SubsystemBase {
-    private final TalonFX m_left = new TalonFX(kLeftId);
-    private final TalonFX m_right = new TalonFX(kRightId);
-    private final VelocityDutyCycle m_request = new VelocityDutyCycle(0);
+    private final TalonFX m_left = new TalonFX(kLeftId, kCanbus);
+    private final TalonFX m_right = new TalonFX(kRightId, kCanbus);
+    private final VelocityVoltage m_request = new VelocityVoltage(0);
+
+    // beam break on port 0
 
     private double m_targetRpm;
 
@@ -55,8 +57,10 @@ public class Shooter extends SubsystemBase {
         m_targetRpm = 1000;
 
         CtreConfigs configs = CtreConfigs.get();
-        m_left.getConfigurator().apply(configs.m_shooterConfigs);
-        m_right.getConfigurator().apply(configs.m_shooterConfigs);
+        m_left.getConfigurator().apply(configs.m_leftShooterConfigs);
+        m_right.getConfigurator().apply(configs.m_leftShooterConfigs);
+
+        m_left.setInverted(true);
     }
 
     // TODO check the numbers for all of this they're just dummy values for now
@@ -65,7 +69,7 @@ public class Shooter extends SubsystemBase {
             m_targetVelo = velo;
         });
         var toTargetCmd = run(() -> {
-            m_right.setControl(m_request.withVelocity(m_targetVelo.in(RotationsPerSecond)));
+            m_right.setControl(m_request.withVelocity(m_targetVelo.in(RotationsPerSecond) * kSpinAmt));
             m_left.setControl(m_request.withVelocity(m_targetVelo.in(RotationsPerSecond)));
         });
         return setTargetCmd.andThen(toTargetCmd);
@@ -83,6 +87,21 @@ public class Shooter extends SubsystemBase {
 
     public Command slowShot() {
         return toVelo(Rotations.per(Minute).of(500));
+    }
+
+    private void rawRun(double dutyCycle) {
+        m_left.set(dutyCycle * 0.8);
+        m_right.set(dutyCycle);
+    }
+
+    public Command runMotors() {
+        return runEnd(() -> {
+            rawRun(0.5);
+        },
+            () -> {
+                m_left.set(0);
+                m_right.set(0);
+            });
     }
 
     // idk i just wrote a couple methods cuz they might be able to be used but i'm
@@ -121,6 +140,7 @@ public class Shooter extends SubsystemBase {
     public void periodic() {
         // will change the value when testing
         shotTime = SmartDashboard.getNumber("shotTime", 1.5);
+
     }
 
     public void simulationPeriodic() {

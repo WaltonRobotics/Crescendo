@@ -6,7 +6,7 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.Inches;
 
-import java.util.function.Supplier;
+import org.photonvision.PhotonCamera;
 
 import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.SignalLogger;
@@ -43,11 +43,13 @@ import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.util.AllianceFlipUtil;
-import frc.robot.subsystems.Climber;
+// import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 
 import static frc.robot.Constants.IntakeK.kVisiSightId;
 import static frc.robot.Constants.RobotK.*;
+
+import java.util.function.Supplier;
 
 public class Robot extends TimedRobot {
 	public static final double maxSpeed = 5; // 5 meters per second desired top speed
@@ -65,8 +67,9 @@ public class Robot extends TimedRobot {
 	public final Shooter shooter = new Shooter();
 	public final Aim aim = new Aim(robotPoseSupplier);
 	public final Intake intake = new Intake(frontVisiSight);
-	public final Climber climber = new Climber();
 	public final Conveyor conveyor = new Conveyor();
+
+	public final Superstructure superstructure = new Superstructure(aim, intake, conveyor);
 
 	public static Translation3d speakerPose;
 
@@ -82,6 +85,8 @@ public class Robot extends TimedRobot {
 	private Command m_autonomousCommand;
 
 	public Robot() {
+		DriverStation.silenceJoystickConnectionWarning(true);
+		PhotonCamera.setVersionCheckEnabled(false);
 		// disable joystick not found warnings when in sim
 		if (Robot.isSimulation()) {
 			DriverStation.silenceJoystickConnectionWarning(true);
@@ -138,15 +143,20 @@ public class Robot extends TimedRobot {
 		driver.start().and(driver.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
 		/* manipulator controls */
-		aim.setDefaultCommand(aim.teleop(() -> -manipulator.getLeftY()));
-		manipulator.rightBumper().whileTrue(intake.intake());
-		manipulator.leftBumper().whileTrue(conveyor.convey());
-		manipulator.rightTrigger().whileTrue(aim.aim()); // change to default cmd eventually
+		// aim.setDefaultCommand(aim.teleop(() -> -manipulator.getLeftY()));
+		// manipulator.rightBumper().whileTrue(intake.intake());
+		// manipulator.leftBumper().whileTrue(conveyor.convey());
+		// manipulator.rightTrigger().whileTrue(aim.aim()); // change to default cmd
+		// eventually
 		// climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
 
 		/* testing buttons */
-		manipulator.x().onTrue(aim.goTo90());
-		manipulator.y().onTrue(aim.goTo30());
+		manipulator.x().whileTrue(shooter.runMotors());
+		manipulator.y().whileTrue(intake.runMotor());
+		manipulator.a().whileTrue(conveyor.convey());
+		manipulator.leftBumper().whileTrue(aim.goTo90()).onFalse(aim.stop());
+		manipulator.rightBumper().whileTrue(aim.goTo30()).onFalse(aim.stop());
+		manipulator.leftTrigger().onTrue(aim.beAt90());
 	}
 
 	private Command getAutonomousCommand() {
@@ -167,13 +177,13 @@ public class Robot extends TimedRobot {
 	@Override
 	public void robotPeriodic() {
 		CommandScheduler.getInstance().run();
-		drivetrain.logModulePositions();
+		// drivetrain.logModulePositions();
 	}
 
 	@Override
 	public void disabledInit() {
 		SignalLogger.stop();
-		aim.setCoast(true);
+		aim.clearTarget();
 	}
 
 	@Override
