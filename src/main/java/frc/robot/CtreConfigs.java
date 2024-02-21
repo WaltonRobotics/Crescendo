@@ -15,7 +15,7 @@ public class CtreConfigs {
     }
 
     public final TalonFXConfiguration m_aimConfigs = new TalonFXConfiguration();
-    public final TalonFXConfiguration m_leftShooterConfigs = new TalonFXConfiguration();
+    public final TalonFXConfiguration m_shooterConfigs = new TalonFXConfiguration();
     public final TalonFXConfiguration m_rightShooterConfigs = new TalonFXConfiguration();
 
     public CtreConfigs() {
@@ -43,14 +43,9 @@ public class CtreConfigs {
         motionMagicConfigs.MotionMagicExpo_kV = AimK.kV;
         motionMagicConfigs.MotionMagicExpo_kA = AimK.kA;
 
-        var shooterSlot0Configs = m_leftShooterConfigs.Slot0;
+        var shooterSlot0Configs = m_shooterConfigs.Slot0;
         shooterSlot0Configs.kP = ShooterK.kP;
         shooterSlot0Configs.kI = 0;
         shooterSlot0Configs.kD = 0;
-
-        var rightShooterSlot0Configs = m_rightShooterConfigs.Slot0;
-        rightShooterSlot0Configs.kP = ShooterK.kP;
-        rightShooterSlot0Configs.kI = 0;
-        rightShooterSlot0Configs.kD = 0;
     }
 }

@@ -29,7 +29,7 @@ public class Intake extends SubsystemBase {
             });
     }
 
-    public Command runMotor() {
+    public Command run() {
         return runEnd(
             () -> {
                 m_motor.set(0.7);

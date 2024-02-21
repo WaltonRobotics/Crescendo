@@ -21,7 +21,7 @@ public class Conveyor extends SubsystemBase {
         m_conveyor.setInverted(true);
     }
 
-    public Command convey() {
+    public Command run() {
         return runEnd(() -> {
             m_conveyor.set(0.35);
         },

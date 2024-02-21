@@ -1,5 +1,6 @@
 package frc.robot.subsystems.shooter;
 
+import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -46,6 +47,7 @@ public class Aim extends SubsystemBase {
 
     private final TalonFX m_motor = new TalonFX(kAimId, kCanbus);
     private final MotionMagicExpoVoltage m_request = new MotionMagicExpoVoltage(0);
+    private final DutyCycleOut m_dutyCycleRequest = new DutyCycleOut(0);
 
     private final DCMotor m_aimGearbox = DCMotor.getFalcon500(1);
     private final SingleJointedArmSim m_aimSim = new SingleJointedArmSim(
@@ -101,6 +103,7 @@ public class Aim extends SubsystemBase {
     }
 
     public void setCoast(boolean coast) {
+        m_isCoast = coast;
         m_motor.setNeutralMode(coast ? NeutralModeValue.Coast : NeutralModeValue.Brake);
     }
 
@@ -132,9 +135,13 @@ public class Aim extends SubsystemBase {
         return setTargetCmd.andThen(toTarget());
     }
 
-    public Command goTo30() {
-        var setTargetCmd = runOnce(() -> m_targetAngle = Degrees.of(30));
-        return setTargetCmd.andThen(toTarget());
+    // TODO make not duty cycle
+    public Command run() {
+        return runEnd(() -> {
+            m_motor.setControl(m_dutyCycleRequest.withOutput(0.25));
+        }, () -> {
+            m_motor.setControl(m_dutyCycleRequest.withOutput(0));
+        });
     }
 
     public Command toTarget() {

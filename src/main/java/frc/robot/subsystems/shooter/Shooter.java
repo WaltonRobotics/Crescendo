@@ -57,8 +57,8 @@ public class Shooter extends SubsystemBase {
         m_targetRpm = 1000;
 
         CtreConfigs configs = CtreConfigs.get();
-        m_left.getConfigurator().apply(configs.m_leftShooterConfigs);
-        m_right.getConfigurator().apply(configs.m_leftShooterConfigs);
+        m_left.getConfigurator().apply(configs.m_shooterConfigs);
+        m_right.getConfigurator().apply(configs.m_shooterConfigs);
 
         m_left.setInverted(true);
     }
@@ -85,6 +85,10 @@ public class Shooter extends SubsystemBase {
             .until(() -> m_flywheelSim.getAngularVelocityRPM() >= m_targetRpm);
     }
 
+    public boolean spinUpFinished() {
+        return false; // TODO add proper implementation
+    }
+
     public Command slowShot() {
         return toVelo(Rotations.per(Minute).of(500));
     }
@@ -94,7 +98,7 @@ public class Shooter extends SubsystemBase {
         m_right.set(dutyCycle);
     }
 
-    public Command runMotors() {
+    public Command run() {
         return runEnd(() -> {
             rawRun(0.5);
         },

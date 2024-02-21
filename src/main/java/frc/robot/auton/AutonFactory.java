@@ -133,7 +133,7 @@ public final class AutonFactory {
 	}
 
 	private static Command intakeShotCycle(Intake intake, Conveyor conveyor, Shooter shooter) {
-		var conveyCmd = conveyor.convey().withTimeout(conveyorTimeout).asProxy();
+		var conveyCmd = conveyor.run().withTimeout(conveyorTimeout).asProxy();
 		var spinUpCmd = shooter.spinUp().withTimeout(spinUpTimeout).asProxy();
 		var shootCmd = shooter.shoot().withTimeout(shooterTimeout).asProxy();
 		var spinUpAndShoot = Commands.sequence(spinUpCmd, shootCmd).asProxy();

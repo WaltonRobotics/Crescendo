@@ -30,7 +30,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+// import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.AimK;
 import frc.robot.Constants.FieldK.SpeakerK;
 import frc.robot.auton.AutonChooser;
@@ -45,6 +45,7 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.util.AllianceFlipUtil;
 // import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.Superstructure;
 
 import static frc.robot.Constants.IntakeK.kVisiSightId;
 import static frc.robot.Constants.RobotK.*;
@@ -61,7 +62,7 @@ public class Robot extends TimedRobot {
 
 	private final DigitalInput frontVisiSight = new DigitalInput(kVisiSightId);
 
-	public final Swerve drivetrain = TunerConstants.Drivetrain;
+	public final Swerve drivetrain = TunerConstants.drivetrain;
 	public final Vision vision = new Vision(drivetrain::addVisionMeasurement);
 	public final Supplier<Pose3d> robotPoseSupplier = drivetrain::getPose3d;
 	public final Shooter shooter = new Shooter();
@@ -69,7 +70,7 @@ public class Robot extends TimedRobot {
 	public final Intake intake = new Intake(frontVisiSight);
 	public final Conveyor conveyor = new Conveyor();
 
-	public final Superstructure superstructure = new Superstructure(aim, intake, conveyor);
+	public final Superstructure superstructure = new Superstructure(aim, intake, conveyor, shooter);
 
 	public static Translation3d speakerPose;
 
@@ -119,28 +120,30 @@ public class Robot extends TimedRobot {
 		drivetrain.registerTelemetry(logger::telemeterize);
 
 		/* driver controls */
-		drivetrain.setDefaultCommand(drivetrain.applyRequest(() -> {
-			double leftY = -driver.getLeftY();
-			double leftX = -driver.getLeftX();
-			return drive
-				.withVelocityX(leftY * maxSpeed)
-				.withVelocityY(leftX * maxSpeed)
-				.withRotationalRate(-driver.getRightX() * maxAngularRate);
-		}));
-		driver.a().whileTrue(drivetrain.applyRequest(() -> brake));
-		driver.b().whileTrue(drivetrain
-			.applyRequest(
-				() -> point.withModuleDirection(new Rotation2d(-driver.getLeftY(), -driver.getLeftX()))));
-		driver.x().whileTrue(drivetrain.goToAutonPose());
-		driver.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
-		driver.rightBumper().onTrue(drivetrain.resetPoseToSpeaker());
-		driver.rightTrigger().whileTrue(shooter.spinUp());
+		// drivetrain.setDefaultCommand(drivetrain.applyRequest(() -> {
+		// double leftY = -driver.getLeftY();
+		// double leftX = -driver.getLeftX();
+		// return drive
+		// .withVelocityX(leftY * maxSpeed)
+		// .withVelocityY(leftX * maxSpeed)
+		// .withRotationalRate(-driver.getRightX() * maxAngularRate);
+		// }));
+		// driver.a().whileTrue(drivetrain.applyRequest(() -> brake));
+		// driver.b().whileTrue(drivetrain
+		// .applyRequest(
+		// () -> point.withModuleDirection(new Rotation2d(-driver.getLeftY(),
+		// -driver.getLeftX()))));
+		// driver.x().whileTrue(drivetrain.goToAutonPose());
+		// driver.leftBumper().onTrue(drivetrain.runOnce(() ->
+		// drivetrain.seedFieldRelative()));
+		// driver.rightBumper().onTrue(drivetrain.resetPoseToSpeaker());
+		// driver.rightTrigger().whileTrue(shooter.spinUp());
 
 		/* sysid buttons */
-		driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-		driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-		driver.start().and(driver.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-		driver.start().and(driver.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+		// driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
+		// driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
+		// driver.start().and(driver.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
+		// driver.start().and(driver.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
 		/* manipulator controls */
 		// aim.setDefaultCommand(aim.teleop(() -> -manipulator.getLeftY()));
@@ -151,11 +154,10 @@ public class Robot extends TimedRobot {
 		// climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
 
 		/* testing buttons */
-		manipulator.x().whileTrue(shooter.runMotors());
-		manipulator.y().whileTrue(intake.runMotor());
-		manipulator.a().whileTrue(conveyor.convey());
-		manipulator.leftBumper().whileTrue(aim.goTo90()).onFalse(aim.stop());
-		manipulator.rightBumper().whileTrue(aim.goTo30()).onFalse(aim.stop());
+		manipulator.x().whileTrue(shooter.run());
+		manipulator.y().whileTrue(intake.run());
+		manipulator.a().whileTrue(conveyor.run());
+		manipulator.rightBumper().whileTrue(aim.run());
 		manipulator.leftTrigger().onTrue(aim.beAt90());
 	}
 
@@ -183,7 +185,7 @@ public class Robot extends TimedRobot {
 	@Override
 	public void disabledInit() {
 		SignalLogger.stop();
-		aim.clearTarget();
+		aim.stop();
 	}
 
 	@Override
