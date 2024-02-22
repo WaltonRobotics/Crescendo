@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.CtreConfigs;
+import frc.util.LoggedTunableNumber;
 
 import static frc.robot.Constants.ShooterK.FlywheelSimK.*;
 import static edu.wpi.first.units.Units.Minute;
@@ -45,7 +46,11 @@ public class Shooter extends SubsystemBase {
     private final VelocityVoltage m_request = new VelocityVoltage(0);
     private final VoltageOut m_voltage = new VoltageOut(0);
 
+    private LoggedTunableNumber m_tunableRpm = new LoggedTunableNumber("targetRpm", 1000);
+    private LoggedTunableNumber m_tunableSpin = new LoggedTunableNumber("spin", kSpinAmt);
+
     private double m_targetRpm;
+    private double m_spinAmt;
 
     private double time = 0;
     private boolean found = false;
@@ -56,13 +61,14 @@ public class Shooter extends SubsystemBase {
     private double shotTime;
 
     private final SysIdRoutine m_sysId = new SysIdRoutine(
-        new SysIdRoutine.Config(),
+        new SysIdRoutine.Config(null,
+            Volts.of(7),
+            null,
+            (state) -> SignalLogger.writeString("state", state.toString())),
         new SysIdRoutine.Mechanism((Measure<Voltage> volts) -> {
             m_left.setControl(m_voltage.withOutput(volts.in(Volts)));
             m_right.setControl(m_voltage.withOutput(volts.in(Volts)));
-        }, (state) -> {
-            SignalLogger.writeString("shooter", state.toString());
-        }, this));
+        }, null, this));
 
     public Shooter() {
         SmartDashboard.putNumber("shotTime", 1.5);
@@ -107,7 +113,7 @@ public class Shooter extends SubsystemBase {
     }
 
     private void rawRun(double dutyCycle) {
-        m_left.set(dutyCycle * kSpinAmt);
+        m_left.set(dutyCycle * m_spinAmt);
         m_right.set(dutyCycle);
     }
 
@@ -157,7 +163,8 @@ public class Shooter extends SubsystemBase {
     public void periodic() {
         // will change the value when testing
         shotTime = SmartDashboard.getNumber("shotTime", 1.5);
-
+        m_targetRpm = m_tunableRpm.get();
+        m_spinAmt = m_tunableSpin.get();
     }
 
     public void simulationPeriodic() {
