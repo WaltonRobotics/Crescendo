@@ -47,5 +47,7 @@ public class CtreConfigs {
         shooterSlot0Configs.kP = ShooterK.kP;
         shooterSlot0Configs.kI = 0;
         shooterSlot0Configs.kD = 0;
+
+        m_shooterConfigs.Feedback = m_shooterConfigs.Feedback.withSensorToMechanismRatio(ShooterK.kGearRatio);
     }
 }

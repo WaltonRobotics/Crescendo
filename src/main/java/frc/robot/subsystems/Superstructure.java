@@ -19,10 +19,17 @@ public class Superstructure {
         m_shooter = shooter;
     }
 
+    public Command intake() {
+        var intakeCmd = m_intake.run();
+        var conveyorCmd = m_conveyor.run(false);
+
+        return Commands.race(intakeCmd, conveyorCmd);
+    }
+
     public Command intakeShotCycle() {
         var aimCmd = m_aim.toTarget();
-        var intakeCmd = m_intake.intake();
-        var conveyorCmd = m_conveyor.run();
+        var intakeCmd = m_intake.outtake();
+        var conveyorCmd = m_conveyor.run(false);
         var shooterCmd = m_shooter.shoot();
 
         return Commands.parallel(
@@ -35,9 +42,21 @@ public class Superstructure {
                     conveyorCmd)));
     }
 
+    public Command shoot() {
+        var shootCmd = m_shooter.run();
+        var conveyorCmd = m_conveyor.run(true);
+
+        return Commands.parallel(
+            shootCmd,
+            Commands.sequence(
+                // TODO make this work correctly
+                Commands.waitSeconds(0.25),
+                conveyorCmd));
+    }
+
     public Command aimAndShoot() {
         var aimCmd = m_aim.toTarget();
-        var conveyorCmd = m_conveyor.run();
+        var conveyorCmd = m_conveyor.run(false);
         var shooterCmd = m_shooter.shoot();
 
         return Commands.parallel(

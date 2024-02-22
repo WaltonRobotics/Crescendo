@@ -59,10 +59,10 @@ public final class AutonFactory {
 		var pathCmd = AutoBuilder.followPath(fourPc);
 		var shootCmd1 = shooter.spinUp().withTimeout(shooterTimeout).asProxy();
 		var aimCmd2 = aim.setAimTarget().asProxy();
-		var intakeCmd1 = intake.intake().withTimeout(intakeTimeout).asProxy();
+		var intakeCmd1 = intake.outtake().withTimeout(intakeTimeout).asProxy();
 		var aimCmd3 = aim.setAimTarget().asProxy();
 		var shootCmd2 = shooter.spinUp().withTimeout(shooterTimeout).asProxy();
-		var intakeCmd2 = intake.intake().withTimeout(intakeTimeout).asProxy();
+		var intakeCmd2 = intake.outtake().withTimeout(intakeTimeout).asProxy();
 		var aimCmd4 = aim.setAimTarget().asProxy();
 		var shootCmd3 = shooter.spinUp().withTimeout(shooterTimeout).asProxy();
 
@@ -100,7 +100,7 @@ public final class AutonFactory {
 		var aimCmd3 = aim.setAimTarget().asProxy();
 		var aimCmd4 = aim.setAimTarget().asProxy();
 		var shootCmd = shooter.shoot().withTimeout(shooterTimeout).asProxy();
-		var finalIntake = intake.intake().withTimeout(intakeTimeout).asProxy();
+		var finalIntake = intake.outtake().withTimeout(intakeTimeout).asProxy();
 		var aimCmd5 = aim.setAimTarget().asProxy();
 		var finalShot = shooter.spinUp().withTimeout(shooterTimeout).asProxy();
 
@@ -133,11 +133,11 @@ public final class AutonFactory {
 	}
 
 	private static Command intakeShotCycle(Intake intake, Conveyor conveyor, Shooter shooter) {
-		var conveyCmd = conveyor.run().withTimeout(conveyorTimeout).asProxy();
+		var conveyCmd = conveyor.run(false).withTimeout(conveyorTimeout).asProxy();
 		var spinUpCmd = shooter.spinUp().withTimeout(spinUpTimeout).asProxy();
 		var shootCmd = shooter.shoot().withTimeout(shooterTimeout).asProxy();
 		var spinUpAndShoot = Commands.sequence(spinUpCmd, shootCmd).asProxy();
-		var intakeCmd = intake.intake().withTimeout(intakeTimeout).asProxy();
+		var intakeCmd = intake.outtake().withTimeout(intakeTimeout).asProxy();
 		return Commands.parallel(conveyCmd, intakeCmd, spinUpAndShoot);
 	}
 }

@@ -20,6 +20,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -30,6 +31,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 // import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.AimK;
 import frc.robot.Constants.FieldK.SpeakerK;
@@ -53,8 +55,8 @@ import static frc.robot.Constants.RobotK.*;
 import java.util.function.Supplier;
 
 public class Robot extends TimedRobot {
-	public static final double maxSpeed = 5; // 5 meters per second desired top speed
-	public static final double maxAngularRate = 1.5 * Math.PI; // 3/4 of a rotation per second max angular velocity
+	public static final double kMaxSpeed = 5; // 5 meters per second desired top speed
+	public static final double kMaxAngularRate = 1.5 * Math.PI; // 3/4 of a rotation per second max angular velocity
 
 	/* Setting up bindings for necessary control of the swerve drive platform */
 	private final CommandXboxController driver = new CommandXboxController(0); // My joystick
@@ -77,11 +79,12 @@ public class Robot extends TimedRobot {
 	public static final Field2d field2d = new Field2d();
 
 	private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-		.withDeadband(maxSpeed * 0.1).withRotationalDeadband(maxAngularRate * 0.1) // Add a 10% deadband
-		.withDriveRequestType(DriveRequestType.Velocity); // I want field-centric driving in open loop
+		.withDeadband(kMaxSpeed * 0.1).withRotationalDeadband(kMaxAngularRate * 0.1) // Add a 10% deadband
+		.withDriveRequestType(DriveRequestType.OpenLoopVoltage)
+		.withCenterOfRotation(new Translation2d(Units.inchesToMeters(2), 0));
 	private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
 	private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
-	private final Telemetry logger = new Telemetry(maxSpeed);
+	private final Telemetry logger = new Telemetry(kMaxSpeed);
 
 	private Command m_autonomousCommand;
 
@@ -120,24 +123,27 @@ public class Robot extends TimedRobot {
 		drivetrain.registerTelemetry(logger::telemeterize);
 
 		/* driver controls */
-		// drivetrain.setDefaultCommand(drivetrain.applyRequest(() -> {
-		// double leftY = -driver.getLeftY();
-		// double leftX = -driver.getLeftX();
-		// return drive
-		// .withVelocityX(leftY * maxSpeed)
-		// .withVelocityY(leftX * maxSpeed)
-		// .withRotationalRate(-driver.getRightX() * maxAngularRate);
-		// }));
-		// driver.a().whileTrue(drivetrain.applyRequest(() -> brake));
-		// driver.b().whileTrue(drivetrain
-		// .applyRequest(
-		// () -> point.withModuleDirection(new Rotation2d(-driver.getLeftY(),
-		// -driver.getLeftX()))));
-		// driver.x().whileTrue(drivetrain.goToAutonPose());
-		// driver.leftBumper().onTrue(drivetrain.runOnce(() ->
-		// drivetrain.seedFieldRelative()));
-		// driver.rightBumper().onTrue(drivetrain.resetPoseToSpeaker());
-		// driver.rightTrigger().whileTrue(shooter.spinUp());
+		drivetrain.setDefaultCommand(drivetrain.applyRequest(() -> {
+			if (!driver.getHID().isConnected()) {
+				return brake;
+			}
+
+			double leftY = -driver.getLeftY();
+			double leftX = -driver.getLeftX();
+			return drive
+				.withVelocityX(leftY * kMaxSpeed)
+				.withVelocityY(leftX * kMaxSpeed)
+				.withRotationalRate(-driver.getRightX() * kMaxAngularRate);
+		}));
+		driver.a().whileTrue(drivetrain.applyRequest(() -> brake));
+		driver.b().whileTrue(drivetrain
+			.applyRequest(
+				() -> point.withModuleDirection(new Rotation2d(-driver.getLeftY(),
+					-driver.getLeftX()))));
+		driver.x().whileTrue(drivetrain.goToAutonPose());
+		driver.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
+		driver.rightBumper().onTrue(drivetrain.resetPoseToSpeaker());
+		driver.rightTrigger().whileTrue(shooter.spinUp());
 
 		/* sysid buttons */
 		// driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
@@ -154,11 +160,15 @@ public class Robot extends TimedRobot {
 		// climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
 
 		/* testing buttons */
-		manipulator.x().whileTrue(shooter.run());
-		manipulator.y().whileTrue(intake.run());
-		manipulator.a().whileTrue(conveyor.run());
-		manipulator.rightBumper().whileTrue(aim.run());
-		manipulator.leftTrigger().onTrue(aim.beAt90());
+		manipulator.leftTrigger().whileTrue(superstructure.intake());
+		manipulator.leftBumper().whileTrue(intake.outtake());
+		manipulator.rightTrigger().whileTrue(superstructure.shoot());
+		manipulator.rightBumper().whileTrue(shooter.run());
+
+		manipulator.a().whileTrue(shooter.sysIdQuasistatic(Direction.kForward));
+		manipulator.b().whileTrue(shooter.sysIdQuasistatic(Direction.kReverse));
+		manipulator.x().whileTrue(shooter.sysIdDynamic(Direction.kForward));
+		manipulator.y().whileTrue(shooter.sysIdDynamic(Direction.kReverse));
 	}
 
 	private Command getAutonomousCommand() {
@@ -199,6 +209,7 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void autonomousInit() {
+		SignalLogger.start();
 		m_autonomousCommand = getAutonomousCommand();
 		if (m_autonomousCommand != null) {
 			m_autonomousCommand.schedule();
@@ -216,6 +227,7 @@ public class Robot extends TimedRobot {
 	@Override
 	public void teleopInit() {
 		SignalLogger.start();
+
 		if (m_autonomousCommand != null) {
 			m_autonomousCommand.cancel();
 		}

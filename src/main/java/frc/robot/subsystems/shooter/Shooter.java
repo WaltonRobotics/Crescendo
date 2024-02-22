@@ -3,7 +3,9 @@ package frc.robot.subsystems.shooter;
 import static frc.robot.Constants.RobotK.kSimInterval;
 import static frc.robot.Constants.ShooterK.*;
 
+import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.math.MathUtil;
@@ -17,16 +19,19 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.CtreConfigs;
 
 import static frc.robot.Constants.ShooterK.FlywheelSimK.*;
 import static edu.wpi.first.units.Units.Minute;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.kCanbus;
 import static frc.robot.Constants.kStickDeadband;
 import static frc.robot.Robot.*;
@@ -38,8 +43,7 @@ public class Shooter extends SubsystemBase {
     private final TalonFX m_left = new TalonFX(kLeftId, kCanbus);
     private final TalonFX m_right = new TalonFX(kRightId, kCanbus);
     private final VelocityVoltage m_request = new VelocityVoltage(0);
-
-    // beam break on port 0
+    private final VoltageOut m_voltage = new VoltageOut(0);
 
     private double m_targetRpm;
 
@@ -51,10 +55,19 @@ public class Shooter extends SubsystemBase {
 
     private double shotTime;
 
+    private final SysIdRoutine m_sysId = new SysIdRoutine(
+        new SysIdRoutine.Config(),
+        new SysIdRoutine.Mechanism((Measure<Voltage> volts) -> {
+            m_left.setControl(m_voltage.withOutput(volts.in(Volts)));
+            m_right.setControl(m_voltage.withOutput(volts.in(Volts)));
+        }, (state) -> {
+            SignalLogger.writeString("shooter", state.toString());
+        }, this));
+
     public Shooter() {
         SmartDashboard.putNumber("shotTime", 1.5);
         shotTime = SmartDashboard.getNumber("shotTime", 1.5);
-        m_targetRpm = 1000;
+        m_targetRpm = 2000;
 
         CtreConfigs configs = CtreConfigs.get();
         m_left.getConfigurator().apply(configs.m_shooterConfigs);
@@ -76,17 +89,17 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command shoot() {
-        return toVelo(Rotations.per(Minute).of(1000));
+        return toVelo(Rotations.per(Minute).of(m_targetRpm));
     }
 
     public Command spinUp() {
         // TODO make work outside of simulation
-        return toVelo(Rotations.per(Minute).of(1000))
-            .until(() -> m_flywheelSim.getAngularVelocityRPM() >= m_targetRpm);
+        return toVelo(Rotations.per(Minute).of(m_targetRpm))
+            .until(() -> spinUpFinished());
     }
 
     public boolean spinUpFinished() {
-        return false; // TODO add proper implementation
+        return m_left.getVelocity().getValueAsDouble() * 60 == m_targetRpm;
     }
 
     public Command slowShot() {
@@ -94,7 +107,7 @@ public class Shooter extends SubsystemBase {
     }
 
     private void rawRun(double dutyCycle) {
-        m_left.set(dutyCycle * 0.8);
+        m_left.set(dutyCycle * kSpinAmt);
         m_right.set(dutyCycle);
     }
 
@@ -116,9 +129,9 @@ public class Shooter extends SubsystemBase {
         var xPower = MathUtil.applyDeadband(x.getAsDouble(), kStickDeadband);
         var yPower = MathUtil.applyDeadband(y.getAsDouble(), kStickDeadband);
         var omegaPower = MathUtil.applyDeadband(omega.getAsDouble(), kStickDeadband);
-        var futureXVelo = xPower * maxSpeed;
-        var futureYVelo = yPower * maxSpeed;
-        var futureOmegaVelo = omegaPower * maxAngularRate;
+        var futureXVelo = xPower * kMaxSpeed;
+        var futureYVelo = yPower * kMaxSpeed;
+        var futureOmegaVelo = omegaPower * kMaxAngularRate;
         var curPose = robotPose.get().toPose2d();
         var adjustedPose = curPose.plus(new Transform2d(futureXVelo * shotTime, futureYVelo * shotTime,
             Rotation2d.fromRadians(futureOmegaVelo * shotTime)));
@@ -160,5 +173,13 @@ public class Shooter extends SubsystemBase {
 
         time += kSimInterval;
         m_flywheelSim.update(kSimInterval);
+    }
+
+    public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+        return m_sysId.quasistatic(direction);
+    }
+
+    public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+        return m_sysId.dynamic(direction);
     }
 }

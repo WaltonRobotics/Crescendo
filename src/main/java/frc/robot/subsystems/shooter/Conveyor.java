@@ -21,13 +21,18 @@ public class Conveyor extends SubsystemBase {
         m_conveyor.setInverted(true);
     }
 
-    public Command run() {
-        return runEnd(() -> {
+    public Command run(boolean ignoreSensor) {
+        var go = runEnd(() -> {
             m_conveyor.set(0.35);
-        },
-            () -> {
-                m_conveyor.set(0);
-            }).until(m_note);
+        }, () -> {
+            m_conveyor.set(0);
+        });
+
+        if (!ignoreSensor) {
+            go = go.until(m_note);
+        }
+
+        return go;
     }
 
     public void periodic() {

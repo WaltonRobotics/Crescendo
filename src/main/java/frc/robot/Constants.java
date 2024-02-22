@@ -116,10 +116,11 @@ public class Constants {
 
         public static final double kP = 3;
 
-        public static final double kSpinAmt = 0.8;
+        public static final double kSpinAmt = 0.5;
+
+        public static final double kGearRatio = 18.0 / 36.0;
 
         public static final class FlywheelSimK {
-            public static final double kGearRatio = 200; // TODO: find actual value
             public static final double kMoi = 0.056699046875; // kg meters^2
 
             // basically just how much faster the wheels have to spin for 1 meter more of
