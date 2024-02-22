@@ -4,10 +4,10 @@ import static frc.robot.Constants.RobotK.kSimInterval;
 import static frc.robot.Constants.ShooterK.*;
 
 import com.ctre.phoenix6.SignalLogger;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -21,11 +21,9 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.CtreConfigs;
 import frc.util.LoggedTunableNumber;
 
 import static frc.robot.Constants.ShooterK.FlywheelSimK.*;
@@ -46,19 +44,19 @@ public class Shooter extends SubsystemBase {
     private final VelocityVoltage m_request = new VelocityVoltage(0);
     private final VoltageOut m_voltage = new VoltageOut(0);
 
-    private LoggedTunableNumber m_tunableRpm = new LoggedTunableNumber("targetRpm", 1000);
+    private LoggedTunableNumber m_tunableRpm = new LoggedTunableNumber("targetRpm", 3000);
     private LoggedTunableNumber m_tunableSpin = new LoggedTunableNumber("spin", kSpinAmt);
+    private LoggedTunableNumber m_tunableShotTime = new LoggedTunableNumber("shotTime", 1.5);
 
     private double m_targetRpm;
     private double m_spinAmt;
+    private double m_shotTime;
 
     private double time = 0;
     private boolean found = false;
     private final FlywheelSim m_flywheelSim = new FlywheelSim(DCMotor.getFalcon500(1), kGearRatio, kMoi);
 
     private Measure<Velocity<Angle>> m_targetVelo = Rotations.per(Minute).of(0);
-
-    private double shotTime;
 
     private final SysIdRoutine m_sysId = new SysIdRoutine(
         new SysIdRoutine.Config(null,
@@ -71,18 +69,22 @@ public class Shooter extends SubsystemBase {
         }, null, this));
 
     public Shooter() {
-        SmartDashboard.putNumber("shotTime", 1.5);
-        shotTime = SmartDashboard.getNumber("shotTime", 1.5);
-        m_targetRpm = 2000;
+        m_targetRpm = 3000;
+        m_spinAmt = kSpinAmt;
+        m_shotTime = 1.5;
 
-        CtreConfigs configs = CtreConfigs.get();
-        m_left.getConfigurator().apply(configs.m_shooterConfigs);
-        m_right.getConfigurator().apply(configs.m_shooterConfigs);
+        TalonFXConfiguration rightConfigs = new ShooterConfigs().kRightConfigs;
+        TalonFXConfiguration leftConfigs = new ShooterConfigs().kLeftConfigs;
+        m_right.getConfigurator().apply(rightConfigs);
+        m_left.getConfigurator().apply(leftConfigs);
 
         m_left.setInverted(true);
     }
 
-    // TODO check the numbers for all of this they're just dummy values for now
+    public Command stop() {
+        return toVelo(RotationsPerSecond.of(0));
+    }
+
     private Command toVelo(Measure<Velocity<Angle>> velo) {
         var setTargetCmd = runOnce(() -> {
             m_targetVelo = velo;
@@ -95,21 +97,22 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command shoot() {
+        // TODO make the LoggedTunableNumber thing work
         return toVelo(Rotations.per(Minute).of(m_targetRpm));
     }
 
+    public Command trapShot() {
+        // It Doesn't Work Very Well. (2 out of like 50 times!!!)
+        return toVelo(Rotations.per(Minute).of(6000)); // TODO make this a constant
+    }
+
     public Command spinUp() {
-        // TODO make work outside of simulation
         return toVelo(Rotations.per(Minute).of(m_targetRpm))
             .until(() -> spinUpFinished());
     }
 
     public boolean spinUpFinished() {
         return m_left.getVelocity().getValueAsDouble() * 60 == m_targetRpm;
-    }
-
-    public Command slowShot() {
-        return toVelo(Rotations.per(Minute).of(500));
     }
 
     private void rawRun(double dutyCycle) {
@@ -119,7 +122,7 @@ public class Shooter extends SubsystemBase {
 
     public Command run() {
         return runEnd(() -> {
-            rawRun(0.5);
+            rawRun(0.25);
         },
             () -> {
                 m_left.set(0);
@@ -139,8 +142,8 @@ public class Shooter extends SubsystemBase {
         var futureYVelo = yPower * kMaxSpeed;
         var futureOmegaVelo = omegaPower * kMaxAngularRate;
         var curPose = robotPose.get().toPose2d();
-        var adjustedPose = curPose.plus(new Transform2d(futureXVelo * shotTime, futureYVelo * shotTime,
-            Rotation2d.fromRadians(futureOmegaVelo * shotTime)));
+        var adjustedPose = curPose.plus(new Transform2d(futureXVelo * m_shotTime, futureYVelo * m_shotTime,
+            Rotation2d.fromRadians(futureOmegaVelo * m_shotTime)));
         return adjustedPose;
     }
 
@@ -153,7 +156,7 @@ public class Shooter extends SubsystemBase {
         var radialComponent = tangentialVelocity.getX();
         var tangentialComponent = tangentialVelocity.getY();
         var rawDist = pose.getDistance(speakerPose);
-        var realShotTime = shotTime * rawDist;
+        var realShotTime = m_shotTime * rawDist;
         // sorry it was less typing
         var shotSpeed = MathUtil.clamp(rawDist / realShotTime + radialComponent, 0, Integer.MAX_VALUE);
         var effectiveDist = Math.hypot(tangentialComponent, shotSpeed);
@@ -161,10 +164,9 @@ public class Shooter extends SubsystemBase {
     }
 
     public void periodic() {
-        // will change the value when testing
-        shotTime = SmartDashboard.getNumber("shotTime", 1.5);
         m_targetRpm = m_tunableRpm.get();
         m_spinAmt = m_tunableSpin.get();
+        m_shotTime = m_tunableShotTime.get();
     }
 
     public void simulationPeriodic() {

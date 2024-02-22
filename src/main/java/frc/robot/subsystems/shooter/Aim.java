@@ -1,5 +1,6 @@
 package frc.robot.subsystems.shooter;
 
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -26,7 +27,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.CtreConfigs;
 import frc.util.AllianceFlipUtil;
 
 import static frc.robot.Constants.FieldK.*;
@@ -79,15 +79,15 @@ public class Aim extends SubsystemBase {
 
     public Aim(Supplier<Pose3d> robotPoseSupplier) {
         m_robotPoseSupplier = robotPoseSupplier;
-        SmartDashboard.putBoolean("shooterCoast", m_isCoast);
-        CtreConfigs configs = CtreConfigs.get();
-        m_motor.getConfigurator().apply(configs.m_aimConfigs);
+        SmartDashboard.putBoolean("Aim/isCoast", m_isCoast);
+
+        TalonFXConfiguration configs = new AimConfigs().kAimConfigs;
+        m_motor.getConfigurator().apply(configs);
 
         m_targetAngle = Degrees.of(180 - 0);
 
         SmartDashboard.putData("Mech2d", m_mech2d);
 
-        // TODO check this value
         m_homeTrigger.onTrue(Commands.runOnce(() -> m_motor.setPosition(kInitAngle.in(Rotations)))
             .ignoringDisable(true));
         // m_atStart.onTrue(Commands.runOnce(() ->
@@ -228,11 +228,11 @@ public class Aim extends SubsystemBase {
 
     @Override
     public void periodic() {
-        SmartDashboard.putNumber("aimSpeed", m_motor.get());
-        SmartDashboard.putNumber("aimPos",
+        SmartDashboard.putNumber("Aim/motorSpeed", m_motor.get());
+        SmartDashboard.putNumber("Aim/motorPos",
             Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()));
 
-        boolean dashCoast = SmartDashboard.getBoolean("shooterCoast", false);
+        boolean dashCoast = SmartDashboard.getBoolean("Aim/isCoast", false);
         if (dashCoast != m_isCoast) {
             m_isCoast = dashCoast;
             setCoast(m_isCoast);
@@ -253,10 +253,10 @@ public class Aim extends SubsystemBase {
         m_aim2d.setAngle(Units.rotationsToDegrees(
             m_motor.getPosition().getValueAsDouble())); // TODO: make this render correctly with the real robot too
 
-        SmartDashboard.putNumber("simVoltage", volts);
-        SmartDashboard.putNumber("simVelo", m_aimSim.getVelocityRadPerSec());
-        SmartDashboard.putNumber("simAngle", angle);
-        SmartDashboard.putNumber("targetAngle", m_targetAngle.in(Degrees));
+        SmartDashboard.putNumber("Aim/Sim/motorVoltage", volts);
+        SmartDashboard.putNumber("Aim/Sim/motorVelo", m_aimSim.getVelocityRadPerSec());
+        SmartDashboard.putNumber("Aim/Sim/curAngle", angle);
+        SmartDashboard.putNumber("Aim/Sim/targetAngle", m_targetAngle.in(Degrees));
 
         m_aimSim.update(kSimInterval);
     }

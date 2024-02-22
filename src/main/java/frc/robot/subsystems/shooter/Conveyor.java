@@ -35,7 +35,11 @@ public class Conveyor extends SubsystemBase {
         return go;
     }
 
+    public Command stop() {
+        return run(() -> m_conveyor.set(0));
+    }
+
     public void periodic() {
-        SmartDashboard.putBoolean("beamBreak", m_beamBreak.get());
+        SmartDashboard.putBoolean("Conveyor/beamBreak", m_beamBreak.get());
     }
 }

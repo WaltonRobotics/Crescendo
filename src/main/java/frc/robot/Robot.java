@@ -162,8 +162,8 @@ public class Robot extends TimedRobot {
 		/* testing buttons */
 		manipulator.leftTrigger().whileTrue(superstructure.intake());
 		manipulator.leftBumper().whileTrue(intake.outtake());
-		manipulator.rightTrigger().whileTrue(superstructure.shoot());
-		manipulator.rightBumper().whileTrue(shooter.run());
+		manipulator.rightTrigger().whileTrue(superstructure.shoot()).onFalse(superstructure.stop());
+		manipulator.rightBumper().whileTrue(superstructure.trapShot()).onFalse(superstructure.stop());
 
 		manipulator.a().whileTrue(shooter.sysIdQuasistatic(Direction.kForward));
 		manipulator.b().whileTrue(shooter.sysIdQuasistatic(Direction.kReverse));
