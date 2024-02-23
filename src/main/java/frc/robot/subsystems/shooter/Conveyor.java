@@ -6,16 +6,19 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.util.logging.WaltLogger;
+import frc.util.logging.WaltLogger.BooleanLogger;
 
 public class Conveyor extends SubsystemBase {
     private final CANSparkMax m_conveyor = new CANSparkMax(kConveyorId, MotorType.kBrushless);
     private final DigitalInput m_beamBreak = new DigitalInput(0);
 
     private final Trigger m_note = new Trigger(() -> m_beamBreak.get()).negate();
+
+    private final BooleanLogger log_beamBreak = WaltLogger.logBoolean(kDbTabName, "beamBreak");
 
     public Conveyor() {
         m_conveyor.setInverted(true);
@@ -50,6 +53,6 @@ public class Conveyor extends SubsystemBase {
     }
 
     public void periodic() {
-        SmartDashboard.putBoolean("Conveyor/beamBreak", m_beamBreak.get());
+        log_beamBreak.accept(m_beamBreak.get());
     }
 }

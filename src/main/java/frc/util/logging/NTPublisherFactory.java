@@ -3,7 +3,7 @@ package frc.util.logging;
 import edu.wpi.first.networktables.*;
 import edu.wpi.first.wpilibj.TimedRobot;
 
-public final class NTPublisherFactory {
+public final class NtPublisherFactory {
     private static final NetworkTableInstance inst = NetworkTableInstance.getDefault();
     private static final NetworkTable traceTable = inst.getTable("Trace");
 

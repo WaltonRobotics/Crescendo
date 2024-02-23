@@ -58,9 +58,9 @@ public class Shooter extends SubsystemBase {
     // private LoggedTunableNumber m_tunableShotTime = new
     // LoggedTunableNumber("shotTime", m_shotTime);
 
-    private final DoubleLogger log_targetRpm = new WaltLogger.DoubleLogger(kDbTabName, "targetRpm");
-    private final DoubleLogger log_spinAmt = new WaltLogger.DoubleLogger(kDbTabName, "spinAmt");
-    private final DoubleLogger log_shotTime = new WaltLogger.DoubleLogger(kDbTabName, "shotTime");
+    private final DoubleLogger log_targetRpm = WaltLogger.logDouble(kDbTabName, "targetRpm");
+    private final DoubleLogger log_spinAmt = WaltLogger.logDouble(kDbTabName, "spinAmt");
+    private final DoubleLogger log_shotTime = WaltLogger.logDouble(kDbTabName, "shotTime");
 
     private double time = 0;
     private boolean found = false;
@@ -85,18 +85,6 @@ public class Shooter extends SubsystemBase {
         m_left.setInverted(true);
     }
 
-    public double getTargetRpm() {
-        return m_targetRpm;
-    }
-
-    public double getSpinAmt() {
-        return m_spinAmt;
-    }
-
-    public double getShotTime() {
-        return m_shotTime;
-    }
-
     public Command stop() {
         return toVelo(() -> RotationsPerSecond.of(0));
     }
@@ -113,14 +101,12 @@ public class Shooter extends SubsystemBase {
     public Command increaseRpm() {
         return Commands.runOnce(() -> {
             m_targetRpm += 100;
-            System.out.println("changing target; m_targetRpm = " + m_targetRpm);
         });
     }
 
     public Command decreaseRpm() {
         return Commands.runOnce(() -> {
             m_targetRpm -= 100;
-            System.out.println("changing target; m_targetRpm = " + m_targetRpm);
         });
     }
 
@@ -217,9 +203,9 @@ public class Shooter extends SubsystemBase {
         // m_spinAmt = m_tunableSpin.get();
         // m_shotTime = m_tunableShotTime.get();
 
-        log_targetRpm.accept(getTargetRpm());
-        log_spinAmt.accept(getSpinAmt());
-        log_shotTime.accept(getShotTime());
+        log_targetRpm.accept(m_targetRpm);
+        log_spinAmt.accept(m_spinAmt);
+        log_shotTime.accept(m_shotTime);
     }
 
     public void simulationPeriodic() {

@@ -14,7 +14,7 @@ public class WaltLogger {
     private static final NetworkTableInstance inst = NetworkTableInstance.getDefault();
     private static final NetworkTable logTable = inst.getTable("Robot");
 
-    private static boolean shouldPublishNT() {
+    private static boolean shouldPublishNt() {
         return Constants.kDebugLoggingEnabled && !FMSCacher.getCachedFMSAttached();
     }
 
@@ -23,13 +23,13 @@ public class WaltLogger {
         public final DoubleLogEntry logEntry;
 
         public DoubleLogger(String subTable, String name) {
-            ntPub = NTPublisherFactory.makeDoublePub(logTable.getSubTable(subTable), name);
+            ntPub = NtPublisherFactory.makeDoublePub(logTable.getSubTable(subTable), name);
             logEntry = new DoubleLogEntry(DataLogManager.getLog(), "Robot/" + subTable + "/" + name);
         }
 
         @Override
         public void accept(Double value) {
-            if (shouldPublishNT()) {
+            if (shouldPublishNt()) {
                 ntPub.set(value);
             } else {
                 logEntry.append(value);
@@ -46,13 +46,13 @@ public class WaltLogger {
         public final BooleanLogEntry logEntry;
 
         public BooleanLogger(String subTable, String name) {
-            ntPub = NTPublisherFactory.makeBoolPub(logTable.getSubTable(subTable), name);
+            ntPub = NtPublisherFactory.makeBoolPub(logTable.getSubTable(subTable), name);
             logEntry = new BooleanLogEntry(DataLogManager.getLog(), "Robot/" + subTable + "/" + name);
         }
 
         @Override
         public void accept(Boolean value) {
-            if (shouldPublishNT()) {
+            if (shouldPublishNt()) {
                 ntPub.set(value);
             } else {
                 logEntry.append(value);
@@ -69,13 +69,13 @@ public class WaltLogger {
         public final DoubleArrayLogEntry logEntry;
 
         public DoubleArrayLogger(String subTable, String name) {
-            ntPub = NTPublisherFactory.makeDoubleArrPub(logTable.getSubTable(subTable), name);
+            ntPub = NtPublisherFactory.makeDoubleArrPub(logTable.getSubTable(subTable), name);
             logEntry = new DoubleArrayLogEntry(DataLogManager.getLog(), "Robot/" + subTable + "/" + name);
         }
 
         @Override
         public void accept(double[] value) {
-            if (shouldPublishNT()) {
+            if (shouldPublishNt()) {
                 ntPub.accept(value);
             } else {
                 logEntry.append(value);
@@ -92,13 +92,13 @@ public class WaltLogger {
         public final StringLogEntry logEntry;
 
         public StringLogger(String subTable, String name) {
-            ntPub = NTPublisherFactory.makeStringPub(logTable.getSubTable(subTable), name);
+            ntPub = NtPublisherFactory.makeStringPub(logTable.getSubTable(subTable), name);
             logEntry = new StringLogEntry(DataLogManager.getLog(), "Robot/" + subTable + "/" + name);
         }
 
         @Override
         public void accept(String value) {
-            if (shouldPublishNT()) {
+            if (shouldPublishNt()) {
                 ntPub.set(value);
             } else {
                 logEntry.append(value);

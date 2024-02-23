@@ -75,7 +75,14 @@ public class Aim extends SubsystemBase {
 
     private boolean m_isCoast;
 
-    private final DoubleLogger log_targetAngle = new WaltLogger.DoubleLogger(kDbTabName, "targetAngle");
+    private final DoubleLogger log_targetAngle = WaltLogger.logDouble(kDbTabName, "targetAngle");
+    private final DoubleLogger log_motorSpeed = WaltLogger.logDouble(kDbTabName, "motorSpeed");
+    private final DoubleLogger log_motorPos = WaltLogger.logDouble(kDbTabName, "motorPos");
+
+    private final DoubleLogger log_simVoltage = WaltLogger.logDouble(kDbTabName + "/Sim", "motorVoltage");
+    private final DoubleLogger log_simVelo = WaltLogger.logDouble(kDbTabName + "/Sim", "motorVelo");
+    private final DoubleLogger log_simAngle = WaltLogger.logDouble(kDbTabName + "/Sim", "curAngle");
+    private final DoubleLogger log_simTarget = WaltLogger.logDouble(kDbTabName + "/Sim", "targetAngle");
 
     // TODO check
     // private final Trigger m_atStart = new Trigger(
@@ -84,7 +91,7 @@ public class Aim extends SubsystemBase {
 
     public Aim(Supplier<Pose3d> robotPoseSupplier) {
         m_robotPoseSupplier = robotPoseSupplier;
-        SmartDashboard.putBoolean("Aim/isCoast", m_isCoast);
+        SmartDashboard.putBoolean(kDbTabName + "/isCoast", m_isCoast);
 
         TalonFXConfiguration configs = new AimConfigs().kAimConfigs;
         m_motor.getConfigurator().apply(configs);
@@ -243,12 +250,12 @@ public class Aim extends SubsystemBase {
 
     @Override
     public void periodic() {
-        SmartDashboard.putNumber("Aim/motorSpeed", m_motor.get());
-        SmartDashboard.putNumber("Aim/motorPos",
-            Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()));
+        // TODO change this to WaltLogger
+        log_motorSpeed.accept(m_motor.get());
+        log_motorPos.accept(Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()));
         log_targetAngle.accept(getTargetAngle());
 
-        boolean dashCoast = SmartDashboard.getBoolean("Aim/isCoast", false);
+        boolean dashCoast = SmartDashboard.getBoolean(kDbTabName + "/isCoast", false);
         if (dashCoast != m_isCoast) {
             m_isCoast = dashCoast;
             setCoast(m_isCoast);
@@ -269,10 +276,10 @@ public class Aim extends SubsystemBase {
         m_aim2d.setAngle(Units.rotationsToDegrees(
             m_motor.getPosition().getValueAsDouble())); // TODO: make this render correctly with the real robot too
 
-        SmartDashboard.putNumber("Aim/Sim/motorVoltage", volts);
-        SmartDashboard.putNumber("Aim/Sim/motorVelo", m_aimSim.getVelocityRadPerSec());
-        SmartDashboard.putNumber("Aim/Sim/curAngle", angle);
-        SmartDashboard.putNumber("Aim/Sim/targetAngle", m_targetAngle.in(Degrees));
+        log_simVoltage.accept(volts);
+        log_simVelo.accept(m_aimSim.getVelocityRadPerSec());
+        log_simAngle.accept(angle);
+        log_simTarget.accept(m_targetAngle.in(Degrees));
 
         m_aimSim.update(kSimInterval);
     }

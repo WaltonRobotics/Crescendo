@@ -23,7 +23,7 @@ import frc.util.AllianceFlipUtil;
 
 public class Constants {
     public static boolean kDebugLoggingEnabled = true;
-    
+
     public static final double kStickDeadband = 0.1;
     public static final String kCanbus = "fd";
 
@@ -72,10 +72,9 @@ public class Constants {
         public static final Measure<Distance> kXToAmp = Inches.of(49.5);
         public static final Measure<Distance> kYToAmp = Inches.of(286.765);
         public static final Measure<Distance> kZToAmp = Inches.of(35);
-        public static final Measure<Distance> kZToSpeaker = Inches.of(98.13);
 
         public static final Translation3d kBlueAmpPose = new Translation3d(
-            kXToAmp, kYToAmp, kZToSpeaker);
+            kXToAmp, kYToAmp, kZToAmp);
 
         public static final Translation3d kRedAmpPose = new Translation3d(
             kFieldLength.minus(kXToAmp), kFieldWidth.minus(kYToAmp), kZToAmp);
@@ -96,6 +95,7 @@ public class Constants {
         public static final double kPX = 3.25; // 8
         public static final double kPY = 3.25;
         public static final double kPTheta = 5.15; // 1
+
         public static final HolonomicPathFollowerConfig kPathFollowerConfig = new HolonomicPathFollowerConfig(
             new PIDConstants(kPX),
             new PIDConstants(kPTheta),
@@ -111,6 +111,8 @@ public class Constants {
     }
 
     public class ConveyorK {
+        public static final String kDbTabName = "Conveyor";
+
         public static final int kConveyorId = 12;
     }
 
@@ -140,7 +142,7 @@ public class Constants {
             }
         }
 
-        public static final String kDbTabName = "ShooterSubsys";
+        public static final String kDbTabName = "Shooter";
 
         public static final int kRightId = 13;
         public static final int kLeftId = 14;
@@ -194,9 +196,9 @@ public class Constants {
                     .withMotionMagicExpo_kV(kV)
                     .withMotionMagicExpo_kA(kA);
             }
-
-            public final String kDbTabName = "AimSubsys";
         }
+
+        public final String kDbTabName = "Aim";
 
         public static final int kAimId = 15;
         public static final int kHomeSwitch = 1;
