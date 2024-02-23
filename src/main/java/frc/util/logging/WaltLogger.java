@@ -23,7 +23,7 @@ public class WaltLogger {
         public final DoubleLogEntry logEntry;
 
         public DoubleLogger(String subTable, String name) {
-            ntPub = NtPublisherFactory.makeDoublePub(logTable.getSubTable(subTable), name);
+            ntPub = NTPublisherFactory.makeDoublePub(logTable.getSubTable(subTable), name);
             logEntry = new DoubleLogEntry(DataLogManager.getLog(), "Robot/" + subTable + "/" + name);
         }
 
@@ -46,7 +46,7 @@ public class WaltLogger {
         public final BooleanLogEntry logEntry;
 
         public BooleanLogger(String subTable, String name) {
-            ntPub = NtPublisherFactory.makeBoolPub(logTable.getSubTable(subTable), name);
+            ntPub = NTPublisherFactory.makeBoolPub(logTable.getSubTable(subTable), name);
             logEntry = new BooleanLogEntry(DataLogManager.getLog(), "Robot/" + subTable + "/" + name);
         }
 
@@ -69,7 +69,7 @@ public class WaltLogger {
         public final DoubleArrayLogEntry logEntry;
 
         public DoubleArrayLogger(String subTable, String name) {
-            ntPub = NtPublisherFactory.makeDoubleArrPub(logTable.getSubTable(subTable), name);
+            ntPub = NTPublisherFactory.makeDoubleArrPub(logTable.getSubTable(subTable), name);
             logEntry = new DoubleArrayLogEntry(DataLogManager.getLog(), "Robot/" + subTable + "/" + name);
         }
 
@@ -92,7 +92,7 @@ public class WaltLogger {
         public final StringLogEntry logEntry;
 
         public StringLogger(String subTable, String name) {
-            ntPub = NtPublisherFactory.makeStringPub(logTable.getSubTable(subTable), name);
+            ntPub = NTPublisherFactory.makeStringPub(logTable.getSubTable(subTable), name);
             logEntry = new StringLogEntry(DataLogManager.getLog(), "Robot/" + subTable + "/" + name);
         }
 
