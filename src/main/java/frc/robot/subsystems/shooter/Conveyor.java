@@ -35,6 +35,16 @@ public class Conveyor extends SubsystemBase {
         return go;
     }
 
+    public Command runBackwards() {
+        var go = runEnd(() -> {
+            m_conveyor.set(-0.25);
+        }, () -> {
+            m_conveyor.set(0);
+        });
+
+        return go;
+    }
+
     public Command stop() {
         return run(() -> m_conveyor.set(0));
     }

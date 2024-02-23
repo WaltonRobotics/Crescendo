@@ -116,6 +116,12 @@ public class Aim extends SubsystemBase {
         m_motor.setNeutralMode(coast ? NeutralModeValue.Coast : NeutralModeValue.Brake);
     }
 
+    public Command coastCmd() {
+        return startEnd(
+            () -> setCoast(true),
+            () -> setCoast(false));
+    }
+
     public Command teleop(DoubleSupplier power) {
         return run(() -> {
             double powerVal = MathUtil.applyDeadband(power.getAsDouble(), 0.1);

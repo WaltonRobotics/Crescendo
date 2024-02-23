@@ -12,8 +12,6 @@ public class Superstructure {
     public Conveyor m_conveyor;
     public Shooter m_shooter;
 
-    private double spinUpTimeout = 0.5;
-
     public Superstructure(Aim aim, Intake intake, Conveyor conveyor, Shooter shooter) {
         m_aim = aim;
         m_intake = intake;
@@ -22,7 +20,7 @@ public class Superstructure {
     }
 
     private Command spinUpWait() {
-        return Commands.waitSeconds(spinUpTimeout);
+        return Commands.waitUntil(() -> m_shooter.spinUpFinished());
     }
 
     public Command intake() {
@@ -73,6 +71,18 @@ public class Superstructure {
                 conveyorCmd));
     }
 
+    public Command ampShot() {
+        var shootCmd = m_shooter.ampShot();
+        var conveyorCmd = m_conveyor.run(true);
+
+        return Commands.parallel(
+            shootCmd,
+            Commands.sequence(
+                // TODO make this work correctly
+                spinUpWait(),
+                conveyorCmd));
+    }
+
     public Command stop() {
         var shootCmd = m_shooter.stop();
         var conveyorCmd = m_conveyor.stop();
@@ -91,5 +101,12 @@ public class Superstructure {
             Commands.sequence(
                 Commands.waitUntil(() -> m_shooter.spinUpFinished() && aimCmd.isFinished()),
                 conveyorCmd));
+    }
+
+    public Command backwardsRun() {
+        var shooterCmd = m_shooter.runBackwards();
+        var conveyorCmd = m_conveyor.runBackwards();
+
+        return Commands.parallel(shooterCmd, conveyorCmd);
     }
 }

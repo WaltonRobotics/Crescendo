@@ -14,9 +14,10 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.ApplyChassisSpeeds;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SwerveDriveBrake;
+import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SysIdSwerveSteerGains;
 // import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SysIdSwerveRotation;
 // import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SysIdSwerveSteerGains;
-import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SysIdSwerveTranslation;
+// import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SysIdSwerveTranslation;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathPlannerPath;
@@ -59,19 +60,19 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final PIDController m_yController = new PIDController(kPY, 0.0, 0.0);
 	private final PIDController m_thetaController = new PIDController(kPTheta, 0.0, 0.0);
 
-	private final SysIdSwerveTranslation translationCharacterization = new SysIdSwerveTranslation();
-	// private final SysIdSwerveRotation rotationCharacterization = new
+	// private final SysIdSwerveTranslation characterization = new
+	// SysIdSwerveTranslation();
+	// private final SysIdSwerveRotation characterization = new
 	// SysIdSwerveRotation();
-	// private final SysIdSwerveSteerGains steerCharacterization = new
-	// SysIdSwerveSteerGains();
-	private SysIdRoutine m_sysIdRoutineTranslation = new SysIdRoutine(
+	private final SysIdSwerveSteerGains characterization = new SysIdSwerveSteerGains();
+	private SysIdRoutine m_sysIdRoutine = new SysIdRoutine(
 		new SysIdRoutine.Config(
 			null,
 			Volts.of(7),
 			null,
 			(state) -> SignalLogger.writeString("state", state.toString())),
 		new SysIdRoutine.Mechanism(
-			(volts) -> setControl(translationCharacterization.withVolts(volts)),
+			(volts) -> setControl(characterization.withVolts(volts)),
 			null,
 			this));
 
@@ -231,10 +232,10 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	}
 
 	public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
-		return m_sysIdRoutineTranslation.quasistatic(direction);
+		return m_sysIdRoutine.quasistatic(direction);
 	}
 
 	public Command sysIdDynamic(SysIdRoutine.Direction direction) {
-		return m_sysIdRoutineTranslation.dynamic(direction);
+		return m_sysIdRoutine.dynamic(direction);
 	}
 }

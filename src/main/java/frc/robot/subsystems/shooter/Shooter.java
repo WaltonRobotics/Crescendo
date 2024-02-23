@@ -20,13 +20,11 @@ import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
-import edu.wpi.first.util.datalog.DoubleLogEntry;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.util.logging.LoggedTunableNumber;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 
@@ -48,13 +46,17 @@ public class Shooter extends SubsystemBase {
     private final VelocityVoltage m_request = new VelocityVoltage(0);
     private final VoltageOut m_voltage = new VoltageOut(0);
 
-    private LoggedTunableNumber m_tunableRpm = new LoggedTunableNumber("targetRpm", 3000);
-    private LoggedTunableNumber m_tunableSpin = new LoggedTunableNumber("spin", kSpinAmt);
-    private LoggedTunableNumber m_tunableShotTime = new LoggedTunableNumber("shotTime", 1.5);
+    private double m_targetRpm = 1600;
+    private final Supplier<Measure<Velocity<Angle>>> m_targetRpmSupp = () -> Rotations.per(Minute).of(m_targetRpm);
+    private double m_spinAmt = kSpinAmt;
+    private double m_shotTime = 1.5;
 
-    private double m_targetRpm;
-    private double m_spinAmt;
-    private double m_shotTime;
+    // private LoggedTunableNumber m_tunableRpm = new
+    // LoggedTunableNumber("targetRpm", m_targetRpm);
+    // private LoggedTunableNumber m_tunableSpin = new LoggedTunableNumber("spin",
+    // m_spinAmt);
+    // private LoggedTunableNumber m_tunableShotTime = new
+    // LoggedTunableNumber("shotTime", m_shotTime);
 
     private final DoubleLogger log_targetRpm = new WaltLogger.DoubleLogger(kDbTabName, "targetRpm");
     private final DoubleLogger log_spinAmt = new WaltLogger.DoubleLogger(kDbTabName, "spinAmt");
@@ -63,8 +65,6 @@ public class Shooter extends SubsystemBase {
     private double time = 0;
     private boolean found = false;
     private final FlywheelSim m_flywheelSim = new FlywheelSim(DCMotor.getFalcon500(1), kGearRatio, kMoi);
-
-    private Measure<Velocity<Angle>> m_targetVelo = Rotations.per(Minute).of(0);
 
     private final SysIdRoutine m_sysId = new SysIdRoutine(
         new SysIdRoutine.Config(null,
@@ -77,10 +77,6 @@ public class Shooter extends SubsystemBase {
         }, null, this));
 
     public Shooter() {
-        m_targetRpm = 3000;
-        m_spinAmt = kSpinAmt;
-        m_shotTime = 1.5;
-
         TalonFXConfiguration rightConfigs = new ShooterConfigs().kRightConfigs;
         TalonFXConfiguration leftConfigs = new ShooterConfigs().kLeftConfigs;
         m_right.getConfigurator().apply(rightConfigs);
@@ -102,37 +98,60 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command stop() {
-        return toVelo(RotationsPerSecond.of(0));
+        return toVelo(() -> RotationsPerSecond.of(0));
     }
 
-    private Command toVelo(Measure<Velocity<Angle>> velo) {
-        var setTargetCmd = runOnce(() -> {
-            m_targetVelo = velo;
+    private Command toVelo(Supplier<Measure<Velocity<Angle>>> velo) {
+        return run(() -> {
+            var velMeas = velo.get();
+            m_targetRpm = velo.get().in(Rotations.per(Minute));
+            m_right.setControl(m_request.withVelocity(velMeas.in(RotationsPerSecond) * kSpinAmt));
+            m_left.setControl(m_request.withVelocity(velMeas.in(RotationsPerSecond)));
         });
-        var toTargetCmd = run(() -> {
-            m_right.setControl(m_request.withVelocity(m_targetVelo.in(RotationsPerSecond) * kSpinAmt));
-            m_left.setControl(m_request.withVelocity(m_targetVelo.in(RotationsPerSecond)));
+    }
+
+    public Command increaseRpm() {
+        return Commands.runOnce(() -> {
+            m_targetRpm += 100;
+            System.out.println("changing target; m_targetRpm = " + m_targetRpm);
         });
-        return setTargetCmd.andThen(toTargetCmd);
+    }
+
+    public Command decreaseRpm() {
+        return Commands.runOnce(() -> {
+            m_targetRpm -= 100;
+            System.out.println("changing target; m_targetRpm = " + m_targetRpm);
+        });
     }
 
     public Command shoot() {
-        // TODO make the LoggedTunableNumber thing work
-        return toVelo(Rotations.per(Minute).of(m_targetRpm));
+        return toVelo(m_targetRpmSupp);
+    }
+
+    public Command ampShot() {
+        return toVelo(() -> Rotations.per(Minute).of(1150)); // TODO make this a constant
     }
 
     public Command trapShot() {
         // It Doesn't Work Very Well. (2 out of like 50 times!!!)
-        return toVelo(Rotations.per(Minute).of(6000)); // TODO make this a constant
+        return toVelo(() -> Rotations.per(Minute).of(6000)); // TODO make this a constant
     }
 
     public Command spinUp() {
-        return toVelo(Rotations.per(Minute).of(m_targetRpm))
+        return toVelo(m_targetRpmSupp)
             .until(() -> spinUpFinished());
     }
 
     public boolean spinUpFinished() {
-        return m_left.getVelocity().getValueAsDouble() * 60 == m_targetRpm;
+        var target = m_targetRpmSupp.get().in(RotationsPerSecond);
+        var tolerance = target < 3000 ? 1.25 : 0.65;
+        boolean leftOk = MathUtil.isNear(
+            target, m_left.getVelocity().getValueAsDouble(), tolerance);
+        boolean rightOk = MathUtil.isNear(
+            target * kSpinAmt, m_right.getVelocity().getValueAsDouble(), tolerance);
+        System.out.println(leftOk + " " + m_left.getVelocity().getValueAsDouble() + " " + target);
+        System.out.println(rightOk + " " + m_right.getVelocity().getValueAsDouble() + " " + target * kSpinAmt);
+        return leftOk && rightOk;
     }
 
     private void rawRun(double dutyCycle) {
@@ -143,6 +162,16 @@ public class Shooter extends SubsystemBase {
     public Command run() {
         return runEnd(() -> {
             rawRun(0.25);
+        },
+            () -> {
+                m_left.set(0);
+                m_right.set(0);
+            });
+    }
+
+    public Command runBackwards() {
+        return runEnd(() -> {
+            rawRun(-0.5);
         },
             () -> {
                 m_left.set(0);
@@ -184,9 +213,9 @@ public class Shooter extends SubsystemBase {
     }
 
     public void periodic() {
-        m_targetRpm = m_tunableRpm.get();
-        m_spinAmt = m_tunableSpin.get();
-        m_shotTime = m_tunableShotTime.get();
+        // m_targetRpm = m_tunableRpm.get();
+        // m_spinAmt = m_tunableSpin.get();
+        // m_shotTime = m_tunableShotTime.get();
 
         log_targetRpm.accept(getTargetRpm());
         log_spinAmt.accept(getSpinAmt());

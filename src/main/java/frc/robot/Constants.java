@@ -146,16 +146,16 @@ public class Constants {
         public static final int kLeftId = 14;
 
         public static final double kPRight = 0.01776;
-        public static final double kSRight = 0.15837;
+        public static final double kSRight = 0.25; // sysid 0.15837
         public static final double kVRight = 0.057376;
         public static final double kARight = 0.007685;
 
-        public static final double kPLeft = 0.046968;
-        public static final double kSLeft = 0.2057;
-        public static final double kVLeft = 0.052935;
+        public static final double kPLeft = 0.0475; // sysid 0.046968
+        public static final double kSLeft = 0.257; // sysid 0.2057
+        public static final double kVLeft = 0.0553; // sysid 0.052935
         public static final double kALeft = 0.017803;
 
-        public static final double kSpinAmt = 0.2;
+        public static final double kSpinAmt = 0.7;
 
         public static final double kGearRatio = 18.0 / 36.0;
 

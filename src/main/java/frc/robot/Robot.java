@@ -143,13 +143,12 @@ public class Robot extends TimedRobot {
 		driver.x().whileTrue(drivetrain.goToAutonPose());
 		driver.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
 		driver.rightBumper().onTrue(drivetrain.resetPoseToSpeaker());
-		driver.rightTrigger().whileTrue(shooter.spinUp());
 
 		/* sysid buttons */
-		// driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-		// driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-		// driver.start().and(driver.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-		// driver.start().and(driver.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+		driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
+		driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
+		driver.start().and(driver.a()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
+		driver.start().and(driver.b()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
 		/* manipulator controls */
 		// aim.setDefaultCommand(aim.teleop(() -> -manipulator.getLeftY()));
@@ -162,13 +161,15 @@ public class Robot extends TimedRobot {
 		/* testing buttons */
 		manipulator.leftTrigger().whileTrue(superstructure.intake());
 		manipulator.leftBumper().whileTrue(intake.outtake());
+		// TODO make these startEnd
 		manipulator.rightTrigger().whileTrue(superstructure.shoot()).onFalse(superstructure.stop());
-		manipulator.rightBumper().whileTrue(superstructure.trapShot()).onFalse(superstructure.stop());
+		manipulator.rightBumper().whileTrue(superstructure.backwardsRun()).onFalse(superstructure.stop());
+		manipulator.a().whileTrue(superstructure.ampShot()).onFalse(superstructure.stop());
 
-		manipulator.a().whileTrue(shooter.sysIdQuasistatic(Direction.kForward));
-		manipulator.b().whileTrue(shooter.sysIdQuasistatic(Direction.kReverse));
-		manipulator.x().whileTrue(shooter.sysIdDynamic(Direction.kForward));
-		manipulator.y().whileTrue(shooter.sysIdDynamic(Direction.kReverse));
+		manipulator.start().whileTrue(aim.coastCmd());
+
+		manipulator.povUp().onTrue(shooter.increaseRpm());
+		manipulator.povDown().onTrue(shooter.decreaseRpm());
 	}
 
 	private Command getAutonomousCommand() {
