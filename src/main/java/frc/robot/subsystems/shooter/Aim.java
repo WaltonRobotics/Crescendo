@@ -28,6 +28,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.util.AllianceFlipUtil;
+import frc.util.logging.WaltLogger;
+import frc.util.logging.WaltLogger.DoubleLogger;
 
 import static frc.robot.Constants.FieldK.*;
 import static edu.wpi.first.units.Units.Degrees;
@@ -37,6 +39,7 @@ import static frc.robot.Constants.kCanbus;
 import static frc.robot.Constants.AimK.*;
 import static frc.robot.Constants.FieldK.SpeakerK.*;
 import static frc.robot.Constants.RobotK.kSimInterval;
+import static frc.robot.Constants.ShooterK.kDbTabName;
 import static frc.robot.Robot.*;
 
 import java.util.function.DoubleSupplier;
@@ -72,6 +75,8 @@ public class Aim extends SubsystemBase {
 
     private boolean m_isCoast;
 
+    private final DoubleLogger log_targetAngle = new WaltLogger.DoubleLogger(kDbTabName, "targetAngle");
+
     // TODO check
     // private final Trigger m_atStart = new Trigger(
     // () -> m_motor.getPosition().getValueAsDouble() ==
@@ -94,6 +99,10 @@ public class Aim extends SubsystemBase {
         // m_motor.setNeutralMode(NeutralModeValue.Brake))
         // .ignoringDisable(true));
 
+    }
+
+    public double getTargetAngle() {
+        return m_targetAngle.baseUnitMagnitude();
     }
 
     private Command toAngle(Measure<Angle> angle) {
@@ -231,6 +240,7 @@ public class Aim extends SubsystemBase {
         SmartDashboard.putNumber("Aim/motorSpeed", m_motor.get());
         SmartDashboard.putNumber("Aim/motorPos",
             Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()));
+        log_targetAngle.accept(getTargetAngle());
 
         boolean dashCoast = SmartDashboard.getBoolean("Aim/isCoast", false);
         if (dashCoast != m_isCoast) {

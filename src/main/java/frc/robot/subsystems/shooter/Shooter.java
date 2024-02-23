@@ -66,18 +66,6 @@ public class Shooter extends SubsystemBase {
 
     private Measure<Velocity<Angle>> m_targetVelo = Rotations.per(Minute).of(0);
 
-    public double getTargetRpm() {
-        return m_targetRpm;
-    }
-
-    public double getSpinAmt() {
-        return m_spinAmt;
-    }
-
-    public double getShotTime() {
-        return m_shotTime;
-    }
-
     private final SysIdRoutine m_sysId = new SysIdRoutine(
         new SysIdRoutine.Config(null,
             Volts.of(7),
@@ -99,6 +87,18 @@ public class Shooter extends SubsystemBase {
         m_left.getConfigurator().apply(leftConfigs);
 
         m_left.setInverted(true);
+    }
+
+    public double getTargetRpm() {
+        return m_targetRpm;
+    }
+
+    public double getSpinAmt() {
+        return m_spinAmt;
+    }
+
+    public double getShotTime() {
+        return m_shotTime;
     }
 
     public Command stop() {

@@ -194,6 +194,8 @@ public class Constants {
                     .withMotionMagicExpo_kV(kV)
                     .withMotionMagicExpo_kA(kA);
             }
+
+            public final String kDbTabName = "AimSubsys";
         }
 
         public static final int kAimId = 15;
