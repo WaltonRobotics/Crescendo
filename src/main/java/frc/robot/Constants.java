@@ -22,6 +22,8 @@ import edu.wpi.first.units.Measure;
 import frc.util.AllianceFlipUtil;
 
 public class Constants {
+    public static boolean kDebugLoggingEnabled = true;
+    
     public static final double kStickDeadband = 0.1;
     public static final String kCanbus = "fd";
 
@@ -137,6 +139,8 @@ public class Constants {
                     .withKA(kALeft);
             }
         }
+
+        public static final String kDbTabName = "ShooterSubsys";
 
         public static final int kRightId = 13;
         public static final int kLeftId = 14;

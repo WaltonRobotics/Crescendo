@@ -1,4 +1,4 @@
-package frc.util;
+package frc.util.logging;
 
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.NetworkTable;

@@ -20,11 +20,15 @@ import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
+import edu.wpi.first.util.datalog.DoubleLogEntry;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.util.LoggedTunableNumber;
+import frc.util.logging.LoggedTunableNumber;
+import frc.util.logging.WaltLogger;
+import frc.util.logging.WaltLogger.DoubleLogger;
 
 import static frc.robot.Constants.ShooterK.FlywheelSimK.*;
 import static edu.wpi.first.units.Units.Minute;
@@ -52,11 +56,27 @@ public class Shooter extends SubsystemBase {
     private double m_spinAmt;
     private double m_shotTime;
 
+    private final DoubleLogger log_targetRpm = new WaltLogger.DoubleLogger(kDbTabName, "targetRpm");
+    private final DoubleLogger log_spinAmt = new WaltLogger.DoubleLogger(kDbTabName, "spinAmt");
+    private final DoubleLogger log_shotTime = new WaltLogger.DoubleLogger(kDbTabName, "shotTime");
+
     private double time = 0;
     private boolean found = false;
     private final FlywheelSim m_flywheelSim = new FlywheelSim(DCMotor.getFalcon500(1), kGearRatio, kMoi);
 
     private Measure<Velocity<Angle>> m_targetVelo = Rotations.per(Minute).of(0);
+
+    public double getTargetRpm() {
+        return m_targetRpm;
+    }
+
+    public double getSpinAmt() {
+        return m_spinAmt;
+    }
+
+    public double getShotTime() {
+        return m_shotTime;
+    }
 
     private final SysIdRoutine m_sysId = new SysIdRoutine(
         new SysIdRoutine.Config(null,
@@ -131,7 +151,7 @@ public class Shooter extends SubsystemBase {
     }
 
     // idk i just wrote a couple methods cuz they might be able to be used but i'm
-    // prob gonna have to redo everything anyway
+    // prob gonna have to redo everything anyway ^-^ tehe
 
     public Pose2d getAdjustedPose(Supplier<Pose3d> robotPose, DoubleSupplier x, DoubleSupplier y,
         DoubleSupplier omega) {
@@ -167,6 +187,10 @@ public class Shooter extends SubsystemBase {
         m_targetRpm = m_tunableRpm.get();
         m_spinAmt = m_tunableSpin.get();
         m_shotTime = m_tunableShotTime.get();
+
+        log_targetRpm.accept(getTargetRpm());
+        log_spinAmt.accept(getSpinAmt());
+        log_shotTime.accept(getShotTime());
     }
 
     public void simulationPeriodic() {
