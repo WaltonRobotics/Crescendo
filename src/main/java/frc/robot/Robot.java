@@ -124,10 +124,6 @@ public class Robot extends TimedRobot {
 
 		/* driver controls */
 		drivetrain.setDefaultCommand(drivetrain.applyRequest(() -> {
-			if (!driver.getHID().isConnected()) {
-				return brake;
-			}
-
 			double leftY = -driver.getLeftY();
 			double leftX = -driver.getLeftX();
 			return drive
@@ -147,29 +143,27 @@ public class Robot extends TimedRobot {
 		/* sysid buttons */
 		driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
 		driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-		driver.start().and(driver.a()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-		driver.start().and(driver.b()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+		driver.start().and(driver.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
+		driver.start().and(driver.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
 		/* manipulator controls */
-		// aim.setDefaultCommand(aim.teleop(() -> -manipulator.getLeftY()));
-		// manipulator.rightBumper().whileTrue(intake.intake());
-		// manipulator.leftBumper().whileTrue(conveyor.convey());
-		// manipulator.rightTrigger().whileTrue(aim.aim()); // change to default cmd
-		// eventually
-		// climber.setDefaultCommand(climber.teleopCmd(() -> -manipulator.getLeftY()));
+		manipulator.leftTrigger().whileTrue(superstructure.intake());
+		manipulator.rightTrigger().whileTrue(intake.outtake());
+		manipulator.povUp().whileTrue(conveyor.run(true));
+		manipulator.povDown().whileTrue(conveyor.runBackwards());
 
 		/* testing buttons */
-		manipulator.leftTrigger().whileTrue(superstructure.intake());
-		manipulator.leftBumper().whileTrue(intake.outtake());
-		// TODO make these startEnd
-		manipulator.rightTrigger().whileTrue(superstructure.shoot()).onFalse(superstructure.stop());
-		manipulator.rightBumper().whileTrue(superstructure.backwardsRun()).onFalse(superstructure.stop());
-		manipulator.a().whileTrue(superstructure.ampShot()).onFalse(superstructure.stop());
+		manipulator.leftBumper().whileTrue(superstructure.shoot());
+		manipulator.rightBumper().whileTrue(superstructure.ampShot());
+		manipulator.back().and(manipulator.leftBumper()).whileTrue(superstructure.shootFast());
+		manipulator.a().whileTrue(superstructure.backwardsRun());
+		manipulator.b().whileTrue(conveyor.run(false));
+		manipulator.x().whileTrue(aim.goTo90());
 
-		manipulator.start().whileTrue(aim.coastCmd());
-
-		manipulator.povUp().onTrue(shooter.increaseRpm());
-		manipulator.povDown().onTrue(shooter.decreaseRpm());
+		manipulator.start().whileTrue(Commands.startEnd(
+			() -> aim.setCoast(true), () -> aim.coastCmd(false)));
+		manipulator.back().and(manipulator.povUp()).onTrue(shooter.increaseRpm());
+		manipulator.back().and(manipulator.povDown()).onTrue(shooter.decreaseRpm());
 	}
 
 	private Command getAutonomousCommand() {
@@ -196,7 +190,6 @@ public class Robot extends TimedRobot {
 	@Override
 	public void disabledInit() {
 		SignalLogger.stop();
-		aim.stop();
 	}
 
 	@Override
@@ -205,7 +198,6 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void disabledExit() {
-		aim.setCoast(false);
 	}
 
 	@Override

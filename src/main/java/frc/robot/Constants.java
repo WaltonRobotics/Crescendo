@@ -6,6 +6,7 @@ import static edu.wpi.first.units.Units.Meters;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.ReplanningConfig;
@@ -118,27 +119,43 @@ public class Constants {
 
     public class ShooterK {
         public static final class ShooterConfigs {
-            public final TalonFXConfiguration kRightConfigs = new TalonFXConfiguration();
-            public final TalonFXConfiguration kLeftConfigs = new TalonFXConfiguration();
+            private static final double kPRight = 0.05;
+            private static final double kSRight = 0.27; // sysid 0.15837
+            private static final double kVRight = 0.0625;
+            private static final double kARight = 0.007685;
 
-            public ShooterConfigs() {
-                kRightConfigs.Feedback = kRightConfigs.Feedback
+            private static final double kPLeft = 0.0475; // sysid 0.046968
+            private static final double kSLeft = 0.257; // sysid 0.2057
+            private static final double kVLeft = 0.065; // sysid 0.052935
+            private static final double kALeft = 0.017803;
+
+            public static final TalonFXConfiguration kLeftConfigs = new TalonFXConfiguration();
+            public static final TalonFXConfiguration kRightConfigs = new TalonFXConfiguration();
+
+            static {
+                kLeftConfigs.Feedback = kLeftConfigs.Feedback
                     .withSensorToMechanismRatio(kGearRatio);
 
-                kRightConfigs.Slot0 = kRightConfigs.Slot0
+                kLeftConfigs.Slot0 = kLeftConfigs.Slot0
                     .withKP(kPRight)
                     .withKS(kSRight)
                     .withKV(kVRight)
                     .withKA(kARight);
 
-                kLeftConfigs.Feedback = kLeftConfigs.Feedback
+                kLeftConfigs.MotorOutput = kLeftConfigs.MotorOutput
+                    .withNeutralMode(NeutralModeValue.Coast);
+
+                kRightConfigs.Feedback = kRightConfigs.Feedback
                     .withSensorToMechanismRatio(kGearRatio);
 
-                kLeftConfigs.Slot0 = kLeftConfigs.Slot0
+                kRightConfigs.Slot0 = kRightConfigs.Slot0
                     .withKP(kPLeft)
                     .withKS(kSLeft)
                     .withKV(kVLeft)
                     .withKA(kALeft);
+
+                kRightConfigs.MotorOutput = kRightConfigs.MotorOutput
+                    .withNeutralMode(NeutralModeValue.Coast);
             }
         }
 
@@ -146,16 +163,6 @@ public class Constants {
 
         public static final int kRightId = 13;
         public static final int kLeftId = 14;
-
-        public static final double kPRight = 0.01776;
-        public static final double kSRight = 0.25; // sysid 0.15837
-        public static final double kVRight = 0.057376;
-        public static final double kARight = 0.007685;
-
-        public static final double kPLeft = 0.0475; // sysid 0.046968
-        public static final double kSLeft = 0.257; // sysid 0.2057
-        public static final double kVLeft = 0.0553; // sysid 0.052935
-        public static final double kALeft = 0.017803;
 
         public static final double kSpinAmt = 0.7;
 
@@ -170,41 +177,56 @@ public class Constants {
         }
     }
 
-    public class AimK {
+    public static class AimK {
         public static final class AimConfigs {
-            public final TalonFXConfiguration kAimConfigs = new TalonFXConfiguration();
+            private static final double kP = 5; // idk
+            private static final double kS = 0.89;
+            private static final double kG = 0;
+            private static final double kV = 22.57; // V * s / rot
+            private static final double kA = 0.12; // V * s^2 / rot
+            private static final double kAcceleration = 160;
 
-            public AimConfigs() {
-                kAimConfigs.Slot0 = kAimConfigs.Slot0.withKP(kP);
+            public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
 
-                kAimConfigs.Feedback = kAimConfigs.Feedback
-                    .withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor)
-                    .withSensorToMechanismRatio(kGearRatio);
+            static {
+                motorConfig.Slot0 = motorConfig.Slot0
+                    .withKP(kP)
+                    .withKS(kS)
+                    .withKG(kG);
 
-                kAimConfigs.MotorOutput = kAimConfigs.MotorOutput
+                motorConfig.Feedback = motorConfig.Feedback
+                    .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
+                    .withFeedbackRemoteSensorID(15)
+                    .withRotorToSensorRatio(kGearRatio / 1.69) // ?
+                    .withSensorToMechanismRatio(1.69 / 1.0);
+
+                motorConfig.MotorOutput = motorConfig.MotorOutput
+                    .withNeutralMode(NeutralModeValue.Brake)
                     .withPeakForwardDutyCycle(0.25)
                     .withPeakReverseDutyCycle(0.25);
 
-                kAimConfigs.CurrentLimits = kAimConfigs.CurrentLimits
+                motorConfig.CurrentLimits = motorConfig.CurrentLimits
                     .withStatorCurrentLimit(15)
                     .withStatorCurrentLimitEnable(true)
                     .withSupplyCurrentLimit(8)
                     .withSupplyCurrentLimitEnable(true);
 
-                kAimConfigs.MotionMagic = kAimConfigs.MotionMagic
+                motorConfig.MotionMagic = motorConfig.MotionMagic
                     .withMotionMagicCruiseVelocity(0)
+                    .withMotionMagicAcceleration(kAcceleration)
                     .withMotionMagicExpo_kV(kV)
                     .withMotionMagicExpo_kA(kA);
             }
         }
 
-        public final String kDbTabName = "Aim";
+        public static final String kDbTabName = "Aim";
 
-        public static final int kAimId = 15;
+        public static final int kAimId = 20;
         public static final int kHomeSwitch = 1;
 
         // 125:1 MaxPlanetary, 24:60 belt drive, 312.5:1 total
-        public static final double kGearRatio = (125 * (60 / 24));
+        // this does not total to 312.5 : 1 banks it's 250 : 1
+        public static final double kGearRatio = (125 * (60.0 / 24));
 
         public static final Measure<Distance> kLength = Inches.of(19.75);
         // asin((22 - kHeightTilShooter) / kLength)
@@ -212,13 +234,6 @@ public class Constants {
         public static final Measure<Angle> kMinAngle = Degrees.of(22.5);
         public static final Measure<Angle> kInitAngle = Degrees.of(90);
         public static final Measure<Angle> kMaxAngle = Degrees.of(150);
-
-        public static final double kS = 0.89;
-        public static final double kV = 22.57; // V * s / rot
-        public static final double kA = 0.12; // V * s^2 / rot
-        public static final double kP = 30; // idk
-        public static final double kG = 0.37;
-        public static final double kAcceleration = 160;
     }
 
     // public class ClimberK {

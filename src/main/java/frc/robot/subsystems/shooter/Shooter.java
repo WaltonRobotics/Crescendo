@@ -4,7 +4,6 @@ import static frc.robot.Constants.RobotK.kSimInterval;
 import static frc.robot.Constants.ShooterK.*;
 
 import com.ctre.phoenix6.SignalLogger;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -46,7 +45,7 @@ public class Shooter extends SubsystemBase {
     private final VelocityVoltage m_request = new VelocityVoltage(0);
     private final VoltageOut m_voltage = new VoltageOut(0);
 
-    private double m_targetRpm = 1600;
+    private double m_targetRpm = 4000;
     private final Supplier<Measure<Velocity<Angle>>> m_targetRpmSupp = () -> Rotations.per(Minute).of(m_targetRpm);
     private double m_spinAmt = kSpinAmt;
     private double m_shotTime = 1.5;
@@ -77,11 +76,8 @@ public class Shooter extends SubsystemBase {
         }, null, this));
 
     public Shooter() {
-        TalonFXConfiguration rightConfigs = new ShooterConfigs().kRightConfigs;
-        TalonFXConfiguration leftConfigs = new ShooterConfigs().kLeftConfigs;
-        m_right.getConfigurator().apply(rightConfigs);
-        m_left.getConfigurator().apply(leftConfigs);
-
+        m_right.getConfigurator().apply(ShooterConfigs.kRightConfigs);
+        m_left.getConfigurator().apply(ShooterConfigs.kLeftConfigs);
         m_left.setInverted(true);
     }
 
@@ -90,32 +86,44 @@ public class Shooter extends SubsystemBase {
     }
 
     private Command toVelo(Supplier<Measure<Velocity<Angle>>> velo) {
-        return run(() -> {
-            var velMeas = velo.get();
-            m_targetRpm = velo.get().in(Rotations.per(Minute));
-            m_right.setControl(m_request.withVelocity(velMeas.in(RotationsPerSecond) * kSpinAmt));
-            m_left.setControl(m_request.withVelocity(velMeas.in(RotationsPerSecond)));
-        });
+        return runEnd(
+            () -> {
+                var velMeas = velo.get();
+                m_targetRpm = velo.get().in(Rotations.per(Minute));
+                m_right.setControl(m_request.withVelocity(velMeas.in(RotationsPerSecond) * kSpinAmt));
+                m_left.setControl(m_request.withVelocity(velMeas.in(RotationsPerSecond)));
+            }, () -> {
+                m_targetRpm = 0;
+                m_right.setControl(m_request.withVelocity(0));
+                m_left.setControl(m_request.withVelocity(0));
+            });
     }
 
     public Command increaseRpm() {
-        return Commands.runOnce(() -> {
-            m_targetRpm += 100;
-        });
+        return Commands.runOnce(
+            () -> {
+                m_targetRpm += 100;
+            });
     }
 
     public Command decreaseRpm() {
-        return Commands.runOnce(() -> {
-            m_targetRpm -= 100;
-        });
+        return Commands.runOnce(
+            () -> {
+                m_targetRpm -= 100;
+            });
     }
 
     public Command shoot() {
-        return toVelo(m_targetRpmSupp);
+        return toVelo(() -> Rotations.per(Minute).of(4000));
+    }
+
+    public Command shootFast() {
+        return toVelo(() -> Rotations.per(Minute).of(6000));
     }
 
     public Command ampShot() {
-        return toVelo(() -> Rotations.per(Minute).of(1150)); // TODO make this a constant
+        // TODO figure out the angle that the arm was at
+        return toVelo(() -> Rotations.per(Minute).of(1250)); // TODO make this a constant
     }
 
     public Command trapShot() {
@@ -130,13 +138,11 @@ public class Shooter extends SubsystemBase {
 
     public boolean spinUpFinished() {
         var target = m_targetRpmSupp.get().in(RotationsPerSecond);
-        var tolerance = target < 3000 ? 1.25 : 0.65;
+        var tolerance = target < 3000 ? 1 : 0.25;
         boolean leftOk = MathUtil.isNear(
             target, m_left.getVelocity().getValueAsDouble(), tolerance);
         boolean rightOk = MathUtil.isNear(
             target * kSpinAmt, m_right.getVelocity().getValueAsDouble(), tolerance);
-        System.out.println(leftOk + " " + m_left.getVelocity().getValueAsDouble() + " " + target);
-        System.out.println(rightOk + " " + m_right.getVelocity().getValueAsDouble() + " " + target * kSpinAmt);
         return leftOk && rightOk;
     }
 
@@ -146,20 +152,20 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command run() {
-        return runEnd(() -> {
-            rawRun(0.25);
-        },
+        return runEnd(
             () -> {
+                rawRun(0.25);
+            }, () -> {
                 m_left.set(0);
                 m_right.set(0);
             });
     }
 
     public Command runBackwards() {
-        return runEnd(() -> {
-            rawRun(-0.5);
-        },
+        return runEnd(
             () -> {
+                rawRun(-0.5);
+            }, () -> {
                 m_left.set(0);
                 m_right.set(0);
             });

@@ -59,6 +59,18 @@ public class Superstructure {
                 conveyorCmd));
     }
 
+    public Command shootFast() {
+        var shootCmd = m_shooter.shootFast();
+        var conveyorCmd = m_conveyor.run(true);
+
+        return Commands.parallel(
+            shootCmd,
+            Commands.sequence(
+                // TODO make this work correctly
+                spinUpWait(),
+                conveyorCmd));
+    }
+
     public Command trapShot() {
         var shootCmd = m_shooter.trapShot();
         var conveyorCmd = m_conveyor.run(true);
@@ -81,13 +93,6 @@ public class Superstructure {
                 // TODO make this work correctly
                 spinUpWait(),
                 conveyorCmd));
-    }
-
-    public Command stop() {
-        var shootCmd = m_shooter.stop();
-        var conveyorCmd = m_conveyor.stop();
-
-        return shootCmd.alongWith(conveyorCmd);
     }
 
     public Command aimAndShoot() {

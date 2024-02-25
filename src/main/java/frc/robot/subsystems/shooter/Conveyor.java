@@ -20,10 +20,6 @@ public class Conveyor extends SubsystemBase {
 
     private final BooleanLogger log_beamBreak = WaltLogger.logBoolean(kDbTabName, "beamBreak");
 
-    public Conveyor() {
-        m_conveyor.setInverted(true);
-    }
-
     public Command run(boolean ignoreSensor) {
         var go = runEnd(() -> {
             m_conveyor.set(0.35);

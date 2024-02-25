@@ -1,8 +1,8 @@
 package frc.robot.subsystems.shooter;
 
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
@@ -29,6 +29,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.util.AllianceFlipUtil;
 import frc.util.logging.WaltLogger;
+import frc.util.logging.WaltLogger.BooleanLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 
 import static frc.robot.Constants.FieldK.*;
@@ -39,7 +40,6 @@ import static frc.robot.Constants.kCanbus;
 import static frc.robot.Constants.AimK.*;
 import static frc.robot.Constants.FieldK.SpeakerK.*;
 import static frc.robot.Constants.RobotK.kSimInterval;
-import static frc.robot.Constants.ShooterK.kDbTabName;
 import static frc.robot.Robot.*;
 
 import java.util.function.DoubleSupplier;
@@ -49,6 +49,8 @@ public class Aim extends SubsystemBase {
     private final Supplier<Pose3d> m_robotPoseSupplier;
 
     private final TalonFX m_motor = new TalonFX(kAimId, kCanbus);
+    private final CANcoder m_cancoder = new CANcoder(15, kCanbus);
+
     private final MotionMagicExpoVoltage m_request = new MotionMagicExpoVoltage(0);
     private final DutyCycleOut m_dutyCycleRequest = new DutyCycleOut(0);
 
@@ -78,6 +80,8 @@ public class Aim extends SubsystemBase {
     private final DoubleLogger log_targetAngle = WaltLogger.logDouble(kDbTabName, "targetAngle");
     private final DoubleLogger log_motorSpeed = WaltLogger.logDouble(kDbTabName, "motorSpeed");
     private final DoubleLogger log_motorPos = WaltLogger.logDouble(kDbTabName, "motorPos");
+    private final DoubleLogger log_cancoderPos = WaltLogger.logDouble(kDbTabName, "cancoderPos");
+    private final BooleanLogger log_atSetpoint = WaltLogger.logBoolean(kDbTabName, "atSetpoint");
 
     private final DoubleLogger log_simVoltage = WaltLogger.logDouble(kDbTabName + "/Sim", "motorVoltage");
     private final DoubleLogger log_simVelo = WaltLogger.logDouble(kDbTabName + "/Sim", "motorVelo");
@@ -93,8 +97,7 @@ public class Aim extends SubsystemBase {
         m_robotPoseSupplier = robotPoseSupplier;
         SmartDashboard.putBoolean(kDbTabName + "/isCoast", m_isCoast);
 
-        TalonFXConfiguration configs = new AimConfigs().kAimConfigs;
-        m_motor.getConfigurator().apply(configs);
+        m_motor.getConfigurator().apply(AimConfigs.motorConfig);
 
         m_targetAngle = Degrees.of(180 - 0);
 
@@ -105,17 +108,20 @@ public class Aim extends SubsystemBase {
         // m_atStart.onTrue(Commands.runOnce(() ->
         // m_motor.setNeutralMode(NeutralModeValue.Brake))
         // .ignoringDisable(true));
-
     }
 
     public double getTargetAngle() {
-        return m_targetAngle.baseUnitMagnitude();
+        return m_targetAngle.in(Degrees);
     }
 
     private Command toAngle(Measure<Angle> angle) {
-        return run(() -> {
-            m_motor.setControl(m_request.withPosition(angle.in(Rotations)));
-        });
+        return runEnd(
+            () -> {
+                m_motor.setControl(m_request.withPosition(angle.in(Rotations)));
+            }, () -> {
+                m_motor.set(0);
+            })
+                .until(() -> MathUtil.isNear(angle.in(Rotations), m_cancoder.getPosition().getValue(), 0.1)); // idk
     }
 
     public void setCoast(boolean coast) {
@@ -123,25 +129,32 @@ public class Aim extends SubsystemBase {
         m_motor.setNeutralMode(coast ? NeutralModeValue.Coast : NeutralModeValue.Brake);
     }
 
-    public Command coastCmd() {
-        return startEnd(
-            () -> setCoast(true),
-            () -> setCoast(false));
+    public Command coastCmd(boolean coast) {
+        return runOnce(
+            () -> {
+                setCoast(coast);
+            });
     }
 
     public Command teleop(DoubleSupplier power) {
-        return run(() -> {
-            double powerVal = MathUtil.applyDeadband(power.getAsDouble(), 0.1);
-            m_targetAngle = m_targetAngle.plus(Degrees.of(powerVal * 1.2));
-            m_targetAngle = Degrees
-                .of(MathUtil.clamp(m_targetAngle.magnitude(), kMinAngle.magnitude(), kMaxAngle.magnitude()));
+        return run(
+            () -> {
+                double powerVal = MathUtil.applyDeadband(power.getAsDouble(), 0.1);
+                m_targetAngle = m_targetAngle.plus(Degrees.of(powerVal * 1.2));
+                m_targetAngle = Degrees
+                    .of(MathUtil.clamp(m_targetAngle.magnitude(), kMinAngle.magnitude(), kMaxAngle.magnitude()));
 
-            m_motor.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
-        });
+                m_motor.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
+            });
     }
 
     public Command runMotor() {
-        return runEnd(() -> m_motor.set(0.25), () -> m_motor.set(0));
+        return runEnd(
+            () -> {
+                m_motor.set(0.25);
+            }, () -> {
+                m_motor.set(0);
+            });
     }
 
     public Command aim() {
@@ -153,17 +166,29 @@ public class Aim extends SubsystemBase {
     }
 
     public Command goTo90() {
-        var setTargetCmd = runOnce(() -> m_targetAngle = Degrees.of(90));
+        // var setTargetCmd = Commands.runOnce(() -> m_targetAngle =
+        // Rotations.of(0.27));
+        return toAngle(Rotations.of(0.27));
+    }
+
+    public Command goToQuote30EndQuote() {
+        var setTargetCmd = Commands.runOnce(() -> m_targetAngle = Degrees.of(150));
+        return setTargetCmd.andThen(toTarget());
+    }
+
+    public Command goToZero() {
+        var setTargetCmd = Commands.runOnce(() -> m_targetAngle = Degrees.of(0));
         return setTargetCmd.andThen(toTarget());
     }
 
     // TODO make not duty cycle
     public Command run() {
-        return runEnd(() -> {
-            m_motor.setControl(m_dutyCycleRequest.withOutput(0.25));
-        }, () -> {
-            m_motor.setControl(m_dutyCycleRequest.withOutput(0));
-        });
+        return runEnd(
+            () -> {
+                m_motor.setControl(m_dutyCycleRequest.withOutput(0.25));
+            }, () -> {
+                m_motor.setControl(m_dutyCycleRequest.withOutput(0));
+            });
     }
 
     public Command toTarget() {
@@ -180,11 +205,12 @@ public class Aim extends SubsystemBase {
     public Command setAimTarget() {
         var translation = AllianceFlipUtil.apply(m_robotPoseSupplier.get().getTranslation());
         var poseToSpeaker = speakerPose.plus(translation);
-        return runOnce(() -> {
-            m_targetAngle = Radians.of(Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX())));
-            m_targetAngle = Degrees
-                .of(MathUtil.clamp(m_targetAngle.in(Degrees), kMinAngle.magnitude(), kMaxAngle.magnitude()));
-        });
+        return runOnce(
+            () -> {
+                m_targetAngle = Radians.of(Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX())));
+                m_targetAngle = Degrees
+                    .of(MathUtil.clamp(m_targetAngle.in(Degrees), kMinAngle.magnitude(), kMaxAngle.magnitude()));
+            });
     }
 
     /**
@@ -250,15 +276,19 @@ public class Aim extends SubsystemBase {
 
     @Override
     public void periodic() {
-        // TODO change this to WaltLogger
         log_motorSpeed.accept(m_motor.get());
         log_motorPos.accept(Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()));
         log_targetAngle.accept(getTargetAngle());
+        log_cancoderPos.accept(Units.rotationsToDegrees(m_cancoder.getPosition().getValueAsDouble()));
+        // TODO check this
+        log_atSetpoint
+            .accept(MathUtil.isNear(m_targetAngle.in(Rotations), m_cancoder.getPosition().getValueAsDouble(), 0.01));
 
         boolean dashCoast = SmartDashboard.getBoolean(kDbTabName + "/isCoast", false);
         if (dashCoast != m_isCoast) {
             m_isCoast = dashCoast;
             setCoast(m_isCoast);
+            System.out.println("Changing coast from SD: " + m_isCoast);
         }
     }
 

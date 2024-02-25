@@ -65,7 +65,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	// private final SysIdSwerveRotation characterization = new
 	// SysIdSwerveRotation();
 	private final SysIdSwerveSteerGains characterization = new SysIdSwerveSteerGains();
-	private SysIdRoutine m_sysIdRoutine = new SysIdRoutine(
+	private final SysIdRoutine m_sysId = new SysIdRoutine(
 		new SysIdRoutine.Config(
 			null,
 			Volts.of(7),
@@ -232,10 +232,10 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	}
 
 	public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
-		return m_sysIdRoutine.quasistatic(direction);
+		return m_sysId.quasistatic(direction);
 	}
 
 	public Command sysIdDynamic(SysIdRoutine.Direction direction) {
-		return m_sysIdRoutine.dynamic(direction);
+		return m_sysId.dynamic(direction);
 	}
 }
