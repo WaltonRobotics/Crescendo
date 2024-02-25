@@ -94,6 +94,7 @@ public class Shooter extends SubsystemBase {
                 m_targetRpm = velo.get().in(Rotations.per(Minute));
                 m_right.setControl(m_request.withVelocity(velMeas.in(RotationsPerSecond) * kSpinAmt));
                 m_left.setControl(m_request.withVelocity(velMeas.in(RotationsPerSecond)));
+
             }, () -> {
                 m_targetRpm = 0;
                 m_right.setControl(m_request.withVelocity(0));

@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
@@ -15,20 +16,26 @@ public class Intake extends SubsystemBase {
     private final CANSparkMax m_feeder = new CANSparkMax(kFeederId,
         MotorType.kBrushless);
 
+    private final VoltageOut m_voltsFoc = new VoltageOut(0).withEnableFOC(true);
+
     public final Trigger m_sightTrigger;
 
     public Intake(DigitalInput visiSight) {
         m_sightTrigger = new Trigger(visiSight::get);
     }
 
+    private void runMainRollers(double volts) {
+        m_motor.setControl(m_voltsFoc.withOutput(volts));
+    }
+
     public Command outtake() {
         return runEnd(
             () -> {
-                m_motor.set(-1);
+                runMainRollers(-12);
                 m_feeder.set(-1);
             },
             () -> {
-                m_motor.set(0);
+                runMainRollers(0);
                 m_feeder.set(0);
             });
     }
@@ -36,11 +43,11 @@ public class Intake extends SubsystemBase {
     public Command run() {
         return runEnd(
             () -> {
-                m_motor.set(1);
+                runMainRollers(12);
                 m_feeder.set(1);
             },
             () -> {
-                m_motor.set(0);
+                runMainRollers(0);
                 m_feeder.set(0);
             });
     }
