@@ -1,5 +1,6 @@
 package frc.robot.subsystems.shooter;
 
+import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
@@ -15,6 +16,7 @@ import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
@@ -56,7 +58,7 @@ public class Aim extends SubsystemBase {
     private final DCMotor m_aimGearbox = DCMotor.getFalcon500(1);
     private final SingleJointedArmSim m_aimSim = new SingleJointedArmSim(
         m_aimGearbox, kGearRatio, 0.761, Units.inchesToMeters(19.75),
-        kMinAngle.in(Radians), kMaxAngle.in(Radians), true, Units.degreesToRadians(0));
+        kMinAngle.in(Radians), kMaxAngle.in(Radians), true, kInitAngle.in(Radians));
 
     private final Mechanism2d m_mech2d = new Mechanism2d(60, 60);
     private final MechanismRoot2d m_aimPivot = m_mech2d.getRoot("aimPivot", 30, 30);
@@ -106,6 +108,10 @@ public class Aim extends SubsystemBase {
 
         SmartDashboard.putData("Mech2d", m_mech2d);
 
+        if (Utils.isSimulation()) {
+            // In simulation, make sure the CANcoder starts at the correct position
+            m_cancoder.setPosition(Units.radiansToRotations(m_aimSim.getAngleRads()) * 1.69);
+        }
         m_homeTrigger.onTrue(Commands.runOnce(() -> m_motor.setPosition(kInitAngle.in(Rotations)))
             .ignoringDisable(true));
         // m_atStart.onTrue(Commands.runOnce(() ->
@@ -203,7 +209,7 @@ public class Aim extends SubsystemBase {
     }
 
     /**
-     * @return a command that changes the target angle of the shooter based on where it is relative to the speaker 
+     * @return a command that changes the target angle of the shooter based on where it is relative to the speaker
      */
     public Command setAimTarget() {
         var translation = AllianceFlipUtil.apply(m_robotPoseSupplier.get().getTranslation());
@@ -219,7 +225,7 @@ public class Aim extends SubsystemBase {
     /**
      * if the robot is to the right of the speaker center, aim at the left corner
      * of the speaker and vice versa
-     * 
+     *
      * @return a command that changes the target speaker pose based on the robot's position
      */
     public Command changeSpeakerTarget() {
@@ -298,14 +304,20 @@ public class Aim extends SubsystemBase {
 
     @Override
     public void simulationPeriodic() {
-        m_motor.getSimState().setSupplyVoltage(12);
+        m_motor.getSimState().setSupplyVoltage(RobotController.getBatteryVoltage());
+        m_cancoder.getSimState().setSupplyVoltage(RobotController.getBatteryVoltage());
+
         var volts = m_motor.getSimState().getMotorVoltage();
         m_aimSim.setInputVoltage(volts);
+        m_aimSim.update(kSimInterval);
 
         double angle = Units.radiansToRotations(m_aimSim.getAngleRads());
         double velocity = Units.radiansToRotations(m_aimSim.getVelocityRadPerSec());
-        m_motor.getSimState().setRawRotorPosition(angle);
-        m_motor.getSimState().setRotorVelocity(velocity);
+        // The values sent to the devices must be before gear ratios
+        m_motor.getSimState().setRawRotorPosition(angle * kGearRatio);
+        m_motor.getSimState().setRotorVelocity(velocity * kGearRatio);
+        m_cancoder.getSimState().setRawPosition(angle * 1.69);
+        m_cancoder.getSimState().setVelocity(velocity * 1.69);
 
         m_aim2d.setAngle(Units.rotationsToDegrees(
             m_motor.getPosition().getValueAsDouble())); // TODO: make this render correctly with the real robot too
@@ -314,7 +326,5 @@ public class Aim extends SubsystemBase {
         log_simVelo.accept(m_aimSim.getVelocityRadPerSec());
         log_simAngle.accept(angle);
         log_simTarget.accept(m_targetAngle.in(Degrees));
-
-        m_aimSim.update(kSimInterval);
     }
 }

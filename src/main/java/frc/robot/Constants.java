@@ -187,6 +187,7 @@ public class Constants {
             private static final double kP = 0.01; // idk
             private static final double kS = 0;
             private static final double kG = 0;
+            private static final double kV = 0;
             private static final double kAcceleration = 160;
 
             public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
@@ -197,6 +198,7 @@ public class Constants {
                     .withKP(kP)
                     .withKS(kS)
                     .withKG(kG)
+                    .withKV(kV)
                     .withGravityType(GravityTypeValue.Arm_Cosine);
 
                 motorConfig.Feedback = motorConfig.Feedback
@@ -217,9 +219,9 @@ public class Constants {
                     .withSupplyCurrentLimitEnable(true);
 
                 motorConfig.MotionMagic = motorConfig.MotionMagic
-                    .withMotionMagicCruiseVelocity(20)
-                    .withMotionMagicAcceleration(kAcceleration)
-                    .withMotionMagicJerk(400);
+                    .withMotionMagicCruiseVelocity(20 / kGearRatio)
+                    .withMotionMagicAcceleration(kAcceleration / kGearRatio)
+                    .withMotionMagicJerk(400 / kGearRatio);
 
                 motorConfig.HardwareLimitSwitch = motorConfig.HardwareLimitSwitch
                     .withForwardLimitEnable(false)
