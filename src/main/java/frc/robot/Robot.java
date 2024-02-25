@@ -161,7 +161,7 @@ public class Robot extends TimedRobot {
 		manipulator.rightBumper().onTrue(aim.coastOut());
 		manipulator.povUp().onTrue(aim.increaseAngle());
 		manipulator.povDown().onTrue(aim.decreaseAngle());
-		manipulator.back().and(manipulator.rightBumper()).whileTrue(aim.speakerAngle());
+		manipulator.back().and(manipulator.rightBumper()).whileTrue(aim.subwoofer());
 
 		manipulator.start().whileTrue(Commands.startEnd(
 			() -> aim.setCoast(true), () -> aim.setCoast(false)));

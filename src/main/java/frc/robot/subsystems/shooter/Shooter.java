@@ -48,7 +48,7 @@ public class Shooter extends SubsystemBase {
     // private final VelocityTorqueCurrentFOC m_focRequest = new
     // VelocityTorqueCurrentFOC(0);
 
-    private double m_targetRpm = 4000;
+    private double m_targetRpm = 7000;
     private final Supplier<Measure<Velocity<Angle>>> m_targetRpmSupp = () -> Rotations.per(Minute).of(m_targetRpm);
     private double m_spinAmt = kSpinAmt;
     private double m_shotTime = 1.5;
@@ -116,7 +116,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command shoot() {
-        return toVelo(() -> Rotations.per(Minute).of(4000));
+        return toVelo(() -> Rotations.per(Minute).of(m_targetRpm));
     }
 
     public Command shootFast() {

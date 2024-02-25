@@ -166,9 +166,9 @@ public class Aim extends SubsystemBase {
         });
     }
 
-    public Command speakerAngle() {
+    public Command subwoofer() {
         return runOnce(() -> {
-            m_targetAngle = Rotations.of(0.123535);
+            m_targetAngle = Rotations.of(0.0646);
             m_motor.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
         });
     }

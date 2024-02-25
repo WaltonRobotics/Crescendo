@@ -49,18 +49,18 @@ public class Superstructure {
     }
 
     public Command shoot() {
-        // var aimCmd = m_aim.speakerAngle();
+        var aimCmd = m_aim.subwoofer();
         var shootCmd = m_shooter.shoot();
         var conveyorCmd = m_conveyor.run(true);
 
         return Commands.parallel(
             shootCmd,
-            // aimCmd,
+            aimCmd,
             Commands.sequence(
                 // TODO make this work correctly
-                // Commands.parallel(
-                spinUpWait(),
-                // Commands.waitUntil(() -> aimCmd.isFinished())),
+                Commands.parallel(
+                    spinUpWait(),
+                    Commands.waitUntil(() -> aimCmd.isFinished())),
                 conveyorCmd));
     }
 
