@@ -4,7 +4,7 @@ import static frc.robot.Constants.RobotK.kSimInterval;
 import static frc.robot.Constants.ShooterK.*;
 
 import com.ctre.phoenix6.SignalLogger;
-import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.math.MathUtil;
@@ -42,8 +42,9 @@ import java.util.function.Supplier;
 public class Shooter extends SubsystemBase {
     private final TalonFX m_left = new TalonFX(kLeftId, kCanbus);
     private final TalonFX m_right = new TalonFX(kRightId, kCanbus);
-    private final VelocityVoltage m_request = new VelocityVoltage(0);
+    // private final VelocityVoltage m_request = new VelocityVoltage(0);
     private final VoltageOut m_voltage = new VoltageOut(0);
+    private final VelocityTorqueCurrentFOC m_foc = new VelocityTorqueCurrentFOC(0);
 
     private double m_targetRpm = 4000;
     private final Supplier<Measure<Velocity<Angle>>> m_targetRpmSupp = () -> Rotations.per(Minute).of(m_targetRpm);
@@ -90,12 +91,12 @@ public class Shooter extends SubsystemBase {
             () -> {
                 var velMeas = velo.get();
                 m_targetRpm = velo.get().in(Rotations.per(Minute));
-                m_right.setControl(m_request.withVelocity(velMeas.in(RotationsPerSecond) * kSpinAmt));
-                m_left.setControl(m_request.withVelocity(velMeas.in(RotationsPerSecond)));
+                m_right.setControl(m_foc.withVelocity(velMeas.in(RotationsPerSecond) * kSpinAmt));
+                m_left.setControl(m_foc.withVelocity(velMeas.in(RotationsPerSecond)));
             }, () -> {
                 m_targetRpm = 0;
-                m_right.setControl(m_request.withVelocity(0));
-                m_left.setControl(m_request.withVelocity(0));
+                m_right.setControl(m_foc.withVelocity(0));
+                m_left.setControl(m_foc.withVelocity(0));
             });
     }
 

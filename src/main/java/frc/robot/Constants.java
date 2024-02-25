@@ -10,6 +10,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.GravityTypeValue;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
@@ -184,7 +185,7 @@ public class Constants {
 
     public static class AimK {
         public static final class AimConfigs {
-            private static final double kP = 0.01; // idk
+            private static final double kP = 100; // idk
             private static final double kS = 0;
             private static final double kG = 0;
             private static final double kV = 0;
@@ -202,7 +203,7 @@ public class Constants {
                     .withGravityType(GravityTypeValue.Arm_Cosine);
 
                 motorConfig.Feedback = motorConfig.Feedback
-                    .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
+                    .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
                     .withFeedbackRemoteSensorID(15)
                     .withRotorToSensorRatio(kGearRatio / 1.69) // ?
                     .withSensorToMechanismRatio(1.69 / 1.0);
@@ -210,10 +211,11 @@ public class Constants {
                 motorConfig.MotorOutput = motorConfig.MotorOutput
                     .withNeutralMode(NeutralModeValue.Brake)
                     .withPeakForwardDutyCycle(0.25)
-                    .withPeakReverseDutyCycle(-0.25);
+                    .withPeakReverseDutyCycle(-0.25)
+                    .withInverted(InvertedValue.Clockwise_Positive);
 
                 motorConfig.CurrentLimits = motorConfig.CurrentLimits
-                    .withStatorCurrentLimit(15)
+                    .withStatorCurrentLimit(45)
                     .withStatorCurrentLimitEnable(true)
                     .withSupplyCurrentLimit(8)
                     .withSupplyCurrentLimitEnable(true);

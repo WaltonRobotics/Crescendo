@@ -1,6 +1,7 @@
 package frc.robot.subsystems.shooter;
 
 import com.ctre.phoenix6.Utils;
+import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
@@ -29,6 +30,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.Constants.AimK.AimConfigs;
 import frc.util.AllianceFlipUtil;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
@@ -54,6 +56,8 @@ public class Aim extends SubsystemBase {
 
     private final MotionMagicExpoVoltage m_request = new MotionMagicExpoVoltage(0);
     private final DutyCycleOut m_dutyCycleRequest = new DutyCycleOut(0);
+    // private final PositionVoltage m_positionRequest = new PositionVoltage(0);
+    private final CoastOut m_coastRequest = new CoastOut();
 
     private final DCMotor m_aimGearbox = DCMotor.getFalcon500(1);
     private final SingleJointedArmSim m_aimSim = new SingleJointedArmSim(
@@ -117,6 +121,18 @@ public class Aim extends SubsystemBase {
         // m_atStart.onTrue(Commands.runOnce(() ->
         // m_motor.setNeutralMode(NeutralModeValue.Brake))
         // .ignoringDisable(true));
+    }
+
+    public Command goUp() {
+        return runOnce(() -> m_motor.setControl(m_request.withPosition(0.166)));
+    }
+
+    public Command goDown() {
+        return runOnce(() -> m_motor.setControl(m_request.withPosition(0)));
+    }
+
+    public Command coastOut() {
+        return runOnce(() -> m_motor.setControl(m_coastRequest));
     }
 
     public double getTargetAngle() {

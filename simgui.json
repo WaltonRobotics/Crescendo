@@ -116,7 +116,7 @@
           "visible": true
         }
       },
-      "/SmartDashboard/mech2d": {
+      "/SmartDashboard/Mech2d": {
         "window": {
           "visible": true
         }
@@ -150,8 +150,10 @@
         "open": true
       },
       "open": true
-    },
-    "visible": true
+    }
+  },
+  "NetworkTables View": {
+    "visible": false
   },
   "Plot": {
     "Plot <0>": {
