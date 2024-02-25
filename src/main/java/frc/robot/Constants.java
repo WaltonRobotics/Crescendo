@@ -5,10 +5,13 @@ import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Rotations;
 
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.ReplanningConfig;
@@ -187,6 +190,7 @@ public class Constants {
             private static final double kAcceleration = 160;
 
             public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
+            public static final CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
 
             static {
                 motorConfig.Slot0 = motorConfig.Slot0
@@ -226,6 +230,11 @@ public class Constants {
                     .withReverseSoftLimitThreshold(kMinAngle.in(Rotations))
                     .withForwardSoftLimitEnable(true)
                     .withReverseSoftLimitEnable(true);
+
+                cancoderConfig.MagnetSensor = cancoderConfig.MagnetSensor
+                    .withMagnetOffset(-0.537)
+                    .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)
+                    .withAbsoluteSensorRange(AbsoluteSensorRangeValue.Signed_PlusMinusHalf);
             }
         }
 

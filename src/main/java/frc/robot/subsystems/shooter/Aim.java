@@ -100,6 +100,7 @@ public class Aim extends SubsystemBase {
         SmartDashboard.putBoolean(kDbTabName + "/isCoast", m_isCoast);
 
         m_motor.getConfigurator().apply(AimConfigs.motorConfig);
+        m_cancoder.getConfigurator().apply(AimConfigs.cancoderConfig);
 
         m_targetAngle = Degrees.of(180 - 0);
 
