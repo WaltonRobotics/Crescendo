@@ -4,7 +4,7 @@ import static frc.robot.Constants.RobotK.kSimInterval;
 import static frc.robot.Constants.ShooterK.*;
 
 import com.ctre.phoenix6.SignalLogger;
-import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.math.MathUtil;
@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.util.logging.LoggedTunableNumber;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 
@@ -42,17 +43,17 @@ import java.util.function.Supplier;
 public class Shooter extends SubsystemBase {
     private final TalonFX m_left = new TalonFX(kLeftId, kCanbus);
     private final TalonFX m_right = new TalonFX(kRightId, kCanbus);
-    // private final VelocityVoltage m_request = new VelocityVoltage(0);
+    private final VelocityVoltage m_request = new VelocityVoltage(0);
     private final VoltageOut m_voltage = new VoltageOut(0);
-    private final VelocityTorqueCurrentFOC m_foc = new VelocityTorqueCurrentFOC(0);
+    // private final VelocityTorqueCurrentFOC m_focRequest = new
+    // VelocityTorqueCurrentFOC(0);
 
     private double m_targetRpm = 4000;
     private final Supplier<Measure<Velocity<Angle>>> m_targetRpmSupp = () -> Rotations.per(Minute).of(m_targetRpm);
     private double m_spinAmt = kSpinAmt;
     private double m_shotTime = 1.5;
 
-    // private LoggedTunableNumber m_tunableRpm = new
-    // LoggedTunableNumber("targetRpm", m_targetRpm);
+    private LoggedTunableNumber m_tunableRpm = new LoggedTunableNumber("targetRpm", m_targetRpm);
     // private LoggedTunableNumber m_tunableSpin = new LoggedTunableNumber("spin",
     // m_spinAmt);
     // private LoggedTunableNumber m_tunableShotTime = new
@@ -91,12 +92,12 @@ public class Shooter extends SubsystemBase {
             () -> {
                 var velMeas = velo.get();
                 m_targetRpm = velo.get().in(Rotations.per(Minute));
-                m_right.setControl(m_foc.withVelocity(velMeas.in(RotationsPerSecond) * kSpinAmt));
-                m_left.setControl(m_foc.withVelocity(velMeas.in(RotationsPerSecond)));
+                m_right.setControl(m_request.withVelocity(velMeas.in(RotationsPerSecond) * kSpinAmt));
+                m_left.setControl(m_request.withVelocity(velMeas.in(RotationsPerSecond)));
             }, () -> {
                 m_targetRpm = 0;
-                m_right.setControl(m_foc.withVelocity(0));
-                m_left.setControl(m_foc.withVelocity(0));
+                m_right.setControl(m_request.withVelocity(0));
+                m_left.setControl(m_request.withVelocity(0));
             });
     }
 
@@ -206,7 +207,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public void periodic() {
-        // m_targetRpm = m_tunableRpm.get();
+        m_targetRpm = m_tunableRpm.get();
         // m_spinAmt = m_tunableSpin.get();
         // m_shotTime = m_tunableShotTime.get();
 

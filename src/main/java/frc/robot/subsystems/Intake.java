@@ -25,7 +25,7 @@ public class Intake extends SubsystemBase {
         return runEnd(
             () -> {
                 m_motor.set(-1);
-                // m_feeder.set(-1);
+                m_feeder.set(-1);
             },
             () -> {
                 m_motor.set(0);
@@ -37,11 +37,11 @@ public class Intake extends SubsystemBase {
         return runEnd(
             () -> {
                 m_motor.set(1);
-                // m_feeder.set(1);
+                m_feeder.set(1);
             },
             () -> {
                 m_motor.set(0);
-                // m_feeder.set(0);
+                m_feeder.set(0);
             });
     }
 }

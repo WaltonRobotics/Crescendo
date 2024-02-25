@@ -149,8 +149,6 @@ public class Robot extends TimedRobot {
 		/* manipulator controls */
 		manipulator.leftTrigger().whileTrue(superstructure.intake());
 		manipulator.rightTrigger().whileTrue(intake.outtake());
-		manipulator.povUp().whileTrue(shooter.shoot());
-		manipulator.povDown().whileTrue(shooter.runBackwards());
 
 		/* testing buttons */
 		manipulator.leftBumper().whileTrue(superstructure.shoot());
@@ -158,9 +156,12 @@ public class Robot extends TimedRobot {
 		manipulator.back().and(manipulator.leftBumper()).whileTrue(superstructure.shootFast());
 		manipulator.a().whileTrue(superstructure.backwardsRun());
 		manipulator.b().whileTrue(conveyor.run(false));
-		manipulator.x().onTrue(aim.goUp());
-		manipulator.y().onTrue(aim.goDown());
+		manipulator.x().onTrue(aim.to90ish());
+		manipulator.y().onTrue(aim.to0());
 		manipulator.rightBumper().onTrue(aim.coastOut());
+		manipulator.povUp().onTrue(aim.increaseAngle());
+		manipulator.povDown().onTrue(aim.decreaseAngle());
+		manipulator.back().and(manipulator.rightBumper()).whileTrue(aim.speakerAngle());
 
 		manipulator.start().whileTrue(Commands.startEnd(
 			() -> aim.setCoast(true), () -> aim.setCoast(false)));

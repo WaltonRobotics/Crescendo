@@ -185,11 +185,10 @@ public class Constants {
 
     public static class AimK {
         public static final class AimConfigs {
-            private static final double kP = 100; // idk
-            private static final double kS = 0;
+            private static final double kP = 120; // idk
+            private static final double kS = 0.25;
             private static final double kG = 0;
             private static final double kV = 0;
-            private static final double kAcceleration = 160;
 
             public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
             public static final CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
@@ -210,34 +209,34 @@ public class Constants {
 
                 motorConfig.MotorOutput = motorConfig.MotorOutput
                     .withNeutralMode(NeutralModeValue.Brake)
-                    .withPeakForwardDutyCycle(0.25)
-                    .withPeakReverseDutyCycle(-0.25)
+                    .withPeakForwardDutyCycle(1)
+                    .withPeakReverseDutyCycle(-1)
                     .withInverted(InvertedValue.Clockwise_Positive);
 
                 motorConfig.CurrentLimits = motorConfig.CurrentLimits
                     .withStatorCurrentLimit(45)
                     .withStatorCurrentLimitEnable(true)
-                    .withSupplyCurrentLimit(8)
+                    .withSupplyCurrentLimit(16)
                     .withSupplyCurrentLimitEnable(true);
 
                 motorConfig.MotionMagic = motorConfig.MotionMagic
-                    .withMotionMagicCruiseVelocity(20 / kGearRatio)
-                    .withMotionMagicAcceleration(kAcceleration / kGearRatio)
-                    .withMotionMagicJerk(400 / kGearRatio);
+                    .withMotionMagicCruiseVelocity(2)
+                    .withMotionMagicAcceleration(12)
+                    .withMotionMagicJerk(1);
 
                 motorConfig.HardwareLimitSwitch = motorConfig.HardwareLimitSwitch
                     .withForwardLimitEnable(false)
                     .withReverseLimitEnable(false);
 
                 motorConfig.SoftwareLimitSwitch = motorConfig.SoftwareLimitSwitch
-                    .withForwardSoftLimitThreshold(kMaxAngle.in(Rotations))
-                    .withReverseSoftLimitThreshold(kMinAngle.in(Rotations))
+                    .withForwardSoftLimitThreshold(0.27)
+                    .withReverseSoftLimitThreshold(0)
                     .withForwardSoftLimitEnable(true)
                     .withReverseSoftLimitEnable(true);
 
                 cancoderConfig.MagnetSensor = cancoderConfig.MagnetSensor
-                    .withMagnetOffset(-0.537)
-                    .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)
+                    .withMagnetOffset(0.459716796875)
+                    .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
                     .withAbsoluteSensorRange(AbsoluteSensorRangeValue.Signed_PlusMinusHalf);
             }
         }

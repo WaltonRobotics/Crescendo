@@ -24,10 +24,11 @@ public class Superstructure {
     }
 
     public Command intake() {
+        var aimCmd = m_aim.intakeMode();
         var intakeCmd = m_intake.run();
         var conveyorCmd = m_conveyor.run(false);
 
-        return Commands.race(intakeCmd, conveyorCmd);
+        return Commands.sequence(aimCmd, Commands.race(intakeCmd, conveyorCmd));
     }
 
     public Command intakeShotCycle() {
@@ -48,14 +49,18 @@ public class Superstructure {
     }
 
     public Command shoot() {
+        // var aimCmd = m_aim.speakerAngle();
         var shootCmd = m_shooter.shoot();
         var conveyorCmd = m_conveyor.run(true);
 
         return Commands.parallel(
             shootCmd,
+            // aimCmd,
             Commands.sequence(
                 // TODO make this work correctly
+                // Commands.parallel(
                 spinUpWait(),
+                // Commands.waitUntil(() -> aimCmd.isFinished())),
                 conveyorCmd));
     }
 
