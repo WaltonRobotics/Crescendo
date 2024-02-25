@@ -3,9 +3,11 @@ package frc.robot;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Rotations;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
@@ -179,11 +181,9 @@ public class Constants {
 
     public static class AimK {
         public static final class AimConfigs {
-            private static final double kP = 5; // idk
-            private static final double kS = 0.89;
+            private static final double kP = 0.01; // idk
+            private static final double kS = 0;
             private static final double kG = 0;
-            private static final double kV = 22.57; // V * s / rot
-            private static final double kA = 0.12; // V * s^2 / rot
             private static final double kAcceleration = 160;
 
             public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
@@ -192,7 +192,8 @@ public class Constants {
                 motorConfig.Slot0 = motorConfig.Slot0
                     .withKP(kP)
                     .withKS(kS)
-                    .withKG(kG);
+                    .withKG(kG)
+                    .withGravityType(GravityTypeValue.Arm_Cosine);
 
                 motorConfig.Feedback = motorConfig.Feedback
                     .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
@@ -203,7 +204,7 @@ public class Constants {
                 motorConfig.MotorOutput = motorConfig.MotorOutput
                     .withNeutralMode(NeutralModeValue.Brake)
                     .withPeakForwardDutyCycle(0.25)
-                    .withPeakReverseDutyCycle(0.25);
+                    .withPeakReverseDutyCycle(-0.25);
 
                 motorConfig.CurrentLimits = motorConfig.CurrentLimits
                     .withStatorCurrentLimit(15)
@@ -212,10 +213,19 @@ public class Constants {
                     .withSupplyCurrentLimitEnable(true);
 
                 motorConfig.MotionMagic = motorConfig.MotionMagic
-                    .withMotionMagicCruiseVelocity(0)
+                    .withMotionMagicCruiseVelocity(20)
                     .withMotionMagicAcceleration(kAcceleration)
-                    .withMotionMagicExpo_kV(kV)
-                    .withMotionMagicExpo_kA(kA);
+                    .withMotionMagicJerk(400);
+
+                motorConfig.HardwareLimitSwitch = motorConfig.HardwareLimitSwitch
+                    .withForwardLimitEnable(false)
+                    .withReverseLimitEnable(false);
+
+                motorConfig.SoftwareLimitSwitch = motorConfig.SoftwareLimitSwitch
+                    .withForwardSoftLimitThreshold(kMaxAngle.in(Rotations))
+                    .withReverseSoftLimitThreshold(kMinAngle.in(Rotations))
+                    .withForwardSoftLimitEnable(true)
+                    .withReverseSoftLimitEnable(true);
             }
         }
 
@@ -231,9 +241,9 @@ public class Constants {
         public static final Measure<Distance> kLength = Inches.of(19.75);
         // asin((22 - kHeightTilShooter) / kLength)
         public static final Measure<Angle> kStageClearance = Degrees.of(47.097);
-        public static final Measure<Angle> kMinAngle = Degrees.of(22.5);
+        public static final Measure<Angle> kMinAngle = Rotations.of(0);
         public static final Measure<Angle> kInitAngle = Degrees.of(90);
-        public static final Measure<Angle> kMaxAngle = Degrees.of(150);
+        public static final Measure<Angle> kMaxAngle = Rotations.of(0.45);
     }
 
     // public class ClimberK {

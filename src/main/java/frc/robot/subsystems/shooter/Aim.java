@@ -29,7 +29,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.util.AllianceFlipUtil;
 import frc.util.logging.WaltLogger;
-import frc.util.logging.WaltLogger.BooleanLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 
 import static frc.robot.Constants.FieldK.*;
@@ -81,7 +80,10 @@ public class Aim extends SubsystemBase {
     private final DoubleLogger log_motorSpeed = WaltLogger.logDouble(kDbTabName, "motorSpeed");
     private final DoubleLogger log_motorPos = WaltLogger.logDouble(kDbTabName, "motorPos");
     private final DoubleLogger log_cancoderPos = WaltLogger.logDouble(kDbTabName, "cancoderPos");
-    private final BooleanLogger log_atSetpoint = WaltLogger.logBoolean(kDbTabName, "atSetpoint");
+
+    private final DoubleLogger log_closedLoopError = WaltLogger.logDouble(kDbTabName, "closedLoopError");
+    private final DoubleLogger log_reference = WaltLogger.logDouble(kDbTabName, "reference");
+    private final DoubleLogger log_output = WaltLogger.logDouble(kDbTabName, "output");
 
     private final DoubleLogger log_simVoltage = WaltLogger.logDouble(kDbTabName + "/Sim", "motorVoltage");
     private final DoubleLogger log_simVelo = WaltLogger.logDouble(kDbTabName + "/Sim", "motorVelo");
@@ -280,9 +282,10 @@ public class Aim extends SubsystemBase {
         log_motorPos.accept(Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()));
         log_targetAngle.accept(getTargetAngle());
         log_cancoderPos.accept(Units.rotationsToDegrees(m_cancoder.getPosition().getValueAsDouble()));
-        // TODO check this
-        log_atSetpoint
-            .accept(MathUtil.isNear(m_targetAngle.in(Rotations), m_cancoder.getPosition().getValueAsDouble(), 0.01));
+
+        log_closedLoopError.accept(m_motor.getClosedLoopError().getValueAsDouble());
+        log_reference.accept(m_motor.getClosedLoopReference().getValueAsDouble());
+        log_output.accept(m_motor.getClosedLoopOutput().getValueAsDouble());
 
         boolean dashCoast = SmartDashboard.getBoolean(kDbTabName + "/isCoast", false);
         if (dashCoast != m_isCoast) {
