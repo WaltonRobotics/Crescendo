@@ -156,8 +156,8 @@ public class Robot extends TimedRobot {
 		manipulator.back().and(manipulator.leftBumper()).whileTrue(superstructure.shootFast());
 		manipulator.a().whileTrue(superstructure.backwardsRun());
 		manipulator.b().whileTrue(conveyor.run(false));
-		manipulator.x().onTrue(aim.to90ish());
-		manipulator.y().onTrue(aim.to0());
+		// manipulator.x().onTrue(aim.to90ish());
+		// manipulator.y().onTrue(aim.to0());
 		manipulator.rightBumper().onTrue(aim.coastOut());
 		manipulator.povUp().onTrue(aim.increaseAngle());
 		manipulator.povDown().onTrue(aim.decreaseAngle());
@@ -167,6 +167,12 @@ public class Robot extends TimedRobot {
 			() -> aim.setCoast(true), () -> aim.setCoast(false)));
 		manipulator.back().and(manipulator.povUp()).onTrue(shooter.increaseRpm());
 		manipulator.back().and(manipulator.povDown()).onTrue(shooter.decreaseRpm());
+
+		/* sysid buttons */
+		manipulator.back().and(manipulator.y()).whileTrue(shooter.sysIdDynamic(Direction.kForward));
+		manipulator.back().and(manipulator.x()).whileTrue(shooter.sysIdDynamic(Direction.kReverse));
+		manipulator.start().and(manipulator.y()).whileTrue(shooter.sysIdQuasistatic(Direction.kForward));
+		manipulator.start().and(manipulator.x()).whileTrue(shooter.sysIdQuasistatic(Direction.kReverse));
 	}
 
 	private Command getAutonomousCommand() {
