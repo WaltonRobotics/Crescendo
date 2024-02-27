@@ -151,14 +151,14 @@ public class Robot extends TimedRobot {
 		manipulator.rightTrigger().whileTrue(intake.outtake());
 
 		/* testing buttons */
-		manipulator.leftBumper().whileTrue(superstructure.shoot());
+		manipulator.leftBumper().whileTrue(superstructure.subwoofer());
 		// manipulator.rightBumper().whileTrue(superstructure.ampShot());
 		manipulator.back().and(manipulator.leftBumper()).whileTrue(superstructure.shootFast());
 		manipulator.a().whileTrue(superstructure.backwardsRun());
 		manipulator.b().whileTrue(conveyor.run(false));
 		// manipulator.x().onTrue(aim.to90ish());
 		// manipulator.y().onTrue(aim.to0());
-		manipulator.rightBumper().onTrue(aim.coastOut());
+		manipulator.rightBumper().whileTrue(superstructure.shoot());
 		manipulator.povUp().onTrue(aim.increaseAngle());
 		manipulator.povDown().onTrue(aim.decreaseAngle());
 		manipulator.back().and(manipulator.rightBumper()).whileTrue(aim.subwoofer());

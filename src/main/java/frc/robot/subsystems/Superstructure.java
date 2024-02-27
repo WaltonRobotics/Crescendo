@@ -48,7 +48,7 @@ public class Superstructure {
                     conveyorCmd)));
     }
 
-    public Command shoot() {
+    public Command subwoofer() {
         var aimCmd = m_aim.subwoofer();
         var shootCmd = m_shooter.shoot();
         var conveyorCmd = m_conveyor.run(true);
@@ -62,6 +62,21 @@ public class Superstructure {
                     spinUpWait(),
                     Commands.waitUntil(() -> aimCmd.isFinished())),
                 conveyorCmd));
+    }
+
+    public Command shoot() { // podium angle: 0.007568 rot
+        var shootCmd = m_shooter.shoot();
+        var conveyorCmd = m_conveyor.run(true);
+
+        return Commands.parallel(
+            Commands.print("shooting"),
+            shootCmd,
+            Commands.sequence(
+                Commands.print("waiting for spinup"),
+                spinUpWait(),
+                Commands.print("conveying"),
+                conveyorCmd,
+                Commands.print("done")));
     }
 
     public Command shootFast() {

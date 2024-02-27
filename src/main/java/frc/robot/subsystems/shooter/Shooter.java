@@ -67,6 +67,7 @@ public class Shooter extends SubsystemBase {
     private final DoubleLogger log_targetRpm = WaltLogger.logDouble(kDbTabName, "targetRpm");
     private final DoubleLogger log_spinAmt = WaltLogger.logDouble(kDbTabName, "spinAmt");
     private final DoubleLogger log_shotTime = WaltLogger.logDouble(kDbTabName, "shotTime");
+
     private final DoubleLogger log_leftTarget = WaltLogger.logDouble(kDbTabName, "leftTarget");
     private final DoubleLogger log_rightTarget = WaltLogger.logDouble(kDbTabName, "rightTarget");
 
