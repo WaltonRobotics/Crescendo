@@ -137,18 +137,22 @@ public class Robot extends TimedRobot {
 					-driver.getLeftX()))));
 		driver.x().whileTrue(drivetrain.goToAutonPose());
 		driver.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
-		driver.rightBumper().onTrue(drivetrain.resetPoseToSpeaker());
+		// driver.rightBumper().onTrue(drivetrain.resetPoseToSpeaker());
+		driver.rightTrigger().whileTrue(superstructure.subwoofer());
+		driver.rightTrigger().and(driver.b()).whileTrue(conveyor.run(true));
 
 		/* sysid buttons */
 		driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
 		driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
 		driver.start().and(driver.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
 		driver.start().and(driver.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
-		driver.rightTrigger().whileTrue(superstructure.subwoofer());
 
 		/* manipulator controls */
 		manipulator.leftTrigger().whileTrue(superstructure.intake());
 		manipulator.rightTrigger().whileTrue(intake.outtake());
+		manipulator.povUp().whileTrue(conveyor.run(true));
+		manipulator.rightBumper().whileTrue(shooter.shoot());
+		manipulator.x().whileTrue(aim.intakeMode());
 
 		/* testing buttons */
 		manipulator.leftBumper().whileTrue(superstructure.subwoofer());
@@ -157,9 +161,8 @@ public class Robot extends TimedRobot {
 		manipulator.b().whileTrue(conveyor.run(false));
 		// manipulator.x().onTrue(aim.to90ish());
 		// manipulator.y().onTrue(aim.to0());
-		manipulator.rightBumper().whileTrue(superstructure.shoot());
-		manipulator.povUp().onTrue(aim.increaseAngle());
-		manipulator.povDown().onTrue(aim.decreaseAngle());
+		// manipulator.povUp().onTrue(aim.increaseAngle());
+		// manipulator.povDown().onTrue(aim.decreaseAngle());
 		manipulator.back().and(manipulator.rightBumper()).whileTrue(aim.subwoofer());
 
 		manipulator.start().whileTrue(Commands.startEnd(

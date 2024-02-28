@@ -135,11 +135,11 @@ public class Constants {
             private static final double kVLeft = 0.0625; // sysid 0.052935
             private static final double kALeft = 0;
 
-            public static final TalonFXConfiguration kLeftConfigs = new TalonFXConfiguration();
             public static final TalonFXConfiguration kRightConfigs = new TalonFXConfiguration();
+            public static final TalonFXConfiguration kLeftConfigs = new TalonFXConfiguration();
 
             static {
-                kLeftConfigs.Feedback = kLeftConfigs.Feedback
+                kRightConfigs.Feedback = kRightConfigs.Feedback
                     .withSensorToMechanismRatio(kGearRatio);
 
                 kRightConfigs.Slot0 = kRightConfigs.Slot0
@@ -148,17 +148,11 @@ public class Constants {
                     .withKV(kVRight)
                     .withKA(kARight);
 
-                kLeftConfigs.MotorOutput = kLeftConfigs.MotorOutput
+                kRightConfigs.MotorOutput = kRightConfigs.MotorOutput
                     .withNeutralMode(NeutralModeValue.Coast);
-
-                kLeftConfigs.ClosedLoopRamps = kLeftConfigs.ClosedLoopRamps
-                    .withVoltageClosedLoopRampPeriod(0.25);
 
                 kRightConfigs.ClosedLoopRamps = kRightConfigs.ClosedLoopRamps
                     .withVoltageClosedLoopRampPeriod(0.25);
-
-                kRightConfigs.Feedback = kRightConfigs.Feedback
-                    .withSensorToMechanismRatio(kGearRatio);
 
                 kLeftConfigs.Slot0 = kLeftConfigs.Slot0
                     .withKP(kPLeft)
@@ -166,8 +160,14 @@ public class Constants {
                     .withKV(kVLeft)
                     .withKA(kALeft);
 
-                kRightConfigs.MotorOutput = kRightConfigs.MotorOutput
+                kLeftConfigs.Feedback = kLeftConfigs.Feedback
+                    .withSensorToMechanismRatio(kGearRatio);
+
+                kLeftConfigs.MotorOutput = kLeftConfigs.MotorOutput
                     .withNeutralMode(NeutralModeValue.Coast);
+
+                kLeftConfigs.ClosedLoopRamps = kLeftConfigs.ClosedLoopRamps
+                    .withVoltageClosedLoopRampPeriod(0.25);
             }
         }
 
