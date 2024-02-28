@@ -20,15 +20,16 @@ public class Superstructure {
     }
 
     private Command spinUpWait() {
-        return Commands.waitUntil(() -> m_shooter.spinUpFinished());
+        return Commands.waitSeconds(0.2).andThen(Commands.waitUntil(() -> m_shooter.spinUpFinished()));
     }
 
     public Command intake() {
         var aimCmd = m_aim.intakeMode();
         var intakeCmd = m_intake.run();
         var conveyorCmd = m_conveyor.run(false);
+        var retractCmd = m_conveyor.retract();
 
-        return Commands.sequence(aimCmd, Commands.race(intakeCmd, conveyorCmd));
+        return Commands.sequence(aimCmd, Commands.race(intakeCmd, conveyorCmd), retractCmd);
     }
 
     public Command intakeShotCycle() {

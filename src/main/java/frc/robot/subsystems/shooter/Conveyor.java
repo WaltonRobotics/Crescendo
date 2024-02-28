@@ -29,10 +29,13 @@ public class Conveyor extends SubsystemBase {
 
         if (!ignoreSensor) {
             go = go.until(m_note);
-            // go = go.andThen(() -> m_conveyor.set(-0.1)).until(m_note.negate());
         }
 
         return go;
+    }
+
+    public Command retract() {
+        return runEnd(() -> m_conveyor.set(-0.05), () -> m_conveyor.set(0)).until(m_note.negate());
     }
 
     public Command runBackwards() {

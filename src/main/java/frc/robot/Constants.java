@@ -125,15 +125,15 @@ public class Constants {
 
     public class ShooterK {
         public static final class ShooterConfigs {
-            private static final double kPRight = 0.05;
-            private static final double kSRight = 0.27; // sysid 0.15837
+            private static final double kPRight = 0.1;
+            private static final double kSRight = 0.254; // sysid 0.15837
             private static final double kVRight = 0.0625;
-            private static final double kARight = 0.007685;
+            private static final double kARight = 0;
 
-            private static final double kPLeft = 0.0475; // sysid 0.046968
-            private static final double kSLeft = 0.257; // sysid 0.2057
-            private static final double kVLeft = 0.065; // sysid 0.052935
-            private static final double kALeft = 0.017803;
+            private static final double kPLeft = 0.1; // sysid 0.046968
+            private static final double kSLeft = 0.275; // sysid 0.2057
+            private static final double kVLeft = 0.0625; // sysid 0.052935
+            private static final double kALeft = 0;
 
             public static final TalonFXConfiguration kLeftConfigs = new TalonFXConfiguration();
             public static final TalonFXConfiguration kRightConfigs = new TalonFXConfiguration();
@@ -142,7 +142,7 @@ public class Constants {
                 kLeftConfigs.Feedback = kLeftConfigs.Feedback
                     .withSensorToMechanismRatio(kGearRatio);
 
-                kLeftConfigs.Slot0 = kLeftConfigs.Slot0
+                kRightConfigs.Slot0 = kRightConfigs.Slot0
                     .withKP(kPRight)
                     .withKS(kSRight)
                     .withKV(kVRight)
@@ -151,10 +151,16 @@ public class Constants {
                 kLeftConfigs.MotorOutput = kLeftConfigs.MotorOutput
                     .withNeutralMode(NeutralModeValue.Coast);
 
+                kLeftConfigs.ClosedLoopRamps = kLeftConfigs.ClosedLoopRamps
+                    .withVoltageClosedLoopRampPeriod(0.25);
+
+                kRightConfigs.ClosedLoopRamps = kRightConfigs.ClosedLoopRamps
+                    .withVoltageClosedLoopRampPeriod(0.25);
+
                 kRightConfigs.Feedback = kRightConfigs.Feedback
                     .withSensorToMechanismRatio(kGearRatio);
 
-                kRightConfigs.Slot0 = kRightConfigs.Slot0
+                kLeftConfigs.Slot0 = kLeftConfigs.Slot0
                     .withKP(kPLeft)
                     .withKS(kSLeft)
                     .withKV(kVLeft)

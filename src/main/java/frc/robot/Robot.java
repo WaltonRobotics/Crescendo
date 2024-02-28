@@ -20,7 +20,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -80,8 +79,8 @@ public class Robot extends TimedRobot {
 
 	private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
 		.withDeadband(kMaxSpeed * 0.1).withRotationalDeadband(kMaxAngularRate * 0.1) // Add a 10% deadband
-		.withDriveRequestType(DriveRequestType.OpenLoopVoltage)
-		.withCenterOfRotation(new Translation2d(Units.inchesToMeters(2), 0));
+		.withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+	// .withCenterOfRotation(new Translation2d(Units.inchesToMeters(2), 0));
 	private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
 	private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 	private final Telemetry logger = new Telemetry(kMaxSpeed);
@@ -145,6 +144,7 @@ public class Robot extends TimedRobot {
 		driver.back().and(driver.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
 		driver.start().and(driver.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
 		driver.start().and(driver.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+		driver.rightTrigger().whileTrue(superstructure.subwoofer());
 
 		/* manipulator controls */
 		manipulator.leftTrigger().whileTrue(superstructure.intake());
@@ -152,7 +152,6 @@ public class Robot extends TimedRobot {
 
 		/* testing buttons */
 		manipulator.leftBumper().whileTrue(superstructure.subwoofer());
-		// manipulator.rightBumper().whileTrue(superstructure.ampShot());
 		manipulator.back().and(manipulator.leftBumper()).whileTrue(superstructure.shootFast());
 		manipulator.a().whileTrue(superstructure.backwardsRun());
 		manipulator.b().whileTrue(conveyor.run(false));

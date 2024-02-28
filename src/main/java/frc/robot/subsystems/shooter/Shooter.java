@@ -6,6 +6,7 @@ import static frc.robot.Constants.ShooterK.*;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
+// import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -24,16 +25,13 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.util.logging.LoggedTunableNumber;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 
 import static frc.robot.Constants.ShooterK.FlywheelSimK.*;
-import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Minute;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
-import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.kCanbus;
 import static frc.robot.Constants.kStickDeadband;
@@ -47,18 +45,18 @@ public class Shooter extends SubsystemBase {
     private final TalonFX m_right = new TalonFX(kRightId, kCanbus);
     private final VelocityVoltage m_request = new VelocityVoltage(0);
     private final VoltageOut m_voltage = new VoltageOut(0).withEnableFOC(true);
-    // private final VelocityTorqueCurrentFOC m_focRequest = new
-    // VelocityTorqueCurrentFOC(0);
 
     private double m_spinAmt = kSpinAmt;
     private double m_shotTime = 1.5;
 
     private double m_leftTarget = 7000;
-    private double m_rightTarget = 7000 * m_spinAmt;
+    // private double m_rightTarget = 7000 * m_spinAmt;
     private final Supplier<Measure<Velocity<Angle>>> m_leftTargetSupp = () -> Rotations.per(Minute).of(m_leftTarget);
-    private final Supplier<Measure<Velocity<Angle>>> m_rightTargetSupp = () -> Rotations.per(Minute).of(m_rightTarget);
+    // private final Supplier<Measure<Velocity<Angle>>> m_rightTargetSupp = () ->
+    // Rotations.per(Minute).of(m_rightTarget);
 
-    private LoggedTunableNumber m_tunableRpm = new LoggedTunableNumber("targetRpm", m_leftTarget);
+    // private LoggedTunableNumber m_tunableRpm = new
+    // LoggedTunableNumber("targetRpm", m_leftTarget);
     // private LoggedTunableNumber m_tunableSpin = new LoggedTunableNumber("spin",
     // m_spinAmt);
     // private LoggedTunableNumber m_tunableShotTime = new
@@ -77,8 +75,7 @@ public class Shooter extends SubsystemBase {
 
     private final SysIdRoutine m_sysId = new SysIdRoutine(
         new SysIdRoutine.Config(
-            Volts.per(Second).of(Amps.of(2).per(Second).baseUnitMagnitude()),
-            Volts.of(Amps.of(10).baseUnitMagnitude()),
+            null, null,
             null,
             (state) -> SignalLogger.writeString("state", state.toString())),
         new SysIdRoutine.Mechanism((Measure<Voltage> volts) -> {
@@ -108,7 +105,7 @@ public class Shooter extends SubsystemBase {
                 m_left.setControl(m_request.withVelocity(velMeas.in(RotationsPerSecond)));
 
             }, () -> {
-                m_rightTarget = 0;
+                // m_rightTarget = 0;
                 m_leftTarget = 0;
                 m_right.setControl(m_request.withVelocity(0));
                 m_left.setControl(m_request.withVelocity(0));
@@ -156,7 +153,7 @@ public class Shooter extends SubsystemBase {
     public boolean spinUpFinished() {
         var left = m_leftTargetSupp.get().in(RotationsPerSecond);
         var right = m_leftTargetSupp.get().in(RotationsPerSecond) * kSpinAmt;
-        var tolerance = Math.max(left, right) < 3000 ? 1 : 0.25;
+        var tolerance = 1;
         boolean leftOk = MathUtil.isNear(
             left, m_left.getVelocity().getValueAsDouble(), tolerance);
         boolean rightOk = MathUtil.isNear(

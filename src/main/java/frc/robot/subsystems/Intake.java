@@ -37,7 +37,7 @@ public class Intake extends SubsystemBase {
         return runEnd(
             () -> {
                 runMainRollers(-12);
-                m_feeder.set(-1);
+                m_feeder.set(0.5);
             },
             () -> {
                 runMainRollers(0);
@@ -49,7 +49,7 @@ public class Intake extends SubsystemBase {
         return runEnd(
             () -> {
                 runMainRollers(12);
-                m_feeder.set(1);
+                m_feeder.set(-0.5);
             },
             () -> {
                 runMainRollers(0);
