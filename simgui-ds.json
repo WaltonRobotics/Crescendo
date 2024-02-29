@@ -1,4 +1,14 @@
 {
+  "FMS": {
+    "window": {
+      "visible": false
+    }
+  },
+  "Keyboard 0 Settings": {
+    "window": {
+      "visible": true
+    }
+  },
   "keyboardJoysticks": [
     {
       "axisConfig": [
@@ -27,14 +37,14 @@
       ],
       "povConfig": [
         {
-          "key0": 328,
-          "key135": 323,
-          "key180": 322,
-          "key225": 321,
-          "key270": 324,
-          "key315": 327,
-          "key45": 329,
-          "key90": 326
+          "key0": 49,
+          "key135": 52,
+          "key180": 53,
+          "key225": 54,
+          "key270": 55,
+          "key315": 56,
+          "key45": 50,
+          "key90": 51
         }
       ],
       "povCount": 1
@@ -101,7 +111,7 @@
       "useGamepad": true
     },
     {
-      "useGamepad": true
+      "guid": "Keyboard0"
     }
   ]
 }

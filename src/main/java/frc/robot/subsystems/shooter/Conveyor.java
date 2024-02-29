@@ -16,7 +16,7 @@ public class Conveyor extends SubsystemBase {
     private final CANSparkMax m_conveyor = new CANSparkMax(kConveyorId, MotorType.kBrushless);
     private final DigitalInput m_beamBreak = new DigitalInput(0);
 
-    private final Trigger m_note = new Trigger(() -> m_beamBreak.get()).negate();
+    public final Trigger m_note = new Trigger(() -> m_beamBreak.get()).negate();
 
     private final BooleanLogger log_beamBreak = WaltLogger.logBoolean(kDbTabName, "beamBreak");
 

@@ -47,10 +47,7 @@
         },
         "top": 79,
         "units": "meters",
-        "width": 16.541748046875,
-        "window": {
-          "visible": true
-        }
+        "width": 16.541748046875
       },
       "/SmartDashboard/AutonChooser": {
         "window": {
@@ -128,6 +125,12 @@
       "Pose": {
         "open": true
       },
+      "Robot": {
+        "Superstructure": {
+          "open": true
+        },
+        "open": true
+      },
       "Shuffleboard": {
         "open": true
       },
@@ -145,15 +148,12 @@
     }
   },
   "NetworkTables Info": {
+    "Connections": {
+      "open": true
+    },
     "Server": {
-      "Publishers": {
-        "open": true
-      },
       "open": true
     }
-  },
-  "NetworkTables View": {
-    "visible": false
   },
   "Plot": {
     "Plot <0>": {
@@ -193,6 +193,69 @@
                 1.0
               ],
               "id": "NT:/SmartDashboard/cancoder position"
+            },
+            {
+              "color": [
+                0.7686275243759155,
+                0.30588236451148987,
+                0.32156863808631897,
+                1.0
+              ],
+              "id": "NT:/Robot/Superstructure/state"
+            },
+            {
+              "color": [
+                0.5058823823928833,
+                0.44705885648727417,
+                0.7019608020782471,
+                1.0
+              ],
+              "id": "NT:/Robot/Superstructure/timothyEntered"
+            },
+            {
+              "color": [
+                0.5764706134796143,
+                0.4705882668495178,
+                0.3764706254005432,
+                1.0
+              ],
+              "id": "NT:/Robot/Superstructure/timothyIn"
+            },
+            {
+              "color": [
+                0.8549020290374756,
+                0.545098066329956,
+                0.7647059559822083,
+                1.0
+              ],
+              "id": "NT:/Robot/Superstructure/timothyLeaving"
+            }
+          ]
+        }
+      ],
+      "window": {
+        "visible": false
+      }
+    },
+    "Plot <1>": {
+      "plots": [
+        {
+          "backgroundColor": [
+            0.0,
+            0.0,
+            0.0,
+            0.8500000238418579
+          ],
+          "height": 332,
+          "series": [
+            {
+              "color": [
+                0.2980392277240753,
+                0.44705885648727417,
+                0.6901960968971252,
+                1.0
+              ],
+              "id": "NT:/Robot/Superstructure/state"
             }
           ]
         }

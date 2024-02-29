@@ -43,10 +43,10 @@ import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.superstructure.Superstructure;
 import frc.util.AllianceFlipUtil;
 // import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
-import frc.robot.subsystems.Superstructure;
 
 import static frc.robot.Constants.IntakeK.kVisiSightId;
 import static frc.robot.Constants.RobotK.*;
@@ -71,7 +71,8 @@ public class Robot extends TimedRobot {
 	public final Intake intake = new Intake(frontVisiSight);
 	public final Conveyor conveyor = new Conveyor();
 
-	public final Superstructure superstructure = new Superstructure(aim, intake, conveyor, shooter);
+	public final Superstructure superstructure = new Superstructure(aim, intake, conveyor, shooter,
+		driver.rightTrigger());
 
 	public static Translation3d speakerPose;
 
@@ -201,6 +202,7 @@ public class Robot extends TimedRobot {
 	@Override
 	public void disabledInit() {
 		SignalLogger.stop();
+		superstructure.backToReady();
 	}
 
 	@Override

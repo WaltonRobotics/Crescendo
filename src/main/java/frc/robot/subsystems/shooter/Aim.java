@@ -130,6 +130,10 @@ public class Aim extends SubsystemBase {
             .getEntry();
     }
 
+    public boolean aimFinished() {
+        return MathUtil.isNear(m_targetAngle.in(Rotations), m_motor.getPosition().getValueAsDouble(), 0.01);
+    }
+
     public double getDegrees() {
         return m_motor.getPosition().getValueAsDouble() * 360 + 22.5;
     }
