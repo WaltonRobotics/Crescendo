@@ -41,9 +41,9 @@ import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
-import frc.robot.subsystems.superstructure.Superstructure;
 import frc.util.AllianceFlipUtil;
 import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.Superstructure;
 
 import static frc.robot.Constants.RobotK.*;
 
@@ -180,10 +180,10 @@ public class Robot extends TimedRobot {
 	@Override
 	public void robotInit() {
 		superstructure.backToIdle();
-		addPeriodic(()-> {
+		addPeriodic(() -> {
 			superstructure.fastPeriodic();
-			superstructure.sensorEvtLoop.poll();
-		}, 0.005);
+			superstructure.sensorEventLoop.poll();
+		}, 0.0025);
 		SmartDashboard.putData(field2d);
 		speakerPose = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpening);
 		mapAutonCommands();
