@@ -8,4 +8,6 @@ public class Paths {
     public static final PathPlannerPath threePc = PathPlannerPath.fromChoreoTrajectory("3pc.1");
     public static final PathPlannerPath fourPc = PathPlannerPath.fromChoreoTrajectory("4pc.1");
     public static final PathPlannerPath fivePc = PathPlannerPath.fromChoreoTrajectory("5pc.1");
+    public static final PathPlannerPath leave = PathPlannerPath.fromChoreoTrajectory("leave.1");
+    public static final PathPlannerPath twoPc = PathPlannerPath.fromChoreoTrajectory("2pc.1");
 }

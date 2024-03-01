@@ -136,7 +136,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	public void logModulePositions() {
 		for (int i = 0; i < Modules.length; i++) {
-			SmartDashboard.putNumber("Module" + i + "/position",
+			SmartDashboard.putNumber("Module " + i + "/position",
 				getModule(i).getDriveMotor().getPosition().getValueAsDouble());
 		}
 	}

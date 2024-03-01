@@ -16,6 +16,8 @@ public class AutonChooser {
         DO_NOTHING("0 - do nothing", new ChoreoTrajectory()),
         ONE_METER("0 - one meter", Trajectories.oneMeter),
         SIMPLE_THING("0 - simple thing", Trajectories.simpleThing),
+        LEAVE("1 - leave", Trajectories.leave),
+        TWO_PC("2 - speaker", Trajectories.leave),
         THREE_PC("3 - speaker", Trajectories.threePc),
         FOUR_PC("4 - speaker", Trajectories.fourPc),
         FIVE_PC("5 - speaker", Trajectories.fivePc);

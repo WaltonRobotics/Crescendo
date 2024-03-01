@@ -100,6 +100,10 @@ public class Robot extends TimedRobot {
 			Trajectories.oneMeter.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.SIMPLE_THING, AutonFactory.simpleThing(drivetrain),
 			Trajectories.simpleThing.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.LEAVE, AutonFactory.leave(superstructure, drivetrain),
+			Trajectories.leave.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.TWO_PC, AutonFactory.twoPc(superstructure, drivetrain),
+			Trajectories.leave.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.THREE_PC,
 			AutonFactory.threePiece(drivetrain, intake, shooter, aim, conveyor),
 			Trajectories.threePc.getInitialPose());
@@ -196,6 +200,9 @@ public class Robot extends TimedRobot {
 	@Override
 	public void robotPeriodic() {
 		CommandScheduler.getInstance().run();
+		if (kTestMode) {
+			drivetrain.logModulePositions();
+		}
 	}
 
 	@Override
@@ -214,6 +221,7 @@ public class Robot extends TimedRobot {
 	@Override
 	public void autonomousInit() {
 		SignalLogger.start();
+		superstructure.forceStateToShoot();
 		m_autonomousCommand = getAutonomousCommand();
 		if (m_autonomousCommand != null) {
 			m_autonomousCommand.schedule();

@@ -7,6 +7,7 @@ import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.Superstructure;
 
 import static frc.robot.auton.Paths.*;
 
@@ -24,7 +25,34 @@ public final class AutonFactory {
 	}
 
 	public static Command simpleThing(Swerve swerve) {
-		return AutoBuilder.followPath(simpleThing);
+		var resetPose = swerve.resetPose(simpleThing);
+		return Commands.sequence(resetPose, AutoBuilder.followPath(simpleThing));
+	}
+
+	public static Command leave(Superstructure superstructure, Swerve swerve) {
+		var resetPose = swerve.resetPose(leave).asProxy();
+		var forceShoot = Commands.runOnce(() -> superstructure.forceStateToShoot()).asProxy();
+		var waitUntilIdle = superstructure.waitUntilIdle().asProxy();
+		var pathFollow = AutoBuilder.followPath(leave).asProxy();
+		return Commands.parallel(resetPose, forceShoot, Commands.sequence(
+			Commands.waitSeconds(0.2),
+			waitUntilIdle,
+			pathFollow));
+	}
+
+	public static Command twoPc(Superstructure superstructure, Swerve swerve) {
+		var leave = leave(superstructure, swerve);
+		var intake = Commands.runOnce(() -> superstructure.forceStateToIntake()).asProxy();
+		var pathFollow = AutoBuilder.followPath(twoPc).asProxy();
+		var shoot = Commands.runOnce(() -> superstructure.forceStateToShoot()).asProxy();
+
+		return Commands.sequence(
+			Commands.parallel(
+				leave,
+				Commands.sequence(
+					Commands.waitSeconds(0.2),
+					intake)),
+			pathFollow, shoot);
 	}
 
 	public static Command threePiece(Swerve swerve, Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
