@@ -22,8 +22,8 @@ public class WaltLogger {
         public final DoublePublisher ntPub;
         public final DoubleLogEntry logEntry;
 
-        public DoubleLogger(String subTable, String name) {
-            ntPub = NTPublisherFactory.makeDoublePub(logTable.getSubTable(subTable), name);
+        public DoubleLogger(String subTable, String name, PubSubOption... options) {
+            ntPub = NTPublisherFactory.makeDoublePub(logTable.getSubTable(subTable), name, options);
             logEntry = new DoubleLogEntry(DataLogManager.getLog(), "Robot/" + subTable + "/" + name);
         }
 
@@ -37,16 +37,16 @@ public class WaltLogger {
         }
     }
 
-    public static DoubleLogger logDouble(String table, String name) {
-        return new DoubleLogger(table, name);
+    public static DoubleLogger logDouble(String table, String name, PubSubOption... options) {
+        return new DoubleLogger(table, name, options);
     }
 
     public static final class BooleanLogger implements Consumer<Boolean> {
         public final BooleanPublisher ntPub;
         public final BooleanLogEntry logEntry;
 
-        public BooleanLogger(String subTable, String name) {
-            ntPub = NTPublisherFactory.makeBoolPub(logTable.getSubTable(subTable), name);
+        public BooleanLogger(String subTable, String name, PubSubOption... options) {
+            ntPub = NTPublisherFactory.makeBoolPub(logTable.getSubTable(subTable), name, options);
             logEntry = new BooleanLogEntry(DataLogManager.getLog(), "Robot/" + subTable + "/" + name);
         }
 
@@ -60,8 +60,8 @@ public class WaltLogger {
         }
     }
 
-    public static BooleanLogger logBoolean(String table, String name) {
-        return new BooleanLogger(table, name);
+    public static BooleanLogger logBoolean(String table, String name, PubSubOption... options) {
+        return new BooleanLogger(table, name, options);
     }
 
     public static final class DoubleArrayLogger implements Consumer<double[]> {

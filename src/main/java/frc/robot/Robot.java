@@ -20,6 +20,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.networktables.PubSubOption;
+import edu.wpi.first.wpilibj.AsynchronousInterrupt;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -31,7 +33,6 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
-// import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.AimK;
 import frc.robot.Constants.FieldK.SpeakerK;
 import frc.robot.auton.AutonChooser;
@@ -45,12 +46,14 @@ import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.util.AllianceFlipUtil;
-// import frc.robot.subsystems.Climber;
+import frc.util.logging.WaltLogger;
+import frc.util.logging.WaltLogger.BooleanLogger;
 import frc.robot.subsystems.Intake;
 
 import static frc.robot.Constants.IntakeK.kVisiSightId;
 import static frc.robot.Constants.RobotK.*;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 public class Robot extends TimedRobot {
@@ -62,6 +65,14 @@ public class Robot extends TimedRobot {
 	private final CommandXboxController manipulator = new CommandXboxController(1);
 
 	private final DigitalInput frontVisiSight = new DigitalInput(kVisiSightId);
+	private final DigitalInput shooterBeamBreak = new DigitalInput(0);
+	private final BooleanSupplier bs_frontVisiSight = () -> frontVisiSight.get();
+	
+	private final BooleanSupplier bs_shooterBeamBreak = () -> !shooterBeamBreak.get();
+	private final BooleanLogger log_frontVisiSight = 
+		WaltLogger.logBoolean("Sensors", "frontVisiSight", PubSubOption.periodic(0.005));
+	private final BooleanLogger log_shooterBeamBreak = 
+		WaltLogger.logBoolean("Sensors", "shooterBeamBreak", PubSubOption.periodic(0.005));
 
 	public final Swerve drivetrain = TunerConstants.drivetrain;
 	public final Vision vision = new Vision(drivetrain::addVisionMeasurement);
@@ -71,8 +82,18 @@ public class Robot extends TimedRobot {
 	public final Intake intake = new Intake(frontVisiSight);
 	public final Conveyor conveyor = new Conveyor();
 
-	public final Superstructure superstructure = new Superstructure(aim, intake, conveyor, shooter,
-		driver.rightTrigger());
+	public final Superstructure superstructure = new Superstructure(
+		aim, intake, conveyor, shooter,
+		manipulator.leftTrigger(), driver.rightTrigger(),
+		bs_frontVisiSight, bs_shooterBeamBreak);
+
+	private final AsynchronousInterrupt ai_frontVisiSight = new AsynchronousInterrupt(frontVisiSight, (Boolean rising, Boolean falling) -> {
+		System.out.println("VISISIGHT CALLBACK: " + rising + ", " + falling);
+	});
+	
+	private final AsynchronousInterrupt ai_shooterBeamBreak = new AsynchronousInterrupt(shooterBeamBreak, (Boolean rising, Boolean falling) -> {
+		System.out.println("BEAMBREAK CALLBACK: " + rising + ", " + falling);
+	});
 
 	public static Translation3d speakerPose;
 
@@ -89,6 +110,10 @@ public class Robot extends TimedRobot {
 	private Command m_autonomousCommand;
 
 	public Robot() {
+		ai_frontVisiSight.setInterruptEdges(true, true);
+		ai_frontVisiSight.enable();
+		ai_shooterBeamBreak.setInterruptEdges(true, true);
+		ai_shooterBeamBreak.enable();
 		DriverStation.silenceJoystickConnectionWarning(true);
 		PhotonCamera.setVersionCheckEnabled(false);
 		// disable joystick not found warnings when in sim
@@ -139,7 +164,7 @@ public class Robot extends TimedRobot {
 		driver.x().whileTrue(drivetrain.goToAutonPose());
 		driver.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
 		// driver.rightBumper().onTrue(drivetrain.resetPoseToSpeaker());
-		driver.rightTrigger().whileTrue(superstructure.subwoofer());
+		// driver.rightTrigger().whileTrue(superstructure.subwoofer());
 		driver.rightTrigger().and(driver.b()).whileTrue(conveyor.run(true));
 
 		/* sysid buttons */
@@ -149,10 +174,10 @@ public class Robot extends TimedRobot {
 		driver.start().and(driver.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
 		/* manipulator controls */
-		manipulator.leftTrigger().whileTrue(superstructure.intake());
+		// manipulator.leftTrigger().whileTrue(superstructure.intake());
 		manipulator.rightTrigger().whileTrue(intake.outtake());
-		manipulator.povUp().whileTrue(conveyor.run(true));
-		manipulator.rightBumper().whileTrue(shooter.shoot());
+		manipulator.b().and(manipulator.povUp()).whileTrue(conveyor.run(true));
+		// manipulator.rightBumper().whileTrue(shooter.shoot());
 		manipulator.x().whileTrue(aim.intakeMode());
 
 		/* testing buttons */
@@ -184,6 +209,12 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void robotInit() {
+		superstructure.backToReady();
+		addPeriodic(()-> {
+			log_frontVisiSight.accept(bs_frontVisiSight.getAsBoolean());
+			log_shooterBeamBreak.accept(bs_shooterBeamBreak.getAsBoolean());
+			superstructure.sensorEvtLoop.poll();
+		}, 0.005);
 		SmartDashboard.putData(field2d);
 		speakerPose = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpening);
 		mapAutonCommands();
@@ -202,7 +233,6 @@ public class Robot extends TimedRobot {
 	@Override
 	public void disabledInit() {
 		SignalLogger.stop();
-		superstructure.backToReady();
 	}
 
 	@Override

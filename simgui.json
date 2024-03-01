@@ -47,7 +47,10 @@
         },
         "top": 79,
         "units": "meters",
-        "width": 16.541748046875
+        "width": 16.541748046875,
+        "window": {
+          "visible": true
+        }
       },
       "/SmartDashboard/AutonChooser": {
         "window": {
@@ -153,7 +156,8 @@
     },
     "Server": {
       "open": true
-    }
+    },
+    "visible": true
   },
   "Plot": {
     "Plot <0>": {

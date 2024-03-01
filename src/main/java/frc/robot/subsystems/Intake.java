@@ -57,6 +57,20 @@ public class Intake extends SubsystemBase {
             });
     }
 
+    public Command start() {
+        return run(() -> {
+            runMainRollers(12);
+            m_feeder.set(-0.5);
+        });
+    }
+
+    public Command stop() {
+        return run(() -> {
+            runMainRollers(0);
+            m_feeder.set(0);
+        });
+    }
+
     public void periodic() {
         log_sight.accept(m_sightTrigger.getAsBoolean());
     }
