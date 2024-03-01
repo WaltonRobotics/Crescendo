@@ -1,7 +1,7 @@
 package frc.robot.subsystems.superstructure;
 
 public enum State {
-    READY(0),
+    IDLE(0),
     INTAKE(1),
     INTAKE_TOP_RISING(2),
     INTAKE_TOP_FALLING(3),

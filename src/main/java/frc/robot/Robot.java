@@ -20,9 +20,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.networktables.PubSubOption;
-import edu.wpi.first.wpilibj.AsynchronousInterrupt;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -46,14 +43,10 @@ import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.superstructure.Superstructure;
 import frc.util.AllianceFlipUtil;
-import frc.util.logging.WaltLogger;
-import frc.util.logging.WaltLogger.BooleanLogger;
 import frc.robot.subsystems.Intake;
 
-import static frc.robot.Constants.IntakeK.kVisiSightId;
 import static frc.robot.Constants.RobotK.*;
 
-import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 public class Robot extends TimedRobot {
@@ -64,36 +57,17 @@ public class Robot extends TimedRobot {
 	private final CommandXboxController driver = new CommandXboxController(0); // My joystick
 	private final CommandXboxController manipulator = new CommandXboxController(1);
 
-	private final DigitalInput frontVisiSight = new DigitalInput(kVisiSightId);
-	private final DigitalInput shooterBeamBreak = new DigitalInput(0);
-	private final BooleanSupplier bs_frontVisiSight = () -> frontVisiSight.get();
-	
-	private final BooleanSupplier bs_shooterBeamBreak = () -> !shooterBeamBreak.get();
-	private final BooleanLogger log_frontVisiSight = 
-		WaltLogger.logBoolean("Sensors", "frontVisiSight", PubSubOption.periodic(0.005));
-	private final BooleanLogger log_shooterBeamBreak = 
-		WaltLogger.logBoolean("Sensors", "shooterBeamBreak", PubSubOption.periodic(0.005));
-
 	public final Swerve drivetrain = TunerConstants.drivetrain;
 	public final Vision vision = new Vision(drivetrain::addVisionMeasurement);
 	public final Supplier<Pose3d> robotPoseSupplier = drivetrain::getPose3d;
 	public final Shooter shooter = new Shooter();
 	public final Aim aim = new Aim(robotPoseSupplier);
-	public final Intake intake = new Intake(frontVisiSight);
+	public final Intake intake = new Intake();
 	public final Conveyor conveyor = new Conveyor();
 
 	public final Superstructure superstructure = new Superstructure(
 		aim, intake, conveyor, shooter,
-		manipulator.leftTrigger(), driver.rightTrigger(),
-		bs_frontVisiSight, bs_shooterBeamBreak);
-
-	private final AsynchronousInterrupt ai_frontVisiSight = new AsynchronousInterrupt(frontVisiSight, (Boolean rising, Boolean falling) -> {
-		System.out.println("VISISIGHT CALLBACK: " + rising + ", " + falling);
-	});
-	
-	private final AsynchronousInterrupt ai_shooterBeamBreak = new AsynchronousInterrupt(shooterBeamBreak, (Boolean rising, Boolean falling) -> {
-		System.out.println("BEAMBREAK CALLBACK: " + rising + ", " + falling);
-	});
+		manipulator.leftTrigger(), driver.rightTrigger());
 
 	public static Translation3d speakerPose;
 
@@ -110,10 +84,6 @@ public class Robot extends TimedRobot {
 	private Command m_autonomousCommand;
 
 	public Robot() {
-		ai_frontVisiSight.setInterruptEdges(true, true);
-		ai_frontVisiSight.enable();
-		ai_shooterBeamBreak.setInterruptEdges(true, true);
-		ai_shooterBeamBreak.enable();
 		DriverStation.silenceJoystickConnectionWarning(true);
 		PhotonCamera.setVersionCheckEnabled(false);
 		// disable joystick not found warnings when in sim
@@ -209,10 +179,9 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void robotInit() {
-		superstructure.backToReady();
+		superstructure.backToIdle();
 		addPeriodic(()-> {
-			log_frontVisiSight.accept(bs_frontVisiSight.getAsBoolean());
-			log_shooterBeamBreak.accept(bs_shooterBeamBreak.getAsBoolean());
+			superstructure.fastPeriodic();
 			superstructure.sensorEvtLoop.poll();
 		}, 0.005);
 		SmartDashboard.putData(field2d);
@@ -227,7 +196,6 @@ public class Robot extends TimedRobot {
 	@Override
 	public void robotPeriodic() {
 		CommandScheduler.getInstance().run();
-		// drivetrain.logModulePositions();
 	}
 
 	@Override
@@ -263,6 +231,7 @@ public class Robot extends TimedRobot {
 	@Override
 	public void teleopInit() {
 		SignalLogger.start();
+		superstructure.backToIdle();
 
 		if (m_autonomousCommand != null) {
 			m_autonomousCommand.cancel();

@@ -1,10 +1,12 @@
 package frc.robot.subsystems.superstructure;
 
+import static frc.robot.Constants.IntakeK.kVisiSightId;
 import static frc.robot.Constants.RobotK.kDbTabName;
 
 import java.util.function.BooleanSupplier;
 
 import edu.wpi.first.networktables.PubSubOption;
+import edu.wpi.first.wpilibj.AsynchronousInterrupt;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.event.EventLoop;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -25,6 +27,29 @@ public class Superstructure extends SubsystemBase {
     public final Conveyor m_conveyor;
     public final Shooter m_shooter;
 
+    private final DigitalInput frontVisiSight = new DigitalInput(kVisiSightId);
+	private final DigitalInput shooterBeamBreak = new DigitalInput(0);
+	private final BooleanSupplier bs_frontVisiSight = () -> frontVisiSight.get();
+	
+	private final BooleanSupplier bs_shooterBeamBreak = () -> !shooterBeamBreak.get();
+	private final BooleanLogger log_frontVisiSight = 
+		WaltLogger.logBoolean("Sensors", "frontVisiSight", PubSubOption.periodic(0.005));
+    private final BooleanLogger log_frontVisiSightIrq = 
+		WaltLogger.logBoolean("Sensors", "frontVisiSightIrq", PubSubOption.sendAll(true));
+	private final BooleanLogger log_shooterBeamBreak = 
+		WaltLogger.logBoolean("Sensors", "shooterBeamBreak", PubSubOption.periodic(0.005));
+
+    /** To be set on any edge from the AsyncIrq callback  */
+    private boolean frontVisiSight_SeenNote = false;
+
+    private final AsynchronousInterrupt ai_frontVisiSight = new AsynchronousInterrupt(frontVisiSight, (Boolean rising, Boolean falling) -> {
+		if ((rising || falling) && !frontVisiSight_SeenNote) {
+            frontVisiSight_SeenNote = true;
+            log_frontVisiSightIrq.accept(true);
+        }
+        // TODO: log correctly somehow
+	});
+
     private State m_state;
 
     /* note trackers. the note is named timothy. */
@@ -41,33 +66,30 @@ public class Superstructure extends SubsystemBase {
     private final Trigger trg_driverShootReq;
 
     /** true = has note */ 
-    private final Trigger trg_intakeSensor;
-    /** true = has note */ 
     private final Trigger trg_shooterSensor;
+    
+    /** true = has note */ 
+    private final Trigger trg_frontSensorIrq;
 
     private final Trigger trg_spunUp;
     private final Trigger trg_aimed;
 
-    private final Trigger trg_a1 = new Trigger(sensorEvtLoop, () -> m_state == State.INTAKE_TOP_RISING);
-    private final Trigger trg_timothyEntered = new Trigger(sensorEvtLoop, () -> timothyEntered);
-    private final Trigger trg_readyToCheck = new Trigger(sensorEvtLoop, () -> readyToCheck);
-    private final Trigger trg_b2 = new Trigger(sensorEvtLoop, () -> m_state == State.INTAKE_BOT_RISING);
-    private final Trigger trg_timothyIn = new Trigger(sensorEvtLoop, () -> timothyIn);
     private final Trigger trg_noteRetracting = new Trigger(sensorEvtLoop, () -> m_state == State.ROLLER_BEAM_RETRACT);
     private final Trigger trg_shooting = new Trigger(sensorEvtLoop, () -> m_state == State.SHOOTING);
     private final Trigger trg_d1 = new Trigger(sensorEvtLoop, () -> m_state == State.D1);
     private final Trigger trg_d2 = new Trigger(sensorEvtLoop, () -> m_state == State.D2);
     private final Trigger trg_timothyFieldTrip = new Trigger(sensorEvtLoop, () -> timothyFieldTrip);
-    private final Trigger trg_ready = new Trigger(sensorEvtLoop, () -> m_state == State.READY);
+    private final Trigger trg_idle = new Trigger(sensorEvtLoop, () -> m_state == State.IDLE);
 
     private final DoubleLogger log_state = WaltLogger.logDouble(kDbTabName, "state", PubSubOption.periodic(0.005));
     private final BooleanLogger log_timothyEntered = WaltLogger.logBoolean(kDbTabName, "timothyEntered", PubSubOption.periodic(0.005));
     private final BooleanLogger log_timothyIn = WaltLogger.logBoolean(kDbTabName, "timothyIn", PubSubOption.periodic(0.005));
     private final BooleanLogger log_timothyFieldTrip = WaltLogger.logBoolean(kDbTabName, "timothyFieldTrip",PubSubOption.periodic(0.005));
     private final BooleanLogger log_readyToCheck = WaltLogger.logBoolean(kDbTabName, "readyToCheck", PubSubOption.periodic(0.005));
+    private final BooleanLogger log_intakeBtn = WaltLogger.logBoolean(kDbTabName, "intakeButton");
 
     public Superstructure(Aim aim, Intake intake, Conveyor conveyor, Shooter shooter,
-        Trigger intaking, Trigger shoot, BooleanSupplier intakeSensor, BooleanSupplier beamBreak) {
+        Trigger intaking, Trigger shoot) {
         m_aim = aim;
         m_intake = intake;
         m_conveyor = conveyor;
@@ -76,35 +98,26 @@ public class Superstructure extends SubsystemBase {
         trg_driverIntakeReq = intaking;
         trg_driverShootReq = shoot;
 
-        trg_intakeSensor = new Trigger(sensorEvtLoop, intakeSensor);
-        trg_shooterSensor = new Trigger(sensorEvtLoop, beamBreak);
+		ai_frontVisiSight.setInterruptEdges(true, true);
+		ai_frontVisiSight.enable();
+            
+        trg_frontSensorIrq = new Trigger(sensorEvtLoop, () -> { return frontVisiSight_SeenNote; });
+        trg_shooterSensor = new Trigger(sensorEvtLoop, bs_shooterBeamBreak);
 
         trg_spunUp = new Trigger(m_shooter::spinUpFinished);
         trg_aimed = new Trigger(m_aim::aimFinished);
 
-        m_state = State.READY;
+        m_state = State.IDLE;
 
         configureStateTriggers();
         // stateTriggersWhileDisabled();
     }
 
     private void configureStateTriggers() {
-        trg_driverIntakeReq.onTrue(Commands.runOnce(() -> m_state = State.INTAKE)
+        (trg_driverIntakeReq.and(trg_idle)).or(trg_frontSensorIrq).onTrue(Commands.runOnce(() -> m_state = State.INTAKE)
             .alongWith(intake()));
-        trg_intakeSensor.and(trg_a1.negate()).onTrue(Commands.runOnce(
-            () -> {
-                if (!readyToCheck) {
-                    m_state = State.INTAKE_TOP_RISING;
-                    timothyEntered = true;
-                }
-            }));
-        trg_intakeSensor.negate().and(trg_timothyEntered).onTrue(Commands.runOnce(() -> readyToCheck = true));
-        trg_intakeSensor.and(trg_readyToCheck).onTrue(Commands.runOnce(() -> timothyIn = true));
-        trg_intakeSensor.negate().and(trg_timothyIn)
-            .onTrue(Commands.sequence(Commands.runOnce(() -> m_state = State.INTAKE_TOP_FALLING),
-                Commands.waitSeconds(0.25),
-                Commands.runOnce(() -> m_state = State.INTAKE_BOT_RISING)));
-        trg_b2.and(trg_shooterSensor).onTrue(Commands.runOnce(() -> {
+        trg_frontSensorIrq.and(trg_driverIntakeReq).onFalse(Commands.runOnce(() -> m_state = State.IDLE));
+        trg_shooterSensor.onTrue(Commands.runOnce(() -> {
             m_state = State.ROLLER_BEAM_RETRACT;
         }));
         trg_noteRetracting.onTrue(
@@ -113,20 +126,18 @@ public class Superstructure extends SubsystemBase {
                 Commands.parallel(
                     m_intake.stop(),
                     m_conveyor.retract()
-                )
-            )
-        );
-        // if (noNote && ) stopConveyor; state = shoot_ok
-        // 
-        trg_shooterSensor.negate().and(trg_noteRetracting).onTrue(Commands.runOnce(
-            () -> {
-                if (m_state != State.D1) {
-                    m_state = State.SHOOT_OK;
-                }
-            }));
-        trg_driverShootReq.onTrue(Commands.runOnce(() -> m_state = State.SHOT_SPINUP));
+                )));
+        trg_shooterSensor.negate().and(trg_noteRetracting).onTrue(
+            Commands.sequence(
+                Commands.waitSeconds(0.5),
+                m_conveyor.stop(),
+                Commands.runOnce(
+                    () -> {
+                        m_state = State.SHOOT_OK;
+                    })));
+        trg_driverShootReq.onTrue(Commands.parallel(Commands.runOnce(() -> m_state = State.SHOT_SPINUP), subwooferNoConveyor()));
         trg_spunUp.and(trg_aimed).onTrue(Commands.runOnce(() -> m_state = State.SHOOTING));
-        trg_shooting.or(trg_d1).or(trg_d2).whileTrue(shoot());
+        trg_shooting.or(trg_d1).or(trg_d2).whileTrue(m_conveyor.run(true));
         trg_shooterSensor.and(trg_shooting).onTrue(Commands.runOnce(() -> {
             m_state = State.D1;
             timothyFieldTrip = true;
@@ -134,95 +145,18 @@ public class Superstructure extends SubsystemBase {
         trg_d1.onTrue(m_conveyor.stop());
         trg_shooterSensor.and(trg_d1).and(trg_timothyFieldTrip).onTrue(Commands.runOnce(() -> m_state = State.D2));
         trg_d2.onTrue(Commands.sequence(Commands.waitSeconds(0.25),
-            Commands.runOnce(() -> m_state = State.READY)));
-        // trg_startShoot.onFalse(Commands.runOnce(() -> m_state = State.READY));
-        trg_ready.onTrue(Commands.runOnce(
+            Commands.runOnce(() -> m_state = State.IDLE)));
+        trg_idle.onTrue(Commands.parallel(
+            Commands.runOnce(
             () -> {
                 timothyEntered = false;
                 readyToCheck = false;
                 timothyIn = false;
                 timothyFieldTrip = false;
-            }));
+                frontVisiSight_SeenNote = false;
+            }), 
+            stopEverything()));
     }
-
-    // private void stateTriggersWhileDisabled() {
-    // trg_intaking.onTrue(Commands.runOnce(() -> m_state = State.INTAKE));
-    // trg_frontSensor.and(trg_a1.negate()).onTrue(Commands.runOnce(
-    // () -> {
-    // if (!readyToCheck) {
-    // m_state = State.A1;
-    // timothyEntered = true;
-    // System.out.println("a1");
-    // }
-    // }).ignoringDisable(true));
-    // trg_frontSensor.negate().and(trg_timothyEntered)
-    // .onTrue(Commands.runOnce(() -> readyToCheck = true).ignoringDisable(true));
-    // trg_frontSensor.and(trg_readyToCheck).onTrue(Commands.runOnce(() -> timothyIn
-    // = true).ignoringDisable(true));
-    // trg_frontSensor.negate().and(trg_timothyIn)
-    // .onTrue(
-    // Commands.sequence(
-    // Commands.runOnce(
-    // () -> {
-    // m_state = State.CONVEY;
-    // System.out.println("conveying");
-    // }),
-    // Commands.waitSeconds(0.25),
-    // Commands.runOnce(
-    // () -> {
-    // m_state = State.B2;
-    // System.out.println("b2");
-    // }))
-    // .ignoringDisable(true));
-    // // trg_b2.onTrue(m_conveyor.start());
-    // trg_b2.and(trg_beamBreak).onTrue(Commands.runOnce(
-    // () -> {
-    // m_state = State.C1;
-    // System.out.println("c1");
-
-    // }).ignoringDisable(true));
-    // // trg_c1.onTrue(m_conveyor.stop().andThen(m_conveyor.retract()));
-    // trg_beamBreak.negate().and(trg_c1).onTrue(Commands.runOnce(
-    // () -> {
-    // m_state = State.SHOOT_OK;
-    // System.out.println("d1");
-    // }).ignoringDisable(true));
-    // trg_shoot.onTrue(Commands.runOnce(
-    // () -> {
-    // m_state = State.SHOOT;
-    // System.out.println("shoot");
-    // }).ignoringDisable(true));
-    // // trg_shooting.or(trg_d1).or(trg_d2).whileTrue(shoot());
-    // trg_spunUp.and(trg_aimed).onTrue(Commands.runOnce(
-    // () -> {
-    // m_state = State.SHOOTING;
-    // System.out.println("shooting");
-    // }).ignoringDisable(true));
-    // trg_beamBreak.and(trg_shooting).onTrue(Commands.runOnce(() -> {
-    // m_state = State.D1;
-    // timothyFieldTrip = true;
-    // System.out.println("d1 (timothy field trip wheeee!)");
-    // }).ignoringDisable(true));
-    // trg_beamBreak.and(trg_d1).and(trg_timothyFieldTrip).onTrue(
-    // Commands.runOnce(
-    // () -> {
-    // m_state = State.D2;
-    // System.out.println("d2");
-    // }).ignoringDisable(true));
-    // trg_d2.onTrue(Commands.sequence(Commands.waitSeconds(0.25), Commands.runOnce(
-    // () -> {
-    // m_state = State.READY;
-    // System.out.println("ready");
-    // })).ignoringDisable(true));
-    // // trg_startShoot.onFalse(Commands.runOnce(() -> m_state = State.READY));
-    // trg_ready.onTrue(Commands.runOnce(
-    // () -> {
-    // timothyEntered = false;
-    // readyToCheck = false;
-    // timothyIn = false;
-    // timothyFieldTrip = false;
-    // }).ignoringDisable(true));
-    // }
 
     private Command spinUpWait() {
         return Commands.waitSeconds(0.2).andThen(Commands.waitUntil(() -> m_shooter.spinUpFinished()));
@@ -231,7 +165,7 @@ public class Superstructure extends SubsystemBase {
     public Command intake() {
         var aimCmd = m_aim.intakeMode();
         var intakeCmd = m_intake.run();
-        var conveyorCmd = m_conveyor.run(true);
+        var conveyorCmd = m_conveyor.start();
         // var retractCmd = m_conveyor.retract();
 
         return Commands.sequence(aimCmd, Commands.race(intakeCmd, conveyorCmd));
@@ -270,6 +204,15 @@ public class Superstructure extends SubsystemBase {
                 conveyorCmd));
     }
 
+    public Command subwooferNoConveyor() {
+        var aimCmd = m_aim.subwoofer();
+        var shootCmd = m_shooter.shoot();
+
+        return Commands.parallel(
+            shootCmd,
+            aimCmd);
+    }
+
     public Command shoot() { // podium angle: 0.007568 rot
         var shootCmd = m_shooter.shoot();
         var conveyorCmd = m_conveyor.run(true);
@@ -283,6 +226,14 @@ public class Superstructure extends SubsystemBase {
                 Commands.print("conveying"),
                 conveyorCmd,
                 Commands.print("done")));
+    }
+
+    public Command stopEverything() {
+        var shootCmd = m_shooter.stop();
+        var conveyorCmd = m_conveyor.stop();
+        var intakeCmd = m_intake.stop();
+
+        return Commands.parallel(shootCmd, conveyorCmd, intakeCmd);
     }
 
     public Command shootFast() {
@@ -341,15 +292,19 @@ public class Superstructure extends SubsystemBase {
         return Commands.parallel(shooterCmd, conveyorCmd);
     }
 
-    public void periodic() {
+    public void fastPeriodic() {
         log_state.accept((double) m_state.idx);
         log_timothyEntered.accept(timothyEntered);
         log_timothyIn.accept(timothyIn);
         log_timothyFieldTrip.accept(timothyFieldTrip);
         log_readyToCheck.accept(readyToCheck);
+        log_frontVisiSight.accept(bs_frontVisiSight.getAsBoolean());
+        log_shooterBeamBreak.accept(bs_shooterBeamBreak.getAsBoolean());
+        log_frontVisiSightIrq.accept(frontVisiSight_SeenNote);
+        log_intakeBtn.accept(trg_driverIntakeReq.getAsBoolean());
     }
 
-    public void backToReady() {
-        m_state = State.READY;
+    public void backToIdle() {
+        m_state = State.IDLE;
     }
 }
