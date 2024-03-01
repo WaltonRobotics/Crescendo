@@ -83,16 +83,17 @@ public class Superstructure extends SubsystemBase {
     private final Trigger trg_timothyFieldTrip = new Trigger(sensorEventLoop, () -> timothyFieldTrip);
     private final Trigger trg_idle = new Trigger(sensorEventLoop, () -> m_state == NoteState.IDLE);
     private final Trigger trg_shouldShoot = new Trigger(sensorEventLoop, () -> shouldShoot);
+    private final Trigger trg_shootOk = new Trigger(sensorEventLoop, () -> m_state == NoteState.SHOOT_OK);
 
     private final DoubleLogger log_state = WaltLogger.logDouble(kDbTabName, "state", PubSubOption.periodic(0.005));
     private final BooleanLogger log_timothyEntered = WaltLogger.logBoolean(kDbTabName, "timothyEntered",
-        PubSubOption.periodic(0.0025));
+        PubSubOption.periodic(0.00125));
     private final BooleanLogger log_timothyIn = WaltLogger.logBoolean(kDbTabName, "timothyIn",
-        PubSubOption.periodic(0.0025));
+        PubSubOption.periodic(0.00125));
     private final BooleanLogger log_timothyFieldTrip = WaltLogger.logBoolean(kDbTabName, "timothyFieldTrip",
-        PubSubOption.periodic(0.0025));
+        PubSubOption.periodic(0.00125));
     private final BooleanLogger log_readyToCheck = WaltLogger.logBoolean(kDbTabName, "readyToCheck",
-        PubSubOption.periodic(0.0025));
+        PubSubOption.periodic(0.00125));
     private final BooleanLogger log_intakeBtn = WaltLogger.logBoolean(kDbTabName, "intakeButton");
 
     public Superstructure(Aim aim, Intake intake, Conveyor conveyor, Shooter shooter,
@@ -128,7 +129,7 @@ public class Superstructure extends SubsystemBase {
         (trg_driverIntakeReq.or(trg_frontSensorIrq)).onFalse(Commands.runOnce(() -> {
             m_state = NoteState.IDLE;
         }));
-        trg_shooterSensor.onTrue(Commands.runOnce(() -> {
+        trg_shooterSensor.and(trg_shooting.negate()).onTrue(Commands.runOnce(() -> {
             m_state = NoteState.ROLLER_BEAM_RETRACT;
         }));
         trg_noteRetracting.onTrue(
@@ -138,15 +139,17 @@ public class Superstructure extends SubsystemBase {
                     m_intake.stop(),
                     m_conveyor.retract())));
         // !beamBreak && noteRetracting
-        (trg_shooterSensor.negate().and(trg_noteRetracting)).onTrue(
-            Commands.sequence(
-                Commands.waitSeconds(0.5),
-                m_conveyor.stop(),
-                Commands.runOnce(
-                    () -> {
-                        m_state = NoteState.SHOOT_OK;
-                    })));
-        (trg_driverShootReq.and(trg_idle.negate()))
+        (trg_shooterSensor.negate().and(trg_noteRetracting))
+            .and(trg_driverShootReq.or(trg_driverShootReq.negate()))
+            .onTrue(
+                Commands.sequence(
+                    Commands.waitSeconds(0.25),
+                    Commands.runOnce(
+                        () -> {
+                            m_state = NoteState.SHOOT_OK;
+                        }),
+                    m_conveyor.stop()));
+        (trg_driverShootReq.and(trg_idle.negate()).and(trg_shootOk))
             .onTrue(Commands.parallel(Commands.runOnce(() -> {
                 shouldShoot = true;
                 m_state = NoteState.SHOT_SPINUP;

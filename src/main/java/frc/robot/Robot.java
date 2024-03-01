@@ -183,7 +183,7 @@ public class Robot extends TimedRobot {
 		addPeriodic(() -> {
 			superstructure.fastPeriodic();
 			superstructure.sensorEventLoop.poll();
-		}, 0.0025);
+		}, 0.00125);
 		SmartDashboard.putData(field2d);
 		speakerPose = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpening);
 		mapAutonCommands();
