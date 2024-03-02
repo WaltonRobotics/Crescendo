@@ -154,6 +154,9 @@ public class Shooter extends SubsystemBase {
     }
 
     public boolean spinUpFinished() {
+        if (m_leftTarget == 0) {
+            return false;
+        }
         var left = m_leftTargetSupp.get().in(RotationsPerSecond);
         var right = m_leftTargetSupp.get().in(RotationsPerSecond) * kSpinAmt;
         var tolerance = 1;

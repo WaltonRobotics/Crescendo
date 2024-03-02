@@ -97,6 +97,8 @@ public class Aim extends SubsystemBase {
 
     private final GenericEntry nte_isCoast;
 
+    private final Measure<Angle> kAngleAllowedError = Rotations.of(0.002);
+
     // private LoggedTunableNumber m_tunableAngle = new
     // LoggedTunableNumber("targetAngle",
     // Units.rotationsToDegrees(m_target) + 22.5);
@@ -131,7 +133,8 @@ public class Aim extends SubsystemBase {
     }
 
     public boolean aimFinished() {
-        return MathUtil.isNear(m_targetAngle.in(Rotations), m_motor.getPosition().getValueAsDouble(), 0.01);
+        var error = Rotations.of(m_motor.getClosedLoopError().getValueAsDouble());
+        return error.lte(kAngleAllowedError);
     }
 
     public double getDegrees() {

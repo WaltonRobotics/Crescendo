@@ -83,6 +83,7 @@ public class Superstructure extends SubsystemBase {
     private final Trigger trg_frontSensorIrq;
 
     private final Trigger trg_spunUp;
+    private final Trigger trg_atAngle;
 
     private final Trigger trg_intakeReq;
     private final Trigger trg_shootReq;
@@ -118,6 +119,7 @@ public class Superstructure extends SubsystemBase {
     private final BooleanLogger log_timothyFieldTrip = WaltLogger.logBoolean(kDbTabName, "timothyFieldTrip",
         PubSubOption.sendAll(true));
     private final BooleanLogger log_drvShootReq = WaltLogger.logBoolean(kDbTabName, "intakeButton");
+    private final BooleanLogger log_aimReady = WaltLogger.logBoolean(kDbTabName, "aimReady");
 
     public Superstructure(Aim aim, Intake intake, Conveyor conveyor, Shooter shooter, Trigger intaking) {
         m_aim = aim;
@@ -137,6 +139,7 @@ public class Superstructure extends SubsystemBase {
         trg_shooterSensor = new Trigger(sensorEventLoop, bs_shooterBeamBreak);
 
         trg_spunUp = new Trigger(m_shooter::spinUpFinished).debounce(0.04);
+        trg_atAngle = new Trigger(m_aim::aimFinished);
 
         m_state = NoteState.IDLE;
 
@@ -169,7 +172,7 @@ public class Superstructure extends SubsystemBase {
         (trg_shooterSensor.negate().and(stateTrg_noteRetracting))
             .onTrue(
                 Commands.sequence(
-                    Commands.waitSeconds(0.25),
+                    Commands.waitSeconds(0.35),
                     Commands.runOnce(
                         () -> {
                             m_state = NoteState.NOTE_READY;
@@ -195,7 +198,7 @@ public class Superstructure extends SubsystemBase {
 
         // if shooter spun up and state spinupping
         // state -> SHOOTING
-        (trg_spunUp.and(stateTrg_shotSpinup))
+        (trg_spunUp.and(trg_atAngle).and(stateTrg_shotSpinup))
             .onTrue(
                 Commands.runOnce(() -> {
                     m_state = NoteState.SHOOTING;
@@ -254,7 +257,7 @@ public class Superstructure extends SubsystemBase {
     }
 
     public Command aimAndShoot(Supplier<Measure<Angle>> target) {
-        var aimCmd = m_aim.toAngleUntilAt(target, Degrees.of(1)); // TODO check this and make this unmagical 🙁
+        var aimCmd = m_aim.toAngleUntilAt(target, Degrees.of(2)); // TODO check this and make this unmagical 🙁
 
         return Commands.sequence(
             Commands.parallel(
@@ -287,6 +290,7 @@ public class Superstructure extends SubsystemBase {
         log_drvShootReq.accept(trg_driverIntakeReq.getAsBoolean());
         log_autonIntakeReq.accept(autonIntake);
         log_autonShootReq.accept(autonShoot);
+        log_aimReady.accept(trg_atAngle.getAsBoolean());
     }
 
     public void forceStateToNoteReady() {
