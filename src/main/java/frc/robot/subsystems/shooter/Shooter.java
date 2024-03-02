@@ -4,9 +4,9 @@ import static frc.robot.Constants.RobotK.kSimInterval;
 import static frc.robot.Constants.ShooterK.*;
 
 import com.ctre.phoenix6.SignalLogger;
-import com.ctre.phoenix6.controls.VelocityVoltage;
-import com.ctre.phoenix6.controls.VoltageOut;
-// import com.ctre.phoenix6.controls.VoltageOut;
+import com.ctre.phoenix6.controls.CoastOut;
+import com.ctre.phoenix6.controls.TorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -17,23 +17,22 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.Angle;
+import edu.wpi.first.units.Current;
 import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Velocity;
-import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Constants.ShooterK.ShooterConfigs;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.BooleanLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 
 import static frc.robot.Constants.ShooterK.FlywheelSimK.*;
-import static edu.wpi.first.units.Units.Minute;
-import static edu.wpi.first.units.Units.Rotations;
-import static edu.wpi.first.units.Units.RotationsPerSecond;
-import static edu.wpi.first.units.Units.Volts;
+import static edu.wpi.first.units.Units.*;
 import static frc.robot.Constants.kCanbus;
 import static frc.robot.Constants.kStickDeadband;
 import static frc.robot.Robot.*;
@@ -44,8 +43,9 @@ import java.util.function.Supplier;
 public class Shooter extends SubsystemBase {
     private final TalonFX m_left = new TalonFX(kLeftId, kCanbus);
     private final TalonFX m_right = new TalonFX(kRightId, kCanbus);
-    private final VelocityVoltage m_request = new VelocityVoltage(0);
-    private final VoltageOut m_voltage = new VoltageOut(0).withEnableFOC(true);
+    private final VelocityTorqueCurrentFOC m_request = new VelocityTorqueCurrentFOC(0);
+    private final TorqueCurrentFOC m_current = new TorqueCurrentFOC(0);
+    private final CoastOut m_coast = new CoastOut();
 
     private double m_spinAmt = kSpinAmt;
     private double m_shotTime = 1.5;
@@ -54,6 +54,8 @@ public class Shooter extends SubsystemBase {
     // private double m_rightTarget = 7000 * m_spinAmt;
     private final Supplier<Measure<Velocity<Angle>>> m_leftTargetSupp = () -> Rotations.per(Minute).of(m_leftTarget);
     private boolean m_spunUp = false;
+    private boolean m_leftOk = false;
+    private boolean m_rightOk = false;
     // private final Supplier<Measure<Velocity<Angle>>> m_rightTargetSupp = () ->
     // Rotations.per(Minute).of(m_rightTarget);
 
@@ -70,21 +72,39 @@ public class Shooter extends SubsystemBase {
 
     private final DoubleLogger log_leftTarget = WaltLogger.logDouble(kDbTabName, "leftTarget");
     private final DoubleLogger log_rightTarget = WaltLogger.logDouble(kDbTabName, "rightTarget");
+
     private final BooleanLogger log_spunUp = WaltLogger.logBoolean(kDbTabName, "spunUp");
+    private final BooleanLogger log_leftOk = WaltLogger.logBoolean(kDbTabName, "leftOk");
+    private final BooleanLogger log_rightOk = WaltLogger.logBoolean(kDbTabName, "rightOk");
 
     private double time = 0;
     private boolean found = false;
     private final FlywheelSim m_flywheelSim = new FlywheelSim(DCMotor.getFalcon500(1), kGearRatio, kMoi);
 
-    private final SysIdRoutine m_sysId = new SysIdRoutine(
-        new SysIdRoutine.Config(
-            null, null,
-            null,
-            (state) -> SignalLogger.writeString("state", state.toString())),
-        new SysIdRoutine.Mechanism((Measure<Voltage> volts) -> {
-            m_left.setControl(m_voltage.withOutput(volts.in(Volts)));
-            m_right.setControl(m_voltage.withOutput(volts.in(Volts)));
-        }, null, this));
+    private final SysIdRoutine m_currentSysId = makeTorqueCurrentSysIdRoutine(
+        Amps.of(4).per(Second),
+        Amps.of(20),
+        Seconds.of(25));
+
+    private SysIdRoutine makeTorqueCurrentSysIdRoutine(
+        final Measure<Velocity<Current>> currentRampRate,
+        final Measure<Current> stepCurrent,
+        final Measure<Time> timeout) {
+        var cfg = new SysIdRoutine.Config(
+            // we need to lie to SysId here, because it only takes voltage instead of
+            // current
+            Volts.per(Second).of(currentRampRate.baseUnitMagnitude()),
+            Volts.of(stepCurrent.baseUnitMagnitude()),
+            timeout,
+            state -> SignalLogger.writeString("state", state.toString()));
+        var mech = new SysIdRoutine.Mechanism(
+            (voltageMeasure) -> {
+                m_left.setControl(m_current.withOutput(voltageMeasure.in(Volts)));
+                m_right.setControl(m_current.withOutput(voltageMeasure.in(Volts)));
+            }, null, this);
+
+        return new SysIdRoutine(cfg, mech);
+    }
 
     public Shooter() {
         m_right.getConfigurator().apply(ShooterConfigs.kRightConfigs);
@@ -93,7 +113,10 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command stop() {
-        return toVelo(() -> RotationsPerSecond.of(0));
+        return runOnce(() -> {
+            m_right.setControl(m_coast);
+            m_left.setControl(m_coast);
+        });
     }
 
     private Command toVelo(Supplier<Measure<Velocity<Angle>>> velo) {
@@ -110,8 +133,8 @@ public class Shooter extends SubsystemBase {
             }, () -> {
                 // m_rightTarget = 0;
                 m_leftTarget = 0;
-                m_right.setControl(m_request.withVelocity(0));
-                m_left.setControl(m_request.withVelocity(0));
+                m_right.setControl(m_coast);
+                m_left.setControl(m_coast);
             });
     }
 
@@ -130,7 +153,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command shoot() {
-        return toVelo(() -> Rotations.per(Minute).of(7000));
+        return toVelo(() -> Rotations.per(Minute).of(7300));
     }
 
     // That's not really that fast.
@@ -159,13 +182,13 @@ public class Shooter extends SubsystemBase {
         }
         var left = m_leftTargetSupp.get().in(RotationsPerSecond);
         var right = m_leftTargetSupp.get().in(RotationsPerSecond) * kSpinAmt;
-        var tolerance = 1;
-        boolean leftOk = MathUtil.isNear(
+        var tolerance = 1.75;
+        m_leftOk = MathUtil.isNear(
             left, m_left.getVelocity().getValueAsDouble(), tolerance);
-        boolean rightOk = MathUtil.isNear(
+        m_rightOk = MathUtil.isNear(
             right, m_right.getVelocity().getValueAsDouble(), tolerance);
-        m_spunUp = leftOk && rightOk;
-        return leftOk && rightOk;
+        m_spunUp = m_leftOk && m_rightOk;
+        return m_leftOk && m_rightOk;
     }
 
     private void rawRun(double dutyCycle) {
@@ -238,6 +261,8 @@ public class Shooter extends SubsystemBase {
         log_leftTarget.accept(m_left.getClosedLoopReference().getValueAsDouble());
         log_rightTarget.accept(m_right.getClosedLoopReference().getValueAsDouble());
         log_spunUp.accept(m_spunUp);
+        log_leftOk.accept(m_leftOk);
+        log_rightOk.accept(m_rightOk);
     }
 
     public void simulationPeriodic() {
@@ -256,10 +281,10 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
-        return m_sysId.quasistatic(direction);
+        return m_currentSysId.quasistatic(direction);
     }
 
     public Command sysIdDynamic(SysIdRoutine.Direction direction) {
-        return m_sysId.dynamic(direction);
+        return m_currentSysId.dynamic(direction);
     }
 }

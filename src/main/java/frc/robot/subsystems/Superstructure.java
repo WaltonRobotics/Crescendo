@@ -5,6 +5,7 @@ import static frc.robot.Constants.IntakeK.kVisiSightId;
 import static frc.robot.Constants.RobotK.kDbTabName;
 
 import java.util.function.BooleanSupplier;
+import java.util.function.DoubleConsumer;
 import java.util.function.Supplier;
 
 import edu.wpi.first.networktables.PubSubOption;
@@ -29,6 +30,8 @@ public class Superstructure extends SubsystemBase {
     public final Intake m_intake;
     public final Conveyor m_conveyor;
     public final Shooter m_shooter;
+
+    private final DoubleConsumer m_driverRumbler, m_manipRumbler;
 
     private final DigitalInput frontVisiSight = new DigitalInput(kVisiSightId);
     private final DigitalInput shooterBeamBreak = new DigitalInput(0);
@@ -63,16 +66,17 @@ public class Superstructure extends SubsystemBase {
     private boolean timothyEntered = false;
     private boolean timothyIn = false;
     private boolean timothyFieldTrip = false;
-    private boolean driverShootReq = false;
     private boolean autonIntake = false;
     private boolean autonShoot = false;
+    private boolean driverRumbled = false;
+    private boolean manipulatorRumbled = false;
 
     public final EventLoop sensorEventLoop = new EventLoop();
 
     /** true = driver wants to intake */
     private final Trigger trg_driverIntakeReq;
     /** true = driver wants to shoot */
-    private final Trigger trg_driverShootReq = new Trigger(() -> driverShootReq);
+    private final Trigger trg_driverShootReq;
 
     private final Trigger trg_autonIntakeReq = new Trigger(() -> autonIntake);
     private final Trigger trg_autonShootReq = new Trigger(() -> autonShoot);
@@ -107,8 +111,6 @@ public class Superstructure extends SubsystemBase {
         () -> m_state == NoteState.LEFT_BEAM_BREAK);
     public final Trigger stateTrg_noteReady = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.NOTE_READY);
-    private final Trigger stateTrg_shotSpinup = new Trigger(sensorEventLoop,
-        () -> m_state == NoteState.SHOT_SPINUP);
 
     private final DoubleLogger log_state = WaltLogger.logDouble(kDbTabName, "state",
         PubSubOption.sendAll(true));
@@ -121,13 +123,20 @@ public class Superstructure extends SubsystemBase {
     private final BooleanLogger log_drvShootReq = WaltLogger.logBoolean(kDbTabName, "intakeButton");
     private final BooleanLogger log_aimReady = WaltLogger.logBoolean(kDbTabName, "aimReady");
 
-    public Superstructure(Aim aim, Intake intake, Conveyor conveyor, Shooter shooter, Trigger intaking) {
+    public Superstructure(
+        Aim aim, Intake intake, Conveyor conveyor, Shooter shooter,
+        Trigger intaking, Trigger shooting,
+        DoubleConsumer driverRumbler, DoubleConsumer manipRumbler) {
         m_aim = aim;
         m_intake = intake;
         m_conveyor = conveyor;
         m_shooter = shooter;
 
+        m_driverRumbler = driverRumbler;
+        m_manipRumbler = manipRumbler;
+
         trg_driverIntakeReq = intaking;
+        trg_driverShootReq = shooting;
 
         trg_intakeReq = trg_driverIntakeReq.or(trg_autonIntakeReq);
         trg_shootReq = trg_driverShootReq.or(trg_autonShootReq);
@@ -146,63 +155,86 @@ public class Superstructure extends SubsystemBase {
         configureStateTriggers();
     }
 
+    private Command cmdDriverRumble(double intensity, double seconds) {
+        if (driverRumbled) {
+            return Commands.none();
+        }
+        return Commands.startEnd(
+            () -> {
+                m_driverRumbler.accept(intensity);
+                driverRumbled = true;
+            },
+            () -> m_driverRumbler.accept(0)).withTimeout(seconds);
+    }
+
+    private Command cmdManipRumble(double intensity, double seconds) {
+        if (manipulatorRumbled) {
+            return Commands.none();
+        }
+        return Commands.startEnd(
+            () -> {
+                m_manipRumbler.accept(intensity);
+                manipulatorRumbled = true;
+            },
+            () -> m_manipRumbler.accept(0)).withTimeout(seconds);
+    }
+
+    private Command changeStateCmd(NoteState state) {
+        return Commands.runOnce(() -> {
+            m_state = state;
+        });
+    }
+
     private void configureStateTriggers() {
         // intakeReq && idle
         (trg_intakeReq.and(stateTrg_idle))
             .onTrue(Commands.runOnce(() -> m_state = NoteState.INTAKE)
                 .alongWith(
-                    // Wait for aim +/-5deg to intake zone
+                    // wait until aim is ±50 degrees to intake mode
                     Commands.sequence(
                         m_aim.intakeAngleNearCmd(),
                         Commands.parallel(m_intake.run(), m_conveyor.startSlow()))));
-        // !(intakeReq || idle) -> !intakeReq && !idle
-        (trg_intakeReq.or(trg_frontSensorIrq)).onFalse(Commands.runOnce(() -> {
-            m_state = NoteState.IDLE;
-        }));
-        (trg_shooterSensor.and((stateTrg_shooting.or(stateTrg_leavingBeamBreak).or(stateTrg_leftBeamBreak)).negate()))
-            .onTrue(Commands.runOnce(() -> {
-                m_state = NoteState.ROLLER_BEAM_RETRACT;
-            }));
+
+        // !(intakeReq || idle) => !intakeReq && !idle
+        (trg_intakeReq.or(trg_frontSensorIrq)).onFalse(changeStateCmd(NoteState.IDLE));
+
+        trg_frontSensorIrq.onTrue(cmdManipRumble(1, 0.5));
+
+        // note in shooter and not shooting
+        (trg_shooterSensor.and((extStateTrg_shooting).negate()))
+            .onTrue(changeStateCmd(NoteState.ROLLER_BEAM_RETRACT));
         stateTrg_noteRetracting.onTrue(
             Commands.parallel(
                 m_intake.stop(),
                 m_conveyor.retract()));
+
         // !beamBreak && noteRetracting
         // Post-retract stop
         (trg_shooterSensor.negate().and(stateTrg_noteRetracting))
             .onTrue(
                 Commands.sequence(
                     Commands.waitSeconds(0.35),
-                    Commands.runOnce(
-                        () -> {
-                            m_state = NoteState.NOTE_READY;
-                        }),
+                    changeStateCmd(NoteState.NOTE_READY),
                     m_conveyor.stop()));
+
+        // manipulator controls this now so idt this is necessary
         // shot requested and note is ready
         // state -> spinup, cmd spinup shooter
-        (trg_shootReq.and(stateTrg_noteReady))
-            .onTrue(Commands.sequence(
-                Commands.parallel(
-                    Commands.runOnce(() -> {
-                        m_state = NoteState.SHOT_SPINUP;
-                    }),
-                    m_shooter.shoot())));
+        // (trg_shootReq.and(stateTrg_aimed))
+        // .onTrue(changeStateCmd(NoteState.SHOT_SPINUP));
 
-        // if shot not requested and shooter spinupping
-        // state -> NOTE_READY, cmd stop everything
-        ((trg_shootReq.negate()).and(stateTrg_shotSpinup)).onTrue(
-            Commands.sequence(
-                Commands.runOnce(() -> {
-                    m_state = NoteState.NOTE_READY;
-                }), stopEverything()));
+        // manipulator controls this now so idt this is necessary (2)
+        // ((trg_shootReq.negate()).and(stateTrg_shotSpinup)).onTrue(
+        // Commands.sequence(
+        // changeStateCmd(NoteState.AIMED), stopEverything()));
+
+        (trg_spunUp.and(trg_atAngle))
+            .onTrue(cmdDriverRumble(1, 0.5));
 
         // if shooter spun up and state spinupping
         // state -> SHOOTING
-        (trg_spunUp.and(trg_atAngle).and(stateTrg_shotSpinup))
-            .onTrue(
-                Commands.runOnce(() -> {
-                    m_state = NoteState.SHOOTING;
-                }));
+        (trg_spunUp.and(trg_atAngle).and(trg_shootReq))
+            .onTrue(changeStateCmd(NoteState.SHOOTING));
 
         // if now shooting, note leaving, or note just left
         // cmd conveyorFast
@@ -214,17 +246,16 @@ public class Superstructure extends SubsystemBase {
             .onFalse(m_conveyor.stop());
 
         // if note in shooter sensor and state shooting
-        // state -> LEAVING_BEAM_BREAK, timothy says bye
+        // state -> LEAVING_BEAM_BREAK, timothy says bye 😃
         (trg_shooterSensor.and(stateTrg_shooting))
-            .onTrue(Commands.runOnce(() -> {
-                m_state = NoteState.LEAVING_BEAM_BREAK;
-                timothyFieldTrip = true;
-            }));
+            .onTrue(Commands.parallel(
+                changeStateCmd(NoteState.LEAVING_BEAM_BREAK),
+                Commands.runOnce(() -> timothyFieldTrip = true)));
 
-        // if note not in shooter and state leaving and timothy waving bye
+        // if note not in shooter and state leaving and timothy waving bye 😄
         // state -> LEFT_BEAM_BREAK
-        (trg_shooterSensor.negate().and(stateTrg_leavingBeamBreak).and(trg_timothyFieldTrip))
-            .onTrue(Commands.runOnce(() -> m_state = NoteState.LEFT_BEAM_BREAK));
+        ((trg_shooterSensor.debounce(0.1)).negate().and(stateTrg_leavingBeamBreak).and(trg_timothyFieldTrip))
+            .onTrue(changeStateCmd(NoteState.LEFT_BEAM_BREAK));
 
         // if left beam break
         // wait for 0.5 sec
@@ -232,7 +263,7 @@ public class Superstructure extends SubsystemBase {
         stateTrg_leftBeamBreak
             .onTrue(Commands.sequence(
                 Commands.waitSeconds(0.5),
-                Commands.runOnce(() -> m_state = NoteState.IDLE)));
+                changeStateCmd(NoteState.IDLE)));
         stateTrg_idle
             .onTrue(Commands.parallel(
                 Commands.runOnce(
@@ -241,9 +272,10 @@ public class Superstructure extends SubsystemBase {
                         timothyIn = false;
                         timothyFieldTrip = false;
                         frontVisiSightSeenNote = false;
-                        driverShootReq = false;
                         autonIntake = false;
                         autonShoot = false;
+                        driverRumbled = false;
+                        manipulatorRumbled = false;
                     }),
                 stopEverything(), m_aim.hardStop()));
     }
@@ -256,20 +288,16 @@ public class Superstructure extends SubsystemBase {
         return Commands.parallel(shootCmd, conveyorCmd, intakeCmd);
     }
 
-    public Command aimAndShoot(Supplier<Measure<Angle>> target) {
-        var aimCmd = m_aim.toAngleUntilAt(target, Degrees.of(2)); // TODO check this and make this unmagical 🙁
+    public Command aim(Supplier<Measure<Angle>> target) {
+        var aimCmd = m_aim.toAngleUntilAt(target, Degrees.of(2)); // TODO make this unmagical 🙁
 
         return Commands.sequence(
             Commands.parallel(
                 aimCmd,
-                Commands.waitUntil(() -> m_state == NoteState.NOTE_READY)),
-            Commands.runOnce(() -> {
-                driverShootReq = true;
-            }));
-    }
-
-    public Command stopRequestingToShoot() {
-        return Commands.runOnce(() -> driverShootReq = false);
+                Commands.waitUntil(() -> m_state != NoteState.ROLLER_BEAM_RETRACT)),
+            Commands.parallel(
+                m_shooter.shoot(),
+                changeStateCmd(NoteState.SHOT_SPINUP)));
     }
 
     public Command backwardsRun() {

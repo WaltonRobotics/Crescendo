@@ -125,15 +125,25 @@ public class Constants {
 
     public class ShooterK {
         public static final class ShooterConfigs {
-            private static final double kPRight = 0.1;
-            private static final double kSRight = 0.254; // sysid 0.15837
-            private static final double kVRight = 0.0625;
-            private static final double kARight = 0;
+            // private static final double kPRight = 0.1;
+            // private static final double kSRight = 0.254; // sysid 0.15837
+            // private static final double kVRight = 0.0625;
+            // private static final double kARight = 0;
 
-            private static final double kPLeft = 0.1; // sysid 0.046968
-            private static final double kSLeft = 0.275; // sysid 0.2057
-            private static final double kVLeft = 0.0625; // sysid 0.052935
-            private static final double kALeft = 0;
+            // private static final double kPLeft = 0.1; // sysid 0.046968
+            // private static final double kSLeft = 0.275; // sysid 0.2057
+            // private static final double kVLeft = 0.0625; // sysid 0.052935
+            // private static final double kALeft = 0;
+
+            private static final double kPRight_FOC = 5;
+            private static final double kSRight_FOC = 3; // Amps
+            private static final double kVRight_FOC = 0.195;
+            private static final double kARight_FOC = 0.25;
+
+            private static final double kPLeft_FOC = 5;
+            private static final double kSLeft_FOC = 3; // Amps
+            private static final double kVLeft_FOC = 0.195;
+            private static final double kALeft_FOC = 0.15;
 
             public static final TalonFXConfiguration kRightConfigs = new TalonFXConfiguration();
             public static final TalonFXConfiguration kLeftConfigs = new TalonFXConfiguration();
@@ -142,11 +152,17 @@ public class Constants {
                 kRightConfigs.Feedback = kRightConfigs.Feedback
                     .withSensorToMechanismRatio(kGearRatio);
 
+                // kRightConfigs.Slot0 = kRightConfigs.Slot0
+                // .withKP(kPRight)
+                // .withKS(kSRight)
+                // .withKV(kVRight)
+                // .withKA(kARight);
+
                 kRightConfigs.Slot0 = kRightConfigs.Slot0
-                    .withKP(kPRight)
-                    .withKS(kSRight)
-                    .withKV(kVRight)
-                    .withKA(kARight);
+                    .withKP(kPRight_FOC)
+                    .withKS(kSRight_FOC)
+                    .withKV(kVRight_FOC)
+                    .withKA(kARight_FOC);
 
                 kRightConfigs.MotorOutput = kRightConfigs.MotorOutput
                     .withNeutralMode(NeutralModeValue.Coast);
@@ -154,11 +170,17 @@ public class Constants {
                 kRightConfigs.ClosedLoopRamps = kRightConfigs.ClosedLoopRamps
                     .withVoltageClosedLoopRampPeriod(0.25);
 
+                // kLeftConfigs.Slot0 = kLeftConfigs.Slot0
+                // .withKP(kPLeft)
+                // .withKS(kSLeft)
+                // .withKV(kVLeft)
+                // .withKA(kALeft);
+
                 kLeftConfigs.Slot0 = kLeftConfigs.Slot0
-                    .withKP(kPLeft)
-                    .withKS(kSLeft)
-                    .withKV(kVLeft)
-                    .withKA(kALeft);
+                    .withKP(kPLeft_FOC)
+                    .withKS(kSLeft_FOC)
+                    .withKV(kVLeft_FOC)
+                    .withKA(kALeft_FOC);
 
                 kLeftConfigs.Feedback = kLeftConfigs.Feedback
                     .withSensorToMechanismRatio(kGearRatio);
@@ -191,7 +213,7 @@ public class Constants {
 
     public static class AimK {
         public static final class AimConfigs {
-            private static final double kP = 120; // idk
+            private static final double kP = 200; // idk
             private static final double kS = 0.25;
             private static final double kG = 0;
             private static final double kV = 0;
@@ -228,7 +250,7 @@ public class Constants {
                 motorConfig.MotionMagic = motorConfig.MotionMagic
                     .withMotionMagicCruiseVelocity(2)
                     .withMotionMagicAcceleration(12)
-                    .withMotionMagicJerk(1);
+                    .withMotionMagicJerk(2);
 
                 motorConfig.HardwareLimitSwitch = motorConfig.HardwareLimitSwitch
                     .withForwardLimitEnable(false)

@@ -23,6 +23,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -66,7 +67,9 @@ public class Robot extends TimedRobot {
 	public final Conveyor conveyor = new Conveyor();
 
 	public final Superstructure superstructure = new Superstructure(
-		aim, intake, conveyor, shooter, manipulator.leftTrigger());
+		aim, intake, conveyor, shooter,
+		manipulator.leftTrigger(), driver.rightTrigger(),
+		(intensity) -> driverRumble(intensity), (intensity) -> manipulatorRumble(intensity));
 
 	public static Translation3d speakerPose;
 
@@ -113,6 +116,14 @@ public class Robot extends TimedRobot {
 			Trajectories.fivePc.getInitialPose());
 	}
 
+	private void driverRumble(double intensity) {
+		driver.getHID().setRumble(RumbleType.kBothRumble, intensity);
+	}
+
+	private void manipulatorRumble(double intensity) {
+		manipulator.getHID().setRumble(RumbleType.kBothRumble, intensity);
+	}
+
 	private void configureBindings() {
 		/* drivetrain */
 		if (Utils.isSimulation()) {
@@ -137,8 +148,6 @@ public class Robot extends TimedRobot {
 		driver.x().whileTrue(drivetrain.goToAutonPose());
 		driver.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
 		// driver.rightBumper().onTrue(drivetrain.resetPoseToSpeaker());
-		driver.rightTrigger().onTrue(superstructure.aimAndShoot(() -> AimK.kSubwooferAngle))
-			.onFalse(superstructure.stopRequestingToShoot());
 		// driver.rightTrigger().and(driver.b()).whileTrue(conveyor.runFast());
 
 		/* sysid buttons */
@@ -151,22 +160,22 @@ public class Robot extends TimedRobot {
 		// manipulator.leftTrigger().whileTrue(superstructure.intake());
 		manipulator.rightTrigger().whileTrue(intake.outtake());
 		manipulator.b().and(manipulator.povUp()).whileTrue(conveyor.runFast());
-		// manipulator.rightBumper().whileTrue(shooter.shoot());
-		manipulator.x().whileTrue(aim.hardStop());
+		manipulator.rightBumper().whileTrue(superstructure.aim(() -> AimK.kSubwooferAngle));
+		// manipulator.x().whileTrue(aim.hardStop());
 
 		/* testing buttons */
 		manipulator.a().whileTrue(superstructure.backwardsRun());
 		manipulator.b().whileTrue(conveyor.runFast());
 		// manipulator.x().onTrue(aim.to90ish());
 		// manipulator.y().onTrue(aim.to0());
-		// manipulator.povUp().onTrue(aim.increaseAngle());
-		// manipulator.povDown().onTrue(aim.decreaseAngle());
+		manipulator.povUp().onTrue(aim.increaseAngle());
+		manipulator.povDown().onTrue(aim.decreaseAngle());
 		manipulator.back().and(manipulator.rightBumper()).whileTrue(aim.subwoofer());
 
 		manipulator.start().whileTrue(Commands.startEnd(
 			() -> aim.setCoast(true), () -> aim.setCoast(false)));
-		manipulator.back().and(manipulator.povUp()).onTrue(shooter.increaseRpm());
-		manipulator.back().and(manipulator.povDown()).onTrue(shooter.decreaseRpm());
+		// manipulator.back().and(manipulator.povUp()).onTrue(shooter.increaseRpm());
+		// manipulator.back().and(manipulator.povDown()).onTrue(shooter.decreaseRpm());
 
 		/* sysid buttons */
 		manipulator.back().and(manipulator.y()).whileTrue(shooter.sysIdDynamic(Direction.kForward));
