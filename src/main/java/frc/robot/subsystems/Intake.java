@@ -16,10 +16,6 @@ public class Intake extends SubsystemBase {
 
     private final VoltageOut m_voltsFoc = new VoltageOut(0).withEnableFOC(true);
 
-    public Intake() {
-
-    }
-
     private void runMainRollers(double volts) {
         m_motor.setControl(m_voltsFoc.withOutput(volts));
     }

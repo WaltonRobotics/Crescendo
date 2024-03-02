@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.util.logging.WaltLogger;
+import frc.util.logging.WaltLogger.BooleanLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 
 import static frc.robot.Constants.ShooterK.FlywheelSimK.*;
@@ -52,6 +53,7 @@ public class Shooter extends SubsystemBase {
     private double m_leftTarget = 7000;
     // private double m_rightTarget = 7000 * m_spinAmt;
     private final Supplier<Measure<Velocity<Angle>>> m_leftTargetSupp = () -> Rotations.per(Minute).of(m_leftTarget);
+    private boolean m_spunUp = false;
     // private final Supplier<Measure<Velocity<Angle>>> m_rightTargetSupp = () ->
     // Rotations.per(Minute).of(m_rightTarget);
 
@@ -68,6 +70,7 @@ public class Shooter extends SubsystemBase {
 
     private final DoubleLogger log_leftTarget = WaltLogger.logDouble(kDbTabName, "leftTarget");
     private final DoubleLogger log_rightTarget = WaltLogger.logDouble(kDbTabName, "rightTarget");
+    private final BooleanLogger log_spunUp = WaltLogger.logBoolean(kDbTabName, "spunUp");
 
     private double time = 0;
     private boolean found = false;
@@ -158,6 +161,7 @@ public class Shooter extends SubsystemBase {
             left, m_left.getVelocity().getValueAsDouble(), tolerance);
         boolean rightOk = MathUtil.isNear(
             right, m_right.getVelocity().getValueAsDouble(), tolerance);
+        m_spunUp = leftOk && rightOk;
         return leftOk && rightOk;
     }
 
@@ -230,6 +234,7 @@ public class Shooter extends SubsystemBase {
         log_shotTime.accept(m_shotTime);
         log_leftTarget.accept(m_left.getClosedLoopReference().getValueAsDouble());
         log_rightTarget.accept(m_right.getClosedLoopReference().getValueAsDouble());
+        log_spunUp.accept(m_spunUp);
     }
 
     public void simulationPeriodic() {

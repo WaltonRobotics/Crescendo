@@ -31,7 +31,7 @@ public final class AutonFactory {
 
 	public static Command leave(Superstructure superstructure, Swerve swerve) {
 		var resetPose = swerve.resetPose(leave).asProxy();
-		var forceShoot = Commands.runOnce(() -> superstructure.forceStateToShoot()).asProxy();
+		var forceShoot = Commands.runOnce(() -> superstructure.forceStateToNoteReady()).asProxy();
 		var waitUntilIdle = superstructure.waitUntilIdle().asProxy();
 		var pathFollow = AutoBuilder.followPath(leave).asProxy();
 		return Commands.parallel(resetPose, forceShoot, Commands.sequence(
@@ -42,9 +42,9 @@ public final class AutonFactory {
 
 	public static Command twoPc(Superstructure superstructure, Swerve swerve) {
 		var leave = leave(superstructure, swerve);
-		var intake = Commands.runOnce(() -> superstructure.forceStateToIntake()).asProxy();
+		var intake = superstructure.autonIntakeCmd().asProxy();
 		var pathFollow = AutoBuilder.followPath(twoPc).asProxy();
-		var shoot = Commands.runOnce(() -> superstructure.forceStateToShoot()).asProxy();
+		var shoot = Commands.runOnce(() -> superstructure.forceStateToNoteReady()).asProxy();
 
 		return Commands.sequence(
 			Commands.parallel(
@@ -52,7 +52,9 @@ public final class AutonFactory {
 				Commands.sequence(
 					Commands.waitSeconds(0.2),
 					intake)),
-			pathFollow, shoot);
+			Commands.parallel(pathFollow,
+				Commands.waitUntil(superstructure.stateTrg_noteReady)),
+			shoot);
 	}
 
 	public static Command threePiece(Swerve swerve, Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
@@ -161,7 +163,7 @@ public final class AutonFactory {
 	}
 
 	private static Command intakeShotCycle(Intake intake, Conveyor conveyor, Shooter shooter) {
-		var conveyCmd = conveyor.run(false).withTimeout(conveyorTimeout).asProxy();
+		var conveyCmd = conveyor.runFast().withTimeout(conveyorTimeout).asProxy();
 		var spinUpCmd = shooter.spinUp().withTimeout(spinUpTimeout).asProxy();
 		var shootCmd = shooter.shoot().withTimeout(shooterTimeout).asProxy();
 		var spinUpAndShoot = Commands.sequence(spinUpCmd, shootCmd).asProxy();

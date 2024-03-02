@@ -241,7 +241,7 @@ public class Constants {
                     .withReverseSoftLimitEnable(true);
 
                 cancoderConfig.MagnetSensor = cancoderConfig.MagnetSensor
-                    .withMagnetOffset(0.224121)
+                    .withMagnetOffset(0.101562)
                     .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
                     .withAbsoluteSensorRange(AbsoluteSensorRangeValue.Signed_PlusMinusHalf);
             }
@@ -262,6 +262,8 @@ public class Constants {
         public static final Measure<Angle> kMinAngle = Rotations.of(0);
         public static final Measure<Angle> kInitAngle = Degrees.of(90);
         public static final Measure<Angle> kMaxAngle = Rotations.of(0.45);
+
+        public static final Measure<Angle> kSubwooferAngle = Rotations.of(0.066);
     }
 
     // public class ClimberK {

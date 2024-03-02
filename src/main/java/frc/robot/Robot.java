@@ -66,8 +66,7 @@ public class Robot extends TimedRobot {
 	public final Conveyor conveyor = new Conveyor();
 
 	public final Superstructure superstructure = new Superstructure(
-		aim, intake, conveyor, shooter,
-		manipulator.leftTrigger(), driver.rightTrigger());
+		aim, intake, conveyor, shooter, manipulator.leftTrigger());
 
 	public static Translation3d speakerPose;
 
@@ -138,8 +137,9 @@ public class Robot extends TimedRobot {
 		driver.x().whileTrue(drivetrain.goToAutonPose());
 		driver.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
 		// driver.rightBumper().onTrue(drivetrain.resetPoseToSpeaker());
-		// driver.rightTrigger().whileTrue(superstructure.subwoofer());
-		driver.rightTrigger().and(driver.b()).whileTrue(conveyor.run(true));
+		driver.rightTrigger().onTrue(superstructure.aimAndShoot(() -> AimK.kSubwooferAngle))
+			.onFalse(superstructure.stopRequestingToShoot());
+		// driver.rightTrigger().and(driver.b()).whileTrue(conveyor.runFast());
 
 		/* sysid buttons */
 		driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
@@ -150,15 +150,13 @@ public class Robot extends TimedRobot {
 		/* manipulator controls */
 		// manipulator.leftTrigger().whileTrue(superstructure.intake());
 		manipulator.rightTrigger().whileTrue(intake.outtake());
-		manipulator.b().and(manipulator.povUp()).whileTrue(conveyor.run(true));
+		manipulator.b().and(manipulator.povUp()).whileTrue(conveyor.runFast());
 		// manipulator.rightBumper().whileTrue(shooter.shoot());
-		manipulator.x().whileTrue(aim.intakeMode());
+		manipulator.x().whileTrue(aim.hardStop());
 
 		/* testing buttons */
-		manipulator.leftBumper().whileTrue(superstructure.subwoofer());
-		manipulator.back().and(manipulator.leftBumper()).whileTrue(superstructure.shootFast());
 		manipulator.a().whileTrue(superstructure.backwardsRun());
-		manipulator.b().whileTrue(conveyor.run(false));
+		manipulator.b().whileTrue(conveyor.runFast());
 		// manipulator.x().onTrue(aim.to90ish());
 		// manipulator.y().onTrue(aim.to0());
 		// manipulator.povUp().onTrue(aim.increaseAngle());
@@ -183,7 +181,6 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void robotInit() {
-		superstructure.backToIdle();
 		addPeriodic(() -> {
 			superstructure.fastPeriodic();
 			superstructure.sensorEventLoop.poll();
@@ -221,7 +218,7 @@ public class Robot extends TimedRobot {
 	@Override
 	public void autonomousInit() {
 		SignalLogger.start();
-		superstructure.forceStateToShoot();
+		superstructure.forceStateToNoteReady();
 		m_autonomousCommand = getAutonomousCommand();
 		if (m_autonomousCommand != null) {
 			m_autonomousCommand.schedule();
@@ -239,7 +236,6 @@ public class Robot extends TimedRobot {
 	@Override
 	public void teleopInit() {
 		SignalLogger.start();
-		superstructure.backToIdle();
 
 		if (m_autonomousCommand != null) {
 			m_autonomousCommand.cancel();

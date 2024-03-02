@@ -11,7 +11,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class Conveyor extends SubsystemBase {
     private final CANSparkMax m_conveyor = new CANSparkMax(kConveyorId, MotorType.kBrushless);
 
-    public Command run(boolean ignoreSensor) {
+    public Command runFast() {
         var go = runEnd(() -> {
             m_conveyor.set(1);
         }, () -> {
@@ -25,7 +25,7 @@ public class Conveyor extends SubsystemBase {
         return runEnd(() -> m_conveyor.set(-0.05), () -> m_conveyor.set(0));
     }
 
-    public Command start() {
+    public Command startSlow() {
         return run(() -> m_conveyor.set(0.35));
     }
 

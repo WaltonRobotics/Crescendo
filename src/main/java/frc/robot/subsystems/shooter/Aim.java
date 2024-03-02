@@ -188,8 +188,36 @@ public class Aim extends SubsystemBase {
             }); // idk
     }
 
-    public Command intakeMode() {
-        return toAngle(Degrees.of(10));
+    private Command toAngleUntilAt(Measure<Angle> angle, Measure<Angle> tolerance) {
+        var goThere = startEnd(
+            () -> {
+                m_motor.setControl(m_request.withPosition(angle.in(Rotations)));
+            }, () -> {
+            });
+        return goThere.until(() -> {
+            var error = Rotations.of(Math.abs(m_motor.getClosedLoopError().getValueAsDouble()));
+            return error.lte(tolerance);
+        });
+    }
+
+    public Command toAngleUntilAt(Supplier<Measure<Angle>> angle, Measure<Angle> tolerance) {
+        var goThere = startEnd(
+            () -> {
+                m_motor.setControl(m_request.withPosition(angle.get().in(Rotations)));
+            }, () -> {
+            });
+        return goThere.until(() -> {
+            var error = Rotations.of(Math.abs(m_motor.getClosedLoopError().getValueAsDouble()));
+            return error.lte(tolerance);
+        });
+    }
+
+    public Command hardStop() {
+        return toAngle(Degrees.of(0));
+    }
+
+    public Command intakeAngleNearCmd() {
+        return toAngleUntilAt(Degrees.of(0), Degrees.of(5));
     }
 
     public void setCoast(boolean coast) {
