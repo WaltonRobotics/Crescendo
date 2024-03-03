@@ -120,7 +120,7 @@ public class Superstructure extends SubsystemBase {
         PubSubOption.sendAll(true));
     private final BooleanLogger log_timothyFieldTrip = WaltLogger.logBoolean(kDbTabName, "timothyFieldTrip",
         PubSubOption.sendAll(true));
-    private final BooleanLogger log_drvShootReq = WaltLogger.logBoolean(kDbTabName, "intakeButton");
+    private final BooleanLogger log_driverIntakeReq = WaltLogger.logBoolean(kDbTabName, "intakeButton");
     private final BooleanLogger log_aimReady = WaltLogger.logBoolean(kDbTabName, "aimReady");
 
     public Superstructure(
@@ -315,7 +315,7 @@ public class Superstructure extends SubsystemBase {
         log_frontVisiSight.accept(bs_frontVisiSight.getAsBoolean());
         log_shooterBeamBreak.accept(bs_shooterBeamBreak.getAsBoolean());
         log_frontVisiSightIrq.accept(frontVisiSightSeenNote);
-        log_drvShootReq.accept(trg_driverIntakeReq.getAsBoolean());
+        log_driverIntakeReq.accept(trg_driverIntakeReq.getAsBoolean());
         log_autonIntakeReq.accept(autonIntake);
         log_autonShootReq.accept(autonShoot);
         log_aimReady.accept(trg_atAngle.getAsBoolean());

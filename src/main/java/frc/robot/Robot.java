@@ -147,8 +147,6 @@ public class Robot extends TimedRobot {
 					-driver.getLeftX()))));
 		driver.x().whileTrue(drivetrain.goToAutonPose());
 		driver.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldRelative()));
-		// driver.rightBumper().onTrue(drivetrain.resetPoseToSpeaker());
-		// driver.rightTrigger().and(driver.b()).whileTrue(conveyor.runFast());
 
 		/* sysid buttons */
 		driver.back().and(driver.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
@@ -157,25 +155,23 @@ public class Robot extends TimedRobot {
 		driver.start().and(driver.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
 		/* manipulator controls */
-		// manipulator.leftTrigger().whileTrue(superstructure.intake());
 		manipulator.rightTrigger().whileTrue(intake.outtake());
 		manipulator.b().and(manipulator.povUp()).whileTrue(conveyor.runFast());
 		manipulator.rightBumper().whileTrue(superstructure.aim(() -> AimK.kSubwooferAngle));
-		// manipulator.x().whileTrue(aim.hardStop());
+		manipulator.b().and(manipulator.povDown())
+			.onTrue(Commands.runOnce(() -> superstructure.forceStateToNoteReady()));
+		manipulator.x().and((manipulator.back().and(manipulator.start())).negate()).whileTrue(aim.hardStop());
 
 		/* testing buttons */
 		manipulator.a().whileTrue(superstructure.backwardsRun());
 		manipulator.b().whileTrue(conveyor.runFast());
-		// manipulator.x().onTrue(aim.to90ish());
-		// manipulator.y().onTrue(aim.to0());
 		manipulator.povUp().onTrue(aim.increaseAngle());
-		manipulator.povDown().onTrue(aim.decreaseAngle());
+		manipulator.povDown().and(manipulator.b().negate())
+			.onTrue(aim.decreaseAngle());
 		manipulator.back().and(manipulator.rightBumper()).whileTrue(aim.subwoofer());
 
 		manipulator.start().whileTrue(Commands.startEnd(
 			() -> aim.setCoast(true), () -> aim.setCoast(false)));
-		// manipulator.back().and(manipulator.povUp()).onTrue(shooter.increaseRpm());
-		// manipulator.back().and(manipulator.povDown()).onTrue(shooter.decreaseRpm());
 
 		/* sysid buttons */
 		manipulator.back().and(manipulator.y()).whileTrue(shooter.sysIdDynamic(Direction.kForward));
