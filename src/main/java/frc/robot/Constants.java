@@ -139,21 +139,17 @@ public class Constants {
     }
 
     public class ShooterK {
-        public static final Measure<Velocity<Angle>> kAmpTolerance = RotationsPerSecond.of(1);
-        public static final Measure<Velocity<Angle>> kBigShootTolerance = RotationsPerSecond.of(2);
-
         public static final class ShooterConfigs {
-
             /* stuff that works for speaker */
-            private static final double kPRightSpeaker = 5;
-            private static final double kSRightSpeaker = 3; // Amps
-            private static final double kVRightSpeaker = 0.195;
-            private static final double kARightSpeaker = 0.25;
+            private static final double kPRightSpeaker = 1.8911;
+            private static final double kSRightSpeaker = 6.1337; // Amps
+            private static final double kVRightSpeaker = 0.11102;
+            private static final double kARightSpeaker = 0.41568;
 
-            private static final double kPLeftSpeaker = 5;
-            private static final double kSLeftSpeaker = 3; // Amps
-            private static final double kVLeftSpeaker = 0.195;
-            private static final double kALeftSpeaker = 0.15;
+            private static final double kPLeftSpeaker = 1.9293;
+            private static final double kSLeftSpeaker = 10.76; // Amps
+            private static final double kVLeftSpeaker = 0.099297;
+            private static final double kALeftSpeaker = 0.302;
 
             /* stuff that works for amp */
             private static final double kPRightAmp = 4;
@@ -235,6 +231,9 @@ public class Constants {
         }
 
         public static final String kDbTabName = "Shooter";
+
+        public static final Measure<Velocity<Angle>> kAmpTolerance = RotationsPerSecond.of(1);
+        public static final Measure<Velocity<Angle>> kBigShootTolerance = RotationsPerSecond.of(2);
 
         public static final int kRightId = 13;
         public static final int kLeftId = 14;
