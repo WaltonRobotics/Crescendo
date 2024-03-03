@@ -164,7 +164,6 @@ public class Robot extends TimedRobot {
 
 		/* testing buttons */
 		manipulator.a().whileTrue(superstructure.backwardsRun());
-		manipulator.b().whileTrue(conveyor.runFast());
 		manipulator.povUp().onTrue(aim.increaseAngle());
 		manipulator.povDown().and(manipulator.b().negate())
 			.onTrue(aim.decreaseAngle());

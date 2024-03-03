@@ -182,7 +182,7 @@ public class Shooter extends SubsystemBase {
         }
         var left = m_leftTargetSupp.get().in(RotationsPerSecond);
         var right = m_leftTargetSupp.get().in(RotationsPerSecond) * kSpinAmt;
-        var tolerance = 1.75;
+        var tolerance = 2;
         m_leftOk = MathUtil.isNear(
             left, m_left.getVelocity().getValueAsDouble(), tolerance);
         m_rightOk = MathUtil.isNear(

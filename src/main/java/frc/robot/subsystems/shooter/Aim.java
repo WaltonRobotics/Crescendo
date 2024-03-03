@@ -97,7 +97,7 @@ public class Aim extends SubsystemBase {
 
     private final GenericEntry nte_isCoast;
 
-    private final Measure<Angle> kAngleAllowedError = Rotations.of(0.002);
+    private final Measure<Angle> kAngleAllowedError = Degrees.of(1);
 
     // private LoggedTunableNumber m_tunableAngle = new
     // LoggedTunableNumber("targetAngle",

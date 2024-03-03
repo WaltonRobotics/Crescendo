@@ -213,7 +213,7 @@ public class Constants {
 
     public static class AimK {
         public static final class AimConfigs {
-            private static final double kP = 200; // idk
+            private static final double kP = 150; // idk
             private static final double kS = 0.25;
             private static final double kG = 0;
             private static final double kV = 0;
