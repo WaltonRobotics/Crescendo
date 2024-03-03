@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -26,6 +27,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Velocity;
 import frc.util.AllianceFlipUtil;
 
 public class Constants {
@@ -137,26 +139,32 @@ public class Constants {
     }
 
     public class ShooterK {
+        public static final Measure<Velocity<Angle>> kAmpTolerance = RotationsPerSecond.of(1);
+        public static final Measure<Velocity<Angle>> kBigShootTolerance = RotationsPerSecond.of(2);
+
         public static final class ShooterConfigs {
-            // private static final double kPRight = 0.1;
-            // private static final double kSRight = 0.254; // sysid 0.15837
-            // private static final double kVRight = 0.0625;
-            // private static final double kARight = 0;
 
-            // private static final double kPLeft = 0.1; // sysid 0.046968
-            // private static final double kSLeft = 0.275; // sysid 0.2057
-            // private static final double kVLeft = 0.0625; // sysid 0.052935
-            // private static final double kALeft = 0;
+            /* stuff that works for speaker */
+            private static final double kPRightSpeaker = 5;
+            private static final double kSRightSpeaker = 3; // Amps
+            private static final double kVRightSpeaker = 0.195;
+            private static final double kARightSpeaker = 0.25;
 
-            private static final double kPRight_FOC = 4;
-            private static final double kSRight_FOC = 3; // Amps
-            private static final double kVRight_FOC = 0.725;
-            private static final double kARight_FOC = 0.45;
+            private static final double kPLeftSpeaker = 5;
+            private static final double kSLeftSpeaker = 3; // Amps
+            private static final double kVLeftSpeaker = 0.195;
+            private static final double kALeftSpeaker = 0.15;
 
-            private static final double kPLeft_FOC = 5.5;
-            private static final double kSLeft_FOC = 4.5; // Amps
-            private static final double kVLeft_FOC = 0.75;
-            private static final double kALeft_FOC = 0.45;
+            /* stuff that works for amp */
+            private static final double kPRightAmp = 4;
+            private static final double kSRightAmp = 3; // Amps
+            private static final double kVRightAmp = 0.725;
+            private static final double kARightAmp = 0.45;
+
+            private static final double kPLeftAmp = 5.5;
+            private static final double kSLeftAmp = 4.5; // Amps
+            private static final double kVLeftAmp = 0.75;
+            private static final double kALeftAmp = 0.45;
 
             public static final TalonFXConfiguration kRightConfigs = new TalonFXConfiguration();
             public static final TalonFXConfiguration kLeftConfigs = new TalonFXConfiguration();
@@ -165,17 +173,17 @@ public class Constants {
                 kRightConfigs.Feedback = kRightConfigs.Feedback
                     .withSensorToMechanismRatio(kGearRatio);
 
-                // kRightConfigs.Slot0 = kRightConfigs.Slot0
-                // .withKP(kPRight)
-                // .withKS(kSRight)
-                // .withKV(kVRight)
-                // .withKA(kARight);
-
                 kRightConfigs.Slot0 = kRightConfigs.Slot0
-                    .withKP(kPRight_FOC)
-                    .withKS(kSRight_FOC)
-                    .withKV(kVRight_FOC)
-                    .withKA(kARight_FOC);
+                    .withKP(kPRightSpeaker)
+                    .withKS(kSRightSpeaker)
+                    .withKV(kVRightSpeaker)
+                    .withKA(kARightSpeaker);
+
+                kRightConfigs.Slot1 = kRightConfigs.Slot1
+                    .withKP(kPRightAmp)
+                    .withKS(kSRightAmp)
+                    .withKV(kVRightAmp)
+                    .withKA(kARightAmp);
 
                 kRightConfigs.MotorOutput = kRightConfigs.MotorOutput
                     .withNeutralMode(NeutralModeValue.Coast);
@@ -193,17 +201,17 @@ public class Constants {
                     .withSupplyCurrentLimit(30)
                     .withSupplyCurrentLimitEnable(true);
 
-                // kLeftConfigs.Slot0 = kLeftConfigs.Slot0
-                // .withKP(kPLeft)
-                // .withKS(kSLeft)
-                // .withKV(kVLeft)
-                // .withKA(kALeft);
-
                 kLeftConfigs.Slot0 = kLeftConfigs.Slot0
-                    .withKP(kPLeft_FOC)
-                    .withKS(kSLeft_FOC)
-                    .withKV(kVLeft_FOC)
-                    .withKA(kALeft_FOC);
+                    .withKP(kPLeftSpeaker)
+                    .withKS(kSLeftSpeaker)
+                    .withKV(kVLeftSpeaker)
+                    .withKA(kALeftSpeaker);
+
+                kLeftConfigs.Slot1 = kLeftConfigs.Slot1
+                    .withKP(kPLeftAmp)
+                    .withKS(kSLeftAmp)
+                    .withKV(kVLeftAmp)
+                    .withKA(kALeftAmp);
 
                 kLeftConfigs.Feedback = kLeftConfigs.Feedback
                     .withSensorToMechanismRatio(kGearRatio);
