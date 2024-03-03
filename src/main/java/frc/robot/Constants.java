@@ -147,15 +147,15 @@ public class Constants {
     public class ShooterK {
         public static final class ShooterConfigs {
             /* stuff that works for speaker */
-            private static final double kPRightSpeaker = 5;
-            private static final double kSRightSpeaker = 6.1337; // Amps
-            private static final double kVRightSpeaker = 0.11102;
-            private static final double kARightSpeaker = 0.41568;
+            private static final double kPRightSpeaker = 0.3;
+            private static final double kSRightSpeaker = 0.050223; // Amps
+            private static final double kVRightSpeaker = 0.06486;
+            private static final double kARightSpeaker = 0.036428;
 
-            private static final double kPLeftSpeaker = 5;
-            private static final double kSLeftSpeaker = 10.76; // Amps
-            private static final double kVLeftSpeaker = 0.099297;
-            private static final double kALeftSpeaker = 0.302;
+            private static final double kPLeftSpeaker = 0.3;
+            private static final double kSLeftSpeaker = 0.20785; // Amps
+            private static final double kVLeftSpeaker = 0.061338;
+            private static final double kALeftSpeaker = 0.024424;
 
             /* stuff that works for amp */
             private static final double kPRightAmp = 4;
@@ -174,17 +174,17 @@ public class Constants {
             static {
                 var currentLimits = new CurrentLimitsConfigs()
                     .withStatorCurrentLimitEnable(true)
-                    .withStatorCurrentLimit(50)
+                    .withStatorCurrentLimit(120)
                     .withSupplyCurrentLimitEnable(true)
-                    .withSupplyCurrentLimit(30);
+                    .withSupplyCurrentLimit(75);
                 var closedLoopRamps = new ClosedLoopRampsConfigs()
-                    .withVoltageClosedLoopRampPeriod(0.25)
-                    .withTorqueClosedLoopRampPeriod(0.25);
+                    .withVoltageClosedLoopRampPeriod(0)
+                    .withTorqueClosedLoopRampPeriod(0);
                 var feedback = new FeedbackConfigs().withSensorToMechanismRatio(kGearRatio);
                 var motorOutput = new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast);
                 var torqueCurrent = new TorqueCurrentConfigs()
-                    .withPeakForwardTorqueCurrent(80)
-                    .withPeakReverseTorqueCurrent(-80);
+                    .withPeakForwardTorqueCurrent(120)
+                    .withPeakReverseTorqueCurrent(-120);
 
                 kRightConfigs.Slot0 = kRightConfigs.Slot0
                     .withKP(kPRightSpeaker)

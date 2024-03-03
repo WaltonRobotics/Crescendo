@@ -5,8 +5,8 @@ import static frc.robot.Constants.ShooterK.*;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.controls.CoastOut;
-import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.math.MathUtil;
@@ -16,9 +16,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.Angle;
-import edu.wpi.first.units.Current;
 import edu.wpi.first.units.Measure;
-import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
@@ -43,8 +41,8 @@ import java.util.function.Supplier;
 public class Shooter extends SubsystemBase {
     private final TalonFX m_left = new TalonFX(kLeftId, kCanbus);
     private final TalonFX m_right = new TalonFX(kRightId, kCanbus);
-    private final VelocityTorqueCurrentFOC m_request = new VelocityTorqueCurrentFOC(0);
-    private final TorqueCurrentFOC m_current = new TorqueCurrentFOC(0);
+    private final VelocityVoltage m_request = new VelocityVoltage(0);
+    private final VelocityTorqueCurrentFOC m_current = new VelocityTorqueCurrentFOC(0);
     private final VoltageOut m_voltage = new VoltageOut(0);
     private final CoastOut m_coast = new CoastOut();
 
@@ -80,10 +78,10 @@ public class Shooter extends SubsystemBase {
     private boolean found = false;
     private final FlywheelSim m_flywheelSim = new FlywheelSim(DCMotor.getFalcon500(1), kGearRatio, kMoi);
 
-    private final SysIdRoutine m_currentSysId = makeTorqueCurrentSysIdRoutine(
-        Amps.of(8).per(Second),
-        Amps.of(35),
-        Seconds.of(25));
+    // private final SysIdRoutine m_currentSysId = makeTorqueCurrentSysIdRoutine(
+    // Amps.of(8).per(Second),
+    // Amps.of(35),
+    // Seconds.of(25));
 
     private final SysIdRoutine m_sysId = new SysIdRoutine(
         new SysIdRoutine.Config(
@@ -96,25 +94,25 @@ public class Shooter extends SubsystemBase {
             m_right.setControl(m_voltage.withOutput(volts.in(Volts)));
         }, null, this));
 
-    private SysIdRoutine makeTorqueCurrentSysIdRoutine(
-        final Measure<Velocity<Current>> currentRampRate,
-        final Measure<Current> stepCurrent,
-        final Measure<Time> timeout) {
-        var cfg = new SysIdRoutine.Config(
-            // we need to lie to SysId here, because it only takes voltage instead of
-            // current
-            Volts.per(Second).of(currentRampRate.baseUnitMagnitude()),
-            Volts.of(stepCurrent.baseUnitMagnitude()),
-            timeout,
-            state -> SignalLogger.writeString("state", state.toString()));
-        var mech = new SysIdRoutine.Mechanism(
-            (voltageMeasure) -> {
-                m_left.setControl(m_current.withOutput(voltageMeasure.in(Volts)));
-                m_right.setControl(m_current.withOutput(voltageMeasure.in(Volts)));
-            }, null, this);
+    // private SysIdRoutine makeTorqueCurrentSysIdRoutine(
+    // final Measure<Velocity<Current>> currentRampRate,
+    // final Measure<Current> stepCurrent,
+    // final Measure<Time> timeout) {
+    // var cfg = new SysIdRoutine.Config(
+    // // we need to lie to SysId here, because it only takes voltage instead of
+    // // current
+    // Volts.per(Second).of(currentRampRate.baseUnitMagnitude()),
+    // Volts.of(stepCurrent.baseUnitMagnitude()),
+    // timeout,
+    // state -> SignalLogger.writeString("state", state.toString()));
+    // var mech = new SysIdRoutine.Mechanism(
+    // (voltageMeasure) -> {
+    // m_left.setControl(m_current.withOutput(voltageMeasure.in(Volts)));
+    // m_right.setControl(m_current.withOutput(voltageMeasure.in(Volts)));
+    // }, null, this);
 
-        return new SysIdRoutine(cfg, mech);
-    }
+    // return new SysIdRoutine(cfg, mech);
+    // }
 
     public Shooter() {
         m_right.getConfigurator().apply(ShooterConfigs.kRightConfigs);
@@ -157,8 +155,8 @@ public class Shooter extends SubsystemBase {
                 var left = m_leftTarget.in(RotationsPerSecond);
 
                 // withSlot(1) to use slot 1 PIDFF gains for powerful shots
-                m_right.setControl(m_request.withVelocity(right).withSlot(1));
-                m_left.setControl(m_request.withVelocity(left).withSlot(1));
+                m_right.setControl(m_current.withVelocity(right).withSlot(1));
+                m_left.setControl(m_current.withVelocity(left).withSlot(1));
 
             }, () -> {
                 m_right.setControl(m_coast);

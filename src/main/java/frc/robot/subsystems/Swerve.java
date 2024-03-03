@@ -45,6 +45,8 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Vision.VisionMeasurement;
 import frc.robot.auton.AutonChooser;
 import frc.util.AdvantageScopeUtil;
+import frc.util.logging.WaltLogger;
+import frc.util.logging.WaltLogger.DoubleLogger;
 
 import static frc.robot.Constants.FieldK.*;
 import static frc.robot.generated.TunerConstants.kDriveRadius;
@@ -72,7 +74,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final PIDController m_thetaController = new PIDController(kPTheta, 0.0, 0.0);
 
 	private final double m_characterisationSpeed = 0.5;
-	private final DoubleSupplier m_gyroYawRadiansSupplier = () -> getPigeon2().getYaw().getValueAsDouble();
+	private final DoubleSupplier m_gyroYawSupplier;
 	private final SlewRateLimiter m_omegaLimiter = new SlewRateLimiter(1);
 
 	private double lastGyroYawRads = 0;
@@ -96,6 +98,8 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			(volts) -> setControl(characterization.withVolts(volts)),
 			null,
 			this));
+
+	private final DoubleLogger log_accumGyro = WaltLogger.logDouble("Swerve", "accumGyro");
 
 	public void addVisionMeasurement(VisionMeasurement measurement) {
 		m_odometry.addVisionMeasurement(
@@ -126,6 +130,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		if (Utils.isSimulation()) {
 			startSimThread();
 		}
+		m_gyroYawSupplier = () -> -Units.degreesToRadians(getPigeon2().getAngle());
 	}
 
 	public Swerve(SwerveDrivetrainConstants driveTrainConstants, SwerveModuleConstants... modules) {
@@ -134,29 +139,38 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		if (Utils.isSimulation()) {
 			startSimThread();
 		}
+		m_gyroYawSupplier = () -> -Units.degreesToRadians(getPigeon2().getAngle());
 	}
 
 	public Command wheelRadiusCharacterisation(double omegaDirection) {
+		lastGyroYawRads = m_gyroYawSupplier.getAsDouble();
+		accumGyroYawRads = 0;
+		for (int i = 0; i < Modules.length; i++) {
+			startWheelPositions[i] = Modules[i].getPosition(true).angle.getRadians();
+		}
+		m_omegaLimiter.reset(0);
 		return runEnd(() -> {
 			setControl(m_characterisationReq
 				.withRotationalRate(m_omegaLimiter.calculate(m_characterisationSpeed * omegaDirection)));
-			lastGyroYawRads = m_gyroYawRadiansSupplier.getAsDouble();
-			accumGyroYawRads += MathUtil.angleModulus(m_gyroYawRadiansSupplier.getAsDouble() - lastGyroYawRads);
+			accumGyroYawRads += MathUtil
+				.angleModulus(m_gyroYawSupplier.getAsDouble() - lastGyroYawRads);
+			lastGyroYawRads = m_gyroYawSupplier.getAsDouble();
 			double averageWheelPosition = 0;
+			double[] wheelPositions = new double[4];
 			for (int i = 0; i < Modules.length; i++) {
-				startWheelPositions[i] = Modules[i].getPosition(true).angle.getRadians();
-				averageWheelPosition += startWheelPositions[i];
+				wheelPositions[i] = Modules[i].getPosition(true).angle.getRadians();
+				averageWheelPosition += Math.abs(wheelPositions[i] - startWheelPositions[i]);
 			}
 			averageWheelPosition /= 4.0;
 			currentEffectiveWheelRadius = (accumGyroYawRads * kDriveRadius) / averageWheelPosition;
 		}, () -> {
 			setControl(m_characterisationReq.withRotationalRate(0));
-			if (accumGyroYawRads <= Math.PI * 2.0) {
-				System.out.println("not enough data for characterization");
+			if (Math.abs(accumGyroYawRads) <= Math.PI * 2.0) {
+				System.out.println("not enough data for characterization " + accumGyroYawRads);
 			} else {
 				System.out.println(
 					"effective wheel radius: "
-						+ Units.metersToInches(currentEffectiveWheelRadius)
+						+ currentEffectiveWheelRadius
 						+ " inches");
 			}
 		});
@@ -284,5 +298,9 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	public Command sysIdDynamic(SysIdRoutine.Direction direction) {
 		return m_sysId.dynamic(direction);
+	}
+
+	public void periodic() {
+		log_accumGyro.accept(Units.radiansToDegrees(accumGyroYawRads));
 	}
 }
