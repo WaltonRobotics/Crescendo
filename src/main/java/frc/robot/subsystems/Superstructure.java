@@ -209,7 +209,7 @@ public class Superstructure extends SubsystemBase {
         trg_frontSensorIrq.onTrue(cmdManipRumble(1, 0.5));
 
         // note in shooter and not shooting
-        (trg_shooterSensor.and((extStateTrg_shooting).negate()))
+        (trg_shooterSensor.and((extStateTrg_shooting.or(stateTrg_spinUp)).negate()))
             .onTrue(changeStateCmd(NoteState.ROLLER_BEAM_RETRACT));
         stateTrg_noteRetracting.onTrue(
             Commands.parallel(
