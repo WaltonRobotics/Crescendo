@@ -47,12 +47,15 @@ import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
 
 import static frc.robot.Constants.RobotK.*;
+import static frc.robot.generated.TunerConstants.*;
 
 import java.util.function.Supplier;
 
 public class Robot extends TimedRobot {
-	public static final double kMaxSpeed = 5; // 5 meters per second desired top speed
-	public static final double kMaxAngularRate = 1.5 * Math.PI; // 3/4 of a rotation per second max angular velocity
+	/** 5.21 meters per second desired top speed */
+	public static final double kMaxSpeed = kSpeedAt12VoltsMps;
+	/** 1.5 of a rotation per second max angular velocity */
+	public static final double kMaxAngularRate = 1.5 * (Math.PI * 2);
 
 	/* Setting up bindings for necessary control of the swerve drive platform */
 	private final CommandXboxController driver = new CommandXboxController(0); // My joystick
@@ -76,9 +79,8 @@ public class Robot extends TimedRobot {
 	public static final Field2d field2d = new Field2d();
 
 	private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-		.withDeadband(kMaxSpeed * 0.1).withRotationalDeadband(kMaxAngularRate * 0.1) // Add a 10% deadband
+		.withDeadband(kMaxSpeed * 0.1).withRotationalDeadband(kMaxAngularRate * 0.1) // Add a 5% deadband
 		.withDriveRequestType(DriveRequestType.OpenLoopVoltage);
-	// .withCenterOfRotation(new Translation2d(Units.inchesToMeters(2), 0));
 	private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
 	private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 	private final Telemetry logger = new Telemetry(kMaxSpeed);

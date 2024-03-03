@@ -16,10 +16,7 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.ApplyChassisSpeeds;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SwerveDriveBrake;
-import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SysIdSwerveSteerGains;
-// import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SysIdSwerveRotation;
-// import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SysIdSwerveSteerGains;
-// import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SysIdSwerveTranslation;
+import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SysIdSwerveTranslation;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathPlannerPath;
@@ -33,6 +30,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
@@ -50,7 +48,6 @@ import frc.util.logging.WaltLogger.DoubleLogger;
 
 import static frc.robot.Constants.FieldK.*;
 import static frc.robot.generated.TunerConstants.kDriveRadius;
-import static frc.robot.Robot.*;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.AutoK.*;
 
@@ -64,8 +61,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private double m_lastSimTime;
 
 	private final ApplyChassisSpeeds m_autoRequest = new ApplyChassisSpeeds();
-	private final SwerveRequest.FieldCentric m_characterisationReq = new SwerveRequest.FieldCentric()
-		.withDeadband(kMaxSpeed * 0.1).withRotationalDeadband(kMaxAngularRate * 0.1)
+	private final SwerveRequest.RobotCentric m_characterisationReq = new SwerveRequest.RobotCentric()
 		.withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
 	private final SwerveDriveBrake m_brake = new SwerveDriveBrake();
@@ -74,7 +70,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final PIDController m_thetaController = new PIDController(kPTheta, 0.0, 0.0);
 
 	private final double m_characterisationSpeed = 0.5;
-	private final DoubleSupplier m_gyroYawSupplier;
+	public final DoubleSupplier m_gyroYawRadsSupplier;
 	private final SlewRateLimiter m_omegaLimiter = new SlewRateLimiter(1);
 
 	private double lastGyroYawRads = 0;
@@ -83,11 +79,11 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private double[] startWheelPositions = new double[4];
 	private double currentEffectiveWheelRadius = 0;
 
-	// private final SysIdSwerveTranslation characterization = new
-	// SysIdSwerveTranslation();
+	private final SysIdSwerveTranslation characterization = new SysIdSwerveTranslation();
 	// private final SysIdSwerveRotation characterization = new
 	// SysIdSwerveRotation();
-	private final SysIdSwerveSteerGains characterization = new SysIdSwerveSteerGains();
+	// private final SysIdSwerveSteerGains characterization = new
+	// SysIdSwerveSteerGains();
 	private final SysIdRoutine m_sysId = new SysIdRoutine(
 		new SysIdRoutine.Config(
 			null,
@@ -100,6 +96,11 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			this));
 
 	private final DoubleLogger log_accumGyro = WaltLogger.logDouble("Swerve", "accumGyro");
+	private final DoubleLogger log_avgWheelPos = WaltLogger.logDouble("Swerve", "avgWheelPos");
+	private final DoubleLogger log_curEffWheelRad = WaltLogger.logDouble("Swerve", "curEffWheelRad");
+	private final DoubleLogger log_lastGyro = WaltLogger.logDouble("Swerve", "lastGyro");
+	private final DoubleLogger log_rotationSpeed = WaltLogger.logDouble("Swerve", "rot_sec",
+		PubSubOption.sendAll(true));
 
 	public void addVisionMeasurement(VisionMeasurement measurement) {
 		m_odometry.addVisionMeasurement(
@@ -123,57 +124,58 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			this);
 	}
 
-	public Swerve(SwerveDrivetrainConstants driveTrainConstants, double OdometryUpdateFrequency,
-		SwerveModuleConstants... modules) {
-		super(driveTrainConstants, OdometryUpdateFrequency, modules);
-		configureAutoBuilder();
-		if (Utils.isSimulation()) {
-			startSimThread();
-		}
-		m_gyroYawSupplier = () -> -Units.degreesToRadians(getPigeon2().getAngle());
-	}
-
 	public Swerve(SwerveDrivetrainConstants driveTrainConstants, SwerveModuleConstants... modules) {
 		super(driveTrainConstants, modules);
 		configureAutoBuilder();
 		if (Utils.isSimulation()) {
 			startSimThread();
 		}
-		m_gyroYawSupplier = () -> -Units.degreesToRadians(getPigeon2().getAngle());
+		m_gyroYawRadsSupplier = () -> getPigeon2().getAngle();
 	}
 
 	public Command wheelRadiusCharacterisation(double omegaDirection) {
-		lastGyroYawRads = m_gyroYawSupplier.getAsDouble();
-		accumGyroYawRads = 0;
-		for (int i = 0; i < Modules.length; i++) {
-			startWheelPositions[i] = Modules[i].getPosition(true).angle.getRadians();
-		}
-		m_omegaLimiter.reset(0);
-		return runEnd(() -> {
-			setControl(m_characterisationReq
-				.withRotationalRate(m_omegaLimiter.calculate(m_characterisationSpeed * omegaDirection)));
-			accumGyroYawRads += MathUtil
-				.angleModulus(m_gyroYawSupplier.getAsDouble() - lastGyroYawRads);
-			lastGyroYawRads = m_gyroYawSupplier.getAsDouble();
-			double averageWheelPosition = 0;
-			double[] wheelPositions = new double[4];
+		var initialize = runOnce(() -> {
+			lastGyroYawRads = m_gyroYawRadsSupplier.getAsDouble();
+			accumGyroYawRads = 0;
+			currentEffectiveWheelRadius = 0;
 			for (int i = 0; i < Modules.length; i++) {
-				wheelPositions[i] = Modules[i].getPosition(true).angle.getRadians();
-				averageWheelPosition += Math.abs(wheelPositions[i] - startWheelPositions[i]);
+				startWheelPositions[i] = Modules[i].getPosition(true).angle.getRadians();
 			}
-			averageWheelPosition /= 4.0;
-			currentEffectiveWheelRadius = (accumGyroYawRads * kDriveRadius) / averageWheelPosition;
-		}, () -> {
-			setControl(m_characterisationReq.withRotationalRate(0));
-			if (Math.abs(accumGyroYawRads) <= Math.PI * 2.0) {
-				System.out.println("not enough data for characterization " + accumGyroYawRads);
-			} else {
-				System.out.println(
-					"effective wheel radius: "
-						+ currentEffectiveWheelRadius
-						+ " inches");
-			}
+			m_omegaLimiter.reset(0);
 		});
+
+		var executeEnd = runEnd(
+			() -> {
+				setControl(m_characterisationReq
+					.withRotationalRate(m_omegaLimiter.calculate(m_characterisationSpeed * omegaDirection)));
+				accumGyroYawRads += MathUtil.angleModulus(m_gyroYawRadsSupplier.getAsDouble() - lastGyroYawRads);
+				lastGyroYawRads = m_gyroYawRadsSupplier.getAsDouble();
+				double averageWheelPosition = 0;
+				double[] wheelPositions = new double[4];
+				for (int i = 0; i < Modules.length; i++) {
+					wheelPositions[i] = Modules[i].getPosition(true).angle.getRadians();
+					averageWheelPosition += Math.abs(wheelPositions[i] - startWheelPositions[i]);
+				}
+				averageWheelPosition /= 4.0;
+				currentEffectiveWheelRadius = (accumGyroYawRads * kDriveRadius) / averageWheelPosition;
+				log_lastGyro.accept(lastGyroYawRads);
+				log_avgWheelPos.accept(averageWheelPosition);
+				log_accumGyro.accept(accumGyroYawRads);
+				log_curEffWheelRad.accept(currentEffectiveWheelRadius);
+			}, () -> {
+				setControl(m_characterisationReq.withRotationalRate(0));
+				if (Math.abs(accumGyroYawRads) <= Math.PI * 2.0) {
+					System.out.println("not enough data for characterization " + accumGyroYawRads);
+				} else {
+					System.out.println(
+						"effective wheel radius: "
+							+ currentEffectiveWheelRadius
+							+ " inches");
+				}
+			});
+
+		return Commands.sequence(
+			initialize, executeEnd);
 	}
 
 	public Command applyRequest(Supplier<SwerveRequest> requestSupplier) {
@@ -301,6 +303,6 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	}
 
 	public void periodic() {
-		log_accumGyro.accept(Units.radiansToDegrees(accumGyroYawRads));
+		log_rotationSpeed.accept(Units.radiansToRotations(getState().speeds.omegaRadiansPerSecond));
 	}
 }
