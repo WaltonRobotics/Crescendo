@@ -241,6 +241,9 @@ public class Constants {
 
         public static final double kSpinAmt = 0.7;
 
+        public static final double kSubwooferRpm = 7300;
+        public static final double kAmpRpm = 850;
+
         public static final double kGearRatio = 18.0 / 36.0;
 
         public static final class FlywheelSimK {

@@ -58,13 +58,6 @@ public class Shooter extends SubsystemBase {
     private boolean m_leftOk = false;
     private boolean m_rightOk = false;
 
-    // private LoggedTunableNumber m_tunableRpm = new
-    // LoggedTunableNumber("targetRpm", m_leftTarget);
-    // private LoggedTunableNumber m_tunableSpin = new LoggedTunableNumber("spin",
-    // m_spinAmt);
-    // private LoggedTunableNumber m_tunableShotTime = new
-    // LoggedTunableNumber("shotTime", m_shotTime);
-
     private final DoubleLogger log_leftTargetRpm = WaltLogger.logDouble(kDbTabName, "leftTargetRpm");
     private final DoubleLogger log_rightTargetRpm = WaltLogger.logDouble(kDbTabName, "rightTargetRpm");
     private final DoubleLogger log_spinAmt = WaltLogger.logDouble(kDbTabName, "spinAmt");
@@ -85,8 +78,8 @@ public class Shooter extends SubsystemBase {
     private final FlywheelSim m_flywheelSim = new FlywheelSim(DCMotor.getFalcon500(1), kGearRatio, kMoi);
 
     private final SysIdRoutine m_currentSysId = makeTorqueCurrentSysIdRoutine(
-        Amps.of(4).per(Second),
-        Amps.of(20),
+        Amps.of(8).per(Second),
+        Amps.of(35),
         Seconds.of(25));
 
     private SysIdRoutine makeTorqueCurrentSysIdRoutine(
@@ -131,7 +124,7 @@ public class Shooter extends SubsystemBase {
                 var right = m_rightTarget.in(RotationsPerSecond);
                 var left = m_leftTarget.in(RotationsPerSecond);
 
-                // withSlot(0) to use slot0 PIDFF gains for powerful shots
+                // withSlot(0) to use slot 0 PIDFF gains for powerful shots
                 m_right.setControl(m_request.withVelocity(right).withSlot(0));
                 m_left.setControl(m_request.withVelocity(left).withSlot(0));
 
@@ -149,7 +142,7 @@ public class Shooter extends SubsystemBase {
                 var right = m_rightTarget.in(RotationsPerSecond);
                 var left = m_leftTarget.in(RotationsPerSecond);
 
-                // withSlot(1) to use slot0 PIDFF gains for powerful shots
+                // withSlot(1) to use slot 1 PIDFF gains for powerful shots
                 m_right.setControl(m_request.withVelocity(right).withSlot(1));
                 m_left.setControl(m_request.withVelocity(left).withSlot(1));
 
@@ -172,21 +165,11 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command subwoofer() {
-        return toVelo(() -> Rotations.per(Minute).of(7300));
-    }
-
-    // That's not really that fast.
-    public Command shootFast() {
-        return toVelo(() -> Rotations.per(Minute).of(6000));
+        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm));
     }
 
     public Command ampShot() {
-        return toVeloNoSpin(() -> Rotations.per(Minute).of(850)); // TODO make this a constant
-    }
-
-    public Command trapShot() {
-        // It Doesn't Work Very Well. (2 out of like 50 times!!!)
-        return toVelo(() -> Rotations.per(Minute).of(6000)); // TODO make this a constant
+        return toVeloNoSpin(() -> Rotations.per(Minute).of(kAmpRpm));
     }
 
     public Command spinUp() {
@@ -243,11 +226,6 @@ public class Shooter extends SubsystemBase {
     }
 
     public void periodic() {
-        // m_leftTarget = m_tunableRpm.get();
-        // m_rightTarget = m_leftTarget * m_spinAmt;
-        // m_spinAmt = m_tunableSpin.get();
-        // m_shotTime = m_tunableShotTime.get();
-
         log_leftTargetRpm.accept(m_leftTarget.in(Rotations.per(Minute)));
         log_rightTargetRpm.accept(m_rightTarget.in(Rotations.per(Minute)));
         log_spinAmt.accept(m_spinAmt);

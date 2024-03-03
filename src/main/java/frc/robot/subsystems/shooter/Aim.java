@@ -99,15 +99,6 @@ public class Aim extends SubsystemBase {
 
     private final Measure<Angle> kAngleAllowedError = Degrees.of(1);
 
-    // private LoggedTunableNumber m_tunableAngle = new
-    // LoggedTunableNumber("targetAngle",
-    // Units.rotationsToDegrees(m_target) + 22.5);
-
-    // TODO check
-    // private final Trigger m_atStart = new Trigger(
-    // () -> m_motor.getPosition().getValueAsDouble() ==
-    // Units.degreesToRotations(40));
-
     public Aim(Supplier<Pose3d> robotPoseSupplier) {
         m_robotPoseSupplier = robotPoseSupplier;
 
@@ -122,9 +113,6 @@ public class Aim extends SubsystemBase {
         }
         m_homeTrigger.onTrue(Commands.runOnce(() -> m_motor.setPosition(kInitAngle.in(Rotations)))
             .ignoringDisable(true));
-        // m_atStart.onTrue(Commands.runOnce(() ->
-        // m_motor.setNeutralMode(NeutralModeValue.Brake))
-        // .ignoringDisable(true));
 
         nte_isCoast = Shuffleboard.getTab(kDbTabName)
             .add("isCoast", false)
@@ -141,6 +129,7 @@ public class Aim extends SubsystemBase {
         return m_motor.getPosition().getValueAsDouble() * 360 + 22.5;
     }
 
+    // not even close.
     public Command to90ish() {
         return runOnce(() -> {
             m_targetAngle = Rotations.of(0.275879);
@@ -173,13 +162,6 @@ public class Aim extends SubsystemBase {
         });
     }
 
-    public Command subwoofer() {
-        return runOnce(() -> {
-            m_targetAngle = Rotations.of(0.064);
-            m_motor.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
-        });
-    }
-
     public Command amp() {
         return runOnce(() -> {
             m_targetAngle = kAmpAngle;
@@ -195,7 +177,7 @@ public class Aim extends SubsystemBase {
         return runOnce(
             () -> {
                 m_motor.setControl(m_request.withPosition(angle.in(Rotations)));
-            }); // idk
+            });
     }
 
     private Command toAngleUntilAt(Measure<Angle> angle, Measure<Angle> tolerance) {
@@ -241,19 +223,6 @@ public class Aim extends SubsystemBase {
                 setCoast(coast);
             });
     }
-
-    // public Command teleop(DoubleSupplier power) {
-    // return run(
-    // () -> {
-    // double powerVal = MathUtil.applyDeadband(power.getAsDouble(), 0.1);
-    // m_targetAngle = m_targetAngle.plus(Degrees.of(powerVal * 1.2));
-    // m_targetAngle = Degrees
-    // .of(MathUtil.clamp(m_targetAngle.magnitude(), kMinAngle.magnitude(),
-    // kMaxAngle.magnitude()));
-
-    // m_motor.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
-    // });
-    // }
 
     public Command aim() {
         return setAimTarget().andThen(toTarget()).repeatedly();
