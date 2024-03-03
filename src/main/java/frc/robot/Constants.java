@@ -112,9 +112,22 @@ public class Constants {
     }
 
     public class IntakeK {
+        public static final class IntakeConfigs {
+            public static final TalonFXConfiguration kConfigs = new TalonFXConfiguration();
+
+            static {
+                kConfigs.CurrentLimits = kConfigs.CurrentLimits
+                    .withStatorCurrentLimit(70)
+                    .withStatorCurrentLimitEnable(true)
+                    .withSupplyCurrentLimit(40)
+                    .withSupplyCurrentLimitEnable(true);
+            }
+        }
+
         public static final int kIntakeId = 10;
         public static final int kFeederId = 11;
         public static final int kVisiSightId = 2;
+
     }
 
     public class ConveyorK {
