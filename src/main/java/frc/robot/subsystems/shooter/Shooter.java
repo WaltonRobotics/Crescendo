@@ -13,8 +13,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Current;
@@ -50,13 +48,13 @@ public class Shooter extends SubsystemBase {
     private double m_spinAmt = kSpinAmt;
     private double m_shotTime = 1.5;
 
-    private double m_leftTarget = 7000;
-    private double m_rightTarget = 7000 * m_spinAmt;
-    private final Supplier<Measure<Velocity<Angle>>> m_leftTargetSupp = () -> Rotations.per(Minute).of(m_leftTarget);
+    private Measure<Velocity<Angle>> m_leftTarget = RotationsPerSecond.of(0);
+    private Measure<Velocity<Angle>> m_rightTarget = RotationsPerSecond.of(0);
+    private final Supplier<Measure<Velocity<Angle>>> m_leftTargetSupp = () -> m_leftTarget;
+    private final Supplier<Measure<Velocity<Angle>>> m_rightTargetSupp = () -> m_rightTarget;
     private boolean m_spunUp = false;
     private boolean m_leftOk = false;
     private boolean m_rightOk = false;
-    private final Supplier<Measure<Velocity<Angle>>> m_rightTargetSupp = () -> Rotations.per(Minute).of(m_rightTarget);
 
     // private LoggedTunableNumber m_tunableRpm = new
     // LoggedTunableNumber("targetRpm", m_leftTarget);
@@ -65,7 +63,8 @@ public class Shooter extends SubsystemBase {
     // private LoggedTunableNumber m_tunableShotTime = new
     // LoggedTunableNumber("shotTime", m_shotTime);
 
-    private final DoubleLogger log_targetRpm = WaltLogger.logDouble(kDbTabName, "targetRpm");
+    private final DoubleLogger log_leftTargetRpm = WaltLogger.logDouble(kDbTabName, "leftTargetRpm");
+    private final DoubleLogger log_rightTargetRpm = WaltLogger.logDouble(kDbTabName, "rightTargetRpm");
     private final DoubleLogger log_spinAmt = WaltLogger.logDouble(kDbTabName, "spinAmt");
     private final DoubleLogger log_shotTime = WaltLogger.logDouble(kDbTabName, "shotTime");
 
@@ -122,16 +121,16 @@ public class Shooter extends SubsystemBase {
         return runEnd(
             () -> {
                 var velMeas = velo.get();
-                m_rightTarget = velMeas.in(Rotations.per(Minute)) * m_spinAmt;
-                m_leftTarget = velMeas.in(Rotations.per(Minute));
-                var right = Rotations.per(Minute).of(m_rightTarget).in(RotationsPerSecond);
-                var left = Rotations.per(Minute).of(m_leftTarget).in(RotationsPerSecond);
-                m_right.setControl(m_request.withVelocity(right));
-                m_left.setControl(m_request.withVelocity(left));
+                m_rightTarget = velMeas.times(m_spinAmt);
+                m_leftTarget = velMeas;
+                var right = m_rightTarget.in(RotationsPerSecond);
+                var left = m_leftTarget.in(RotationsPerSecond);
+
+                // withSlot(0) to use slot0 PIDFF gains for powerful shots
+                m_right.setControl(m_request.withVelocity(right).withSlot(0));
+                m_left.setControl(m_request.withVelocity(left).withSlot(0));
 
             }, () -> {
-                // m_rightTarget = 0;
-                m_leftTarget = 0;
                 m_right.setControl(m_coast);
                 m_left.setControl(m_coast);
             });
@@ -141,36 +140,33 @@ public class Shooter extends SubsystemBase {
         return runEnd(
             () -> {
                 var velMeas = velo.get();
-                m_rightTarget = velMeas.in(Rotations.per(Minute));
-                m_leftTarget = velMeas.in(Rotations.per(Minute));
-                var right = Rotations.per(Minute).of(m_rightTarget).in(RotationsPerSecond);
-                var left = Rotations.per(Minute).of(m_leftTarget).in(RotationsPerSecond);
-                m_right.setControl(m_request.withVelocity(right));
-                m_left.setControl(m_request.withVelocity(left));
+                m_rightTarget = m_leftTarget = velMeas;
+                var right = m_rightTarget.in(RotationsPerSecond);
+                var left = m_leftTarget.in(RotationsPerSecond);
+
+                // withSlot(1) to use slot0 PIDFF gains for powerful shots
+                m_right.setControl(m_request.withVelocity(right).withSlot(1));
+                m_left.setControl(m_request.withVelocity(left).withSlot(1));
 
             }, () -> {
-                // m_rightTarget = 0;
-                m_leftTarget = 0;
                 m_right.setControl(m_coast);
                 m_left.setControl(m_coast);
             });
     }
 
     public Command increaseRpm() {
-        return Commands.runOnce(
-            () -> {
-                m_leftTarget += 100;
-            });
+        return Commands.runOnce(() -> {
+            m_leftTarget = m_leftTarget.plus(Rotations.per(Minute).of(100));
+        });
     }
 
     public Command decreaseRpm() {
-        return Commands.runOnce(
-            () -> {
-                m_leftTarget -= 100;
-            });
+        return Commands.runOnce(() -> {
+            m_leftTarget = m_leftTarget.minus(Rotations.per(Minute).of(100));
+        });
     }
 
-    public Command shoot() {
+    public Command subwoofer() {
         return toVelo(() -> Rotations.per(Minute).of(7300));
     }
 
@@ -194,33 +190,24 @@ public class Shooter extends SubsystemBase {
     }
 
     public boolean spinUpFinished() {
-        if (m_leftTarget == 0) {
+        if (m_leftTarget.baseUnitMagnitude() == 0) {
             return false;
         }
-        var left = m_leftTargetSupp.get().in(RotationsPerSecond);
-        var right = m_rightTargetSupp.get().in(RotationsPerSecond);
-        var tolerance = 2;
-        m_leftOk = MathUtil.isNear(
-            left, m_left.getVelocity().getValueAsDouble(), tolerance);
-        m_rightOk = MathUtil.isNear(
-            right, m_right.getVelocity().getValueAsDouble(), tolerance);
+        var leftMeas = m_leftTargetSupp.get();
+        var tolerance = leftMeas.gte(RotationsPerSecond.of(40)) ? kBigShootTolerance : kAmpTolerance;
+
+        var leftCleMeas = RotationsPerSecond.of(m_left.getClosedLoopError().getValueAsDouble());
+        var rightCleMeas = RotationsPerSecond.of(m_right.getClosedLoopError().getValueAsDouble());
+
+        m_leftOk = leftCleMeas.lte(tolerance);
+        m_rightOk = rightCleMeas.lte(tolerance);
         m_spunUp = m_leftOk && m_rightOk;
-        return m_leftOk && m_rightOk;
+        return m_spunUp;
     }
 
     private void rawRun(double dutyCycle) {
         m_left.set(dutyCycle * m_spinAmt);
         m_right.set(dutyCycle);
-    }
-
-    public Command run() {
-        return runEnd(
-            () -> {
-                rawRun(0.25);
-            }, () -> {
-                m_left.set(0);
-                m_right.set(0);
-            });
     }
 
     public Command runBackwards() {
@@ -250,29 +237,14 @@ public class Shooter extends SubsystemBase {
         return adjustedPose;
     }
 
-    public void setTargetRpmWhileMoving(Supplier<Pose3d> robotPose, Supplier<ChassisSpeeds> chassisSpeeds) {
-        var pose = robotPose.get().getTranslation();
-        var speakerToRobotAngle = pose.minus(speakerPose).toTranslation2d().getAngle();
-        var speeds = chassisSpeeds.get();
-        var linearVelocity = new Translation2d(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
-        var tangentialVelocity = linearVelocity.rotateBy(speakerToRobotAngle.unaryMinus());
-        var radialComponent = tangentialVelocity.getX();
-        var tangentialComponent = tangentialVelocity.getY();
-        var rawDist = pose.getDistance(speakerPose);
-        var realShotTime = m_shotTime * rawDist;
-        // sorry it was less typing
-        var shotSpeed = MathUtil.clamp(rawDist / realShotTime + radialComponent, 0, Integer.MAX_VALUE);
-        var effectiveDist = Math.hypot(tangentialComponent, shotSpeed);
-        m_leftTarget = effectiveDist * kRpmFactor;
-    }
-
     public void periodic() {
         // m_leftTarget = m_tunableRpm.get();
         // m_rightTarget = m_leftTarget * m_spinAmt;
         // m_spinAmt = m_tunableSpin.get();
         // m_shotTime = m_tunableShotTime.get();
 
-        log_targetRpm.accept(m_leftTarget);
+        log_leftTargetRpm.accept(m_leftTarget.in(Rotations.per(Minute)));
+        log_rightTargetRpm.accept(m_rightTarget.in(Rotations.per(Minute)));
         log_spinAmt.accept(m_spinAmt);
         log_shotTime.accept(m_shotTime);
         log_leftTarget.accept(m_left.getClosedLoopReference().getValueAsDouble());
@@ -288,7 +260,7 @@ public class Shooter extends SubsystemBase {
         // TODO: check voltage
         m_flywheelSim.setInputVoltage(volts);
 
-        if (m_flywheelSim.getAngularVelocityRPM() >= m_leftTarget && !found) {
+        if (m_flywheelSim.getAngularVelocityRPM() >= m_leftTarget.in(Rotations.per(Minute)) && !found) {
             System.out.println("found it at " + time + " seconds");
             found = true;
         }
