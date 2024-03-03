@@ -51,7 +51,9 @@ public class Shooter extends SubsystemBase {
     private Measure<Velocity<Angle>> m_leftTarget = RotationsPerSecond.of(0);
     private Measure<Velocity<Angle>> m_rightTarget = RotationsPerSecond.of(0);
     private final Supplier<Measure<Velocity<Angle>>> m_leftTargetSupp = () -> m_leftTarget;
-    private final Supplier<Measure<Velocity<Angle>>> m_rightTargetSupp = () -> m_rightTarget;
+    // unused thing was bothering me.
+    // private final Supplier<Measure<Velocity<Angle>>> m_rightTargetSupp = () ->
+    // m_rightTarget;
     private boolean m_spunUp = false;
     private boolean m_leftOk = false;
     private boolean m_rightOk = false;
@@ -70,6 +72,9 @@ public class Shooter extends SubsystemBase {
 
     private final DoubleLogger log_leftTarget = WaltLogger.logDouble(kDbTabName, "leftTarget");
     private final DoubleLogger log_rightTarget = WaltLogger.logDouble(kDbTabName, "rightTarget");
+
+    private final DoubleLogger log_leftError = WaltLogger.logDouble(kDbTabName, "leftError");
+    private final DoubleLogger log_rightError = WaltLogger.logDouble(kDbTabName, "rightError");
 
     private final BooleanLogger log_spunUp = WaltLogger.logBoolean(kDbTabName, "spunUp");
     private final BooleanLogger log_leftOk = WaltLogger.logBoolean(kDbTabName, "leftOk");
@@ -249,6 +254,9 @@ public class Shooter extends SubsystemBase {
         log_shotTime.accept(m_shotTime);
         log_leftTarget.accept(m_left.getClosedLoopReference().getValueAsDouble());
         log_rightTarget.accept(m_right.getClosedLoopReference().getValueAsDouble());
+
+        log_leftError.accept(m_left.getClosedLoopError().getValueAsDouble());
+        log_rightError.accept(m_right.getClosedLoopError().getValueAsDouble());
         log_spunUp.accept(m_spunUp);
         log_leftOk.accept(m_leftOk);
         log_rightOk.accept(m_rightOk);
