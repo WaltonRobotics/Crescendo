@@ -129,7 +129,7 @@ public final class AutonFactory {
 		var pathCmd = AutoBuilder.followPath(fivePc);
 		var aimCmd3 = aim.setAimTarget().asProxy();
 		var aimCmd4 = aim.setAimTarget().asProxy();
-		var shootCmd = shooter.shoot().withTimeout(shooterTimeout).asProxy();
+		var shootCmd = shooter.subwoofer().withTimeout(shooterTimeout).asProxy();
 		var finalIntake = intake.outtake().withTimeout(intakeTimeout).asProxy();
 		var aimCmd5 = aim.setAimTarget().asProxy();
 		var finalShot = shooter.spinUp().withTimeout(shooterTimeout).asProxy();
@@ -165,7 +165,7 @@ public final class AutonFactory {
 	private static Command intakeShotCycle(Intake intake, Conveyor conveyor, Shooter shooter) {
 		var conveyCmd = conveyor.runFast().withTimeout(conveyorTimeout).asProxy();
 		var spinUpCmd = shooter.spinUp().withTimeout(spinUpTimeout).asProxy();
-		var shootCmd = shooter.shoot().withTimeout(shooterTimeout).asProxy();
+		var shootCmd = shooter.subwoofer().withTimeout(shooterTimeout).asProxy();
 		var spinUpAndShoot = Commands.sequence(spinUpCmd, shootCmd).asProxy();
 		var intakeCmd = intake.outtake().withTimeout(intakeTimeout).asProxy();
 		return Commands.parallel(conveyCmd, intakeCmd, spinUpAndShoot);

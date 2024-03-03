@@ -304,7 +304,7 @@ public class Superstructure extends SubsystemBase {
                 aimCmd,
                 Commands.waitUntil(() -> m_state != NoteState.ROLLER_BEAM_RETRACT)),
             Commands.parallel(
-                amp ? m_shooter.ampShot() : m_shooter.shoot(),
+                amp ? m_shooter.ampShot() : m_shooter.subwoofer(),
                 changeStateCmd(NoteState.SHOT_SPINUP)));
     }
 
