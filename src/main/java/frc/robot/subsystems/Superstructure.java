@@ -285,7 +285,7 @@ public class Superstructure extends SubsystemBase {
                         driverRumbled = false;
                         manipulatorRumbled = false;
                     }),
-                stopEverything()));
+                stopEverything(), m_aim.intakeAngleNearCmd()));
     }
 
     public Command stopEverything() {
