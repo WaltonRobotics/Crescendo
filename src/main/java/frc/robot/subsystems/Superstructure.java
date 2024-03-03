@@ -99,6 +99,7 @@ public class Superstructure extends SubsystemBase {
         () -> m_state == NoteState.IDLE);
     private final Trigger stateTrg_noteRetracting = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.ROLLER_BEAM_RETRACT);
+    private final Trigger stateTrg_spinUp = new Trigger(sensorEventLoop, () -> m_state == NoteState.SHOT_SPINUP);
     private final Trigger stateTrg_shooting = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.SHOOTING);
     private final Trigger extStateTrg_shooting = new Trigger(sensorEventLoop,
@@ -240,7 +241,7 @@ public class Superstructure extends SubsystemBase {
 
         // if shooter spun up and state spinupping
         // state -> SHOOTING
-        (trg_spunUp.and(trg_atAngle).and(trg_shootReq))
+        (trg_spunUp.and(trg_atAngle).and(trg_shootReq).and(stateTrg_spinUp))
             .onTrue(changeStateCmd(NoteState.SHOOTING));
 
         // if now shooting, note leaving, or note just left
