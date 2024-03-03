@@ -135,15 +135,15 @@ public class Constants {
             // private static final double kVLeft = 0.0625; // sysid 0.052935
             // private static final double kALeft = 0;
 
-            private static final double kPRight_FOC = 5;
+            private static final double kPRight_FOC = 4;
             private static final double kSRight_FOC = 3; // Amps
-            private static final double kVRight_FOC = 0.195;
-            private static final double kARight_FOC = 0.25;
+            private static final double kVRight_FOC = 0.725;
+            private static final double kARight_FOC = 0.45;
 
-            private static final double kPLeft_FOC = 5;
-            private static final double kSLeft_FOC = 3; // Amps
-            private static final double kVLeft_FOC = 0.195;
-            private static final double kALeft_FOC = 0.15;
+            private static final double kPLeft_FOC = 5.5;
+            private static final double kSLeft_FOC = 4.5; // Amps
+            private static final double kVLeft_FOC = 0.75;
+            private static final double kALeft_FOC = 0.45;
 
             public static final TalonFXConfiguration kRightConfigs = new TalonFXConfiguration();
             public static final TalonFXConfiguration kLeftConfigs = new TalonFXConfiguration();
@@ -170,6 +170,16 @@ public class Constants {
                 kRightConfigs.ClosedLoopRamps = kRightConfigs.ClosedLoopRamps
                     .withVoltageClosedLoopRampPeriod(0.25);
 
+                kRightConfigs.TorqueCurrent = kRightConfigs.TorqueCurrent
+                    .withPeakForwardTorqueCurrent(800)
+                    .withPeakReverseTorqueCurrent(-800);
+
+                kRightConfigs.CurrentLimits = kRightConfigs.CurrentLimits
+                    .withStatorCurrentLimit(50)
+                    .withStatorCurrentLimitEnable(true)
+                    .withSupplyCurrentLimit(30)
+                    .withSupplyCurrentLimitEnable(true);
+
                 // kLeftConfigs.Slot0 = kLeftConfigs.Slot0
                 // .withKP(kPLeft)
                 // .withKS(kSLeft)
@@ -190,6 +200,16 @@ public class Constants {
 
                 kLeftConfigs.ClosedLoopRamps = kLeftConfigs.ClosedLoopRamps
                     .withVoltageClosedLoopRampPeriod(0.25);
+
+                kLeftConfigs.CurrentLimits = kLeftConfigs.CurrentLimits
+                    .withStatorCurrentLimit(50)
+                    .withStatorCurrentLimitEnable(true)
+                    .withSupplyCurrentLimit(30)
+                    .withSupplyCurrentLimitEnable(true);
+
+                kLeftConfigs.TorqueCurrent = kLeftConfigs.TorqueCurrent
+                    .withPeakForwardTorqueCurrent(800)
+                    .withPeakReverseTorqueCurrent(-800);
             }
         }
 
@@ -286,6 +306,7 @@ public class Constants {
         public static final Measure<Angle> kMaxAngle = Rotations.of(0.45);
 
         public static final Measure<Angle> kSubwooferAngle = Rotations.of(0.066);
+        public static final Measure<Angle> kAmpAngle = Rotations.of(0.234131);
     }
 
     // public class ClimberK {

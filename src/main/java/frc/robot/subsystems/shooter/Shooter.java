@@ -51,13 +51,12 @@ public class Shooter extends SubsystemBase {
     private double m_shotTime = 1.5;
 
     private double m_leftTarget = 7000;
-    // private double m_rightTarget = 7000 * m_spinAmt;
+    private double m_rightTarget = 7000 * m_spinAmt;
     private final Supplier<Measure<Velocity<Angle>>> m_leftTargetSupp = () -> Rotations.per(Minute).of(m_leftTarget);
     private boolean m_spunUp = false;
     private boolean m_leftOk = false;
     private boolean m_rightOk = false;
-    // private final Supplier<Measure<Velocity<Angle>>> m_rightTargetSupp = () ->
-    // Rotations.per(Minute).of(m_rightTarget);
+    private final Supplier<Measure<Velocity<Angle>>> m_rightTargetSupp = () -> Rotations.per(Minute).of(m_rightTarget);
 
     // private LoggedTunableNumber m_tunableRpm = new
     // LoggedTunableNumber("targetRpm", m_leftTarget);
@@ -123,12 +122,31 @@ public class Shooter extends SubsystemBase {
         return runEnd(
             () -> {
                 var velMeas = velo.get();
-                // m_rightTarget = velMeas.in(Rotations.per(Minute)) * m_spinAmt;
+                m_rightTarget = velMeas.in(Rotations.per(Minute)) * m_spinAmt;
                 m_leftTarget = velMeas.in(Rotations.per(Minute));
-                // var right = Rotations.per(Minute).of(m_rightTarget).in(RotationsPerSecond);
-                // var left = Rotations.per(Minute).of(m_leftTarget).in(RotationsPerSecond);
-                m_right.setControl(m_request.withVelocity(velMeas.in(RotationsPerSecond) * kSpinAmt));
-                m_left.setControl(m_request.withVelocity(velMeas.in(RotationsPerSecond)));
+                var right = Rotations.per(Minute).of(m_rightTarget).in(RotationsPerSecond);
+                var left = Rotations.per(Minute).of(m_leftTarget).in(RotationsPerSecond);
+                m_right.setControl(m_request.withVelocity(right));
+                m_left.setControl(m_request.withVelocity(left));
+
+            }, () -> {
+                // m_rightTarget = 0;
+                m_leftTarget = 0;
+                m_right.setControl(m_coast);
+                m_left.setControl(m_coast);
+            });
+    }
+
+    private Command toVeloNoSpin(Supplier<Measure<Velocity<Angle>>> velo) {
+        return runEnd(
+            () -> {
+                var velMeas = velo.get();
+                m_rightTarget = velMeas.in(Rotations.per(Minute));
+                m_leftTarget = velMeas.in(Rotations.per(Minute));
+                var right = Rotations.per(Minute).of(m_rightTarget).in(RotationsPerSecond);
+                var left = Rotations.per(Minute).of(m_leftTarget).in(RotationsPerSecond);
+                m_right.setControl(m_request.withVelocity(right));
+                m_left.setControl(m_request.withVelocity(left));
 
             }, () -> {
                 // m_rightTarget = 0;
@@ -162,8 +180,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command ampShot() {
-        // TODO figure out the angle that the arm was at
-        return toVelo(() -> Rotations.per(Minute).of(1250)); // TODO make this a constant
+        return toVeloNoSpin(() -> Rotations.per(Minute).of(850)); // TODO make this a constant
     }
 
     public Command trapShot() {
@@ -181,7 +198,7 @@ public class Shooter extends SubsystemBase {
             return false;
         }
         var left = m_leftTargetSupp.get().in(RotationsPerSecond);
-        var right = m_leftTargetSupp.get().in(RotationsPerSecond) * kSpinAmt;
+        var right = m_rightTargetSupp.get().in(RotationsPerSecond);
         var tolerance = 2;
         m_leftOk = MathUtil.isNear(
             left, m_left.getVelocity().getValueAsDouble(), tolerance);

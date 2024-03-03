@@ -157,7 +157,8 @@ public class Robot extends TimedRobot {
 		/* manipulator controls */
 		manipulator.rightTrigger().whileTrue(intake.outtake());
 		manipulator.b().and(manipulator.povUp()).whileTrue(conveyor.runFast());
-		manipulator.rightBumper().whileTrue(superstructure.aim(() -> AimK.kSubwooferAngle));
+		manipulator.rightBumper().whileTrue(superstructure.aim(() -> AimK.kSubwooferAngle, false));
+		manipulator.leftBumper().whileTrue(superstructure.aim(() -> AimK.kAmpAngle, true));
 		manipulator.b().and(manipulator.povDown())
 			.onTrue(Commands.runOnce(() -> superstructure.forceStateToNoteReady()));
 		manipulator.x().and((manipulator.back().and(manipulator.start())).negate()).whileTrue(aim.hardStop());
@@ -167,6 +168,8 @@ public class Robot extends TimedRobot {
 		manipulator.povUp().onTrue(aim.increaseAngle());
 		manipulator.povDown().and(manipulator.b().negate())
 			.onTrue(aim.decreaseAngle());
+		manipulator.povLeft().onTrue(aim.to90ish());
+		manipulator.povRight().onTrue(aim.amp());
 		manipulator.back().and(manipulator.rightBumper()).whileTrue(aim.subwoofer());
 
 		manipulator.start().whileTrue(Commands.startEnd(

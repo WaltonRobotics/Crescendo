@@ -155,6 +155,13 @@ public class Superstructure extends SubsystemBase {
         configureStateTriggers();
     }
 
+    public Command ampShot() {
+        var shootCmd = m_shooter.ampShot();
+        var conveyorCmd = m_conveyor.runFast();
+
+        return Commands.parallel(shootCmd, conveyorCmd);
+    }
+
     private Command cmdDriverRumble(double intensity, double seconds) {
         if (driverRumbled) {
             return Commands.none();
@@ -264,6 +271,7 @@ public class Superstructure extends SubsystemBase {
             .onTrue(Commands.sequence(
                 Commands.waitSeconds(0.5),
                 changeStateCmd(NoteState.IDLE)));
+
         stateTrg_idle
             .onTrue(Commands.parallel(
                 Commands.runOnce(
@@ -277,7 +285,7 @@ public class Superstructure extends SubsystemBase {
                         driverRumbled = false;
                         manipulatorRumbled = false;
                     }),
-                stopEverything(), m_aim.hardStop()));
+                stopEverything()));
     }
 
     public Command stopEverything() {
@@ -288,15 +296,15 @@ public class Superstructure extends SubsystemBase {
         return Commands.parallel(shootCmd, conveyorCmd, intakeCmd);
     }
 
-    public Command aim(Supplier<Measure<Angle>> target) {
-        var aimCmd = m_aim.toAngleUntilAt(target, Degrees.of(2)); // TODO make this unmagical 🙁
+    public Command aim(Supplier<Measure<Angle>> target, boolean amp) {
+        var aimCmd = m_aim.toAngleUntilAt(target, amp ? Degrees.of(1) : Degrees.of(2)); // TODO make this unmagical 🙁
 
         return Commands.sequence(
             Commands.parallel(
                 aimCmd,
                 Commands.waitUntil(() -> m_state != NoteState.ROLLER_BEAM_RETRACT)),
             Commands.parallel(
-                m_shooter.shoot(),
+                amp ? m_shooter.ampShot() : m_shooter.shoot(),
                 changeStateCmd(NoteState.SHOT_SPINUP)));
     }
 
@@ -304,7 +312,8 @@ public class Superstructure extends SubsystemBase {
         var shooterCmd = m_shooter.runBackwards();
         var conveyorCmd = m_conveyor.runBackwards();
 
-        return Commands.parallel(shooterCmd, conveyorCmd);
+        return Commands.parallel(shooterCmd,
+            Commands.sequence(Commands.waitUntil(trg_spunUp), conveyorCmd));
     }
 
     public void fastPeriodic() {
