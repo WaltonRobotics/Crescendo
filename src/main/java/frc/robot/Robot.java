@@ -164,7 +164,7 @@ public class Robot extends TimedRobot {
 		manipulator.rightBumper().whileTrue(superstructure.aim(() -> AimK.kSubwooferAngle, false));
 		manipulator.leftBumper().whileTrue(superstructure.aim(() -> AimK.kAmpAngle, true));
 		manipulator.b().and(manipulator.povDown())
-			.onTrue(Commands.runOnce(() -> superstructure.forceStateToNoteReady()));
+			.onTrue(Commands.runOnce(() -> superstructure.forceStateToShooting()));
 		manipulator.x().and((manipulator.back().and(manipulator.start())).negate()).whileTrue(aim.hardStop());
 
 		/* testing buttons */

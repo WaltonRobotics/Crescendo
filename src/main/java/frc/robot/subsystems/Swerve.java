@@ -63,7 +63,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	private final ApplyChassisSpeeds m_autoRequest = new ApplyChassisSpeeds();
 	private final SwerveRequest.FieldCentric m_characterisationReq = new SwerveRequest.FieldCentric()
-		.withDeadband(kMaxSpeed * 0.1).withRotationalDeadband(kMaxAngularRate * 0.1) // Add a 10% deadband
+		.withDeadband(kMaxSpeed * 0.1).withRotationalDeadband(kMaxAngularRate * 0.1)
 		.withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
 	private final SwerveDriveBrake m_brake = new SwerveDriveBrake();
@@ -71,7 +71,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final PIDController m_yController = new PIDController(kPY, 0.0, 0.0);
 	private final PIDController m_thetaController = new PIDController(kPTheta, 0.0, 0.0);
 
-	private final double m_characterisationSpeed = 0.1;
+	private final double m_characterisationSpeed = 0.5;
 	private final DoubleSupplier m_gyroYawRadiansSupplier = () -> getPigeon2().getYaw().getValueAsDouble();
 	private final SlewRateLimiter m_omegaLimiter = new SlewRateLimiter(1);
 

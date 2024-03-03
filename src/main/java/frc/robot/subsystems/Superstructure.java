@@ -339,6 +339,13 @@ public class Superstructure extends SubsystemBase {
         m_state = NoteState.NOTE_READY;
     }
 
+    public void forceStateToShooting() {
+        timothyEntered = true;
+        timothyIn = true;
+        autonIntake = false;
+        m_state = NoteState.SHOOTING;
+    }
+
     public Command autonIntakeCmd() {
         return runOnce(() -> {
             autonIntake = true;

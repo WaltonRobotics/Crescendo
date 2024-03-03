@@ -7,6 +7,7 @@ import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -19,6 +20,7 @@ import edu.wpi.first.units.Current;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -43,6 +45,7 @@ public class Shooter extends SubsystemBase {
     private final TalonFX m_right = new TalonFX(kRightId, kCanbus);
     private final VelocityTorqueCurrentFOC m_request = new VelocityTorqueCurrentFOC(0);
     private final TorqueCurrentFOC m_current = new TorqueCurrentFOC(0);
+    private final VoltageOut m_voltage = new VoltageOut(0);
     private final CoastOut m_coast = new CoastOut();
 
     private double m_spinAmt = kSpinAmt;
@@ -81,6 +84,17 @@ public class Shooter extends SubsystemBase {
         Amps.of(8).per(Second),
         Amps.of(35),
         Seconds.of(25));
+
+    private final SysIdRoutine m_sysId = new SysIdRoutine(
+        new SysIdRoutine.Config(
+            Volts.of(0.5).per(Second),
+            Volts.of(7),
+            Seconds.of(15),
+            (state) -> SignalLogger.writeString("state", state.toString())),
+        new SysIdRoutine.Mechanism((Measure<Voltage> volts) -> {
+            m_left.setControl(m_voltage.withOutput(volts.in(Volts)));
+            m_right.setControl(m_voltage.withOutput(volts.in(Volts)));
+        }, null, this));
 
     private SysIdRoutine makeTorqueCurrentSysIdRoutine(
         final Measure<Velocity<Current>> currentRampRate,
@@ -256,10 +270,10 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
-        return m_currentSysId.quasistatic(direction);
+        return m_sysId.quasistatic(direction);
     }
 
     public Command sysIdDynamic(SysIdRoutine.Direction direction) {
-        return m_currentSysId.dynamic(direction);
+        return m_sysId.dynamic(direction);
     }
 }
