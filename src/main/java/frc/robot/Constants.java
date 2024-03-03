@@ -7,7 +7,12 @@ import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.GravityTypeValue;
@@ -167,8 +172,19 @@ public class Constants {
             public static final TalonFXConfiguration kLeftConfigs = new TalonFXConfiguration();
 
             static {
-                kRightConfigs.Feedback = kRightConfigs.Feedback
-                    .withSensorToMechanismRatio(kGearRatio);
+                var currentLimits = new CurrentLimitsConfigs()
+                    .withStatorCurrentLimitEnable(true)
+                    .withStatorCurrentLimit(50)
+                    .withSupplyCurrentLimitEnable(true)
+                    .withSupplyCurrentLimit(30);
+                var closedLoopRamps = new ClosedLoopRampsConfigs()
+                    .withVoltageClosedLoopRampPeriod(0.25)
+                    .withTorqueClosedLoopRampPeriod(0.25);
+                var feedback = new FeedbackConfigs().withSensorToMechanismRatio(kGearRatio);
+                var motorOutput = new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast);
+                var torqueCurrent = new TorqueCurrentConfigs()
+                    .withPeakForwardTorqueCurrent(80)
+                    .withPeakReverseTorqueCurrent(-80);
 
                 kRightConfigs.Slot0 = kRightConfigs.Slot0
                     .withKP(kPRightSpeaker)
@@ -182,21 +198,11 @@ public class Constants {
                     .withKV(kVRightAmp)
                     .withKA(kARightAmp);
 
-                kRightConfigs.MotorOutput = kRightConfigs.MotorOutput
-                    .withNeutralMode(NeutralModeValue.Coast);
-
-                kRightConfigs.ClosedLoopRamps = kRightConfigs.ClosedLoopRamps
-                    .withVoltageClosedLoopRampPeriod(0.25);
-
-                kRightConfigs.TorqueCurrent = kRightConfigs.TorqueCurrent
-                    .withPeakForwardTorqueCurrent(800)
-                    .withPeakReverseTorqueCurrent(-800);
-
-                kRightConfigs.CurrentLimits = kRightConfigs.CurrentLimits
-                    .withStatorCurrentLimit(50)
-                    .withStatorCurrentLimitEnable(true)
-                    .withSupplyCurrentLimit(30)
-                    .withSupplyCurrentLimitEnable(true);
+                kRightConfigs.Feedback = feedback;
+                kRightConfigs.MotorOutput = motorOutput;
+                kRightConfigs.ClosedLoopRamps = closedLoopRamps;
+                kRightConfigs.TorqueCurrent = torqueCurrent;
+                kRightConfigs.CurrentLimits = currentLimits;
 
                 kLeftConfigs.Slot0 = kLeftConfigs.Slot0
                     .withKP(kPLeftSpeaker)
@@ -210,24 +216,11 @@ public class Constants {
                     .withKV(kVLeftAmp)
                     .withKA(kALeftAmp);
 
-                kLeftConfigs.Feedback = kLeftConfigs.Feedback
-                    .withSensorToMechanismRatio(kGearRatio);
-
-                kLeftConfigs.MotorOutput = kLeftConfigs.MotorOutput
-                    .withNeutralMode(NeutralModeValue.Coast);
-
-                kLeftConfigs.ClosedLoopRamps = kLeftConfigs.ClosedLoopRamps
-                    .withVoltageClosedLoopRampPeriod(0.25);
-
-                kLeftConfigs.CurrentLimits = kLeftConfigs.CurrentLimits
-                    .withStatorCurrentLimit(50)
-                    .withStatorCurrentLimitEnable(true)
-                    .withSupplyCurrentLimit(30)
-                    .withSupplyCurrentLimitEnable(true);
-
-                kLeftConfigs.TorqueCurrent = kLeftConfigs.TorqueCurrent
-                    .withPeakForwardTorqueCurrent(800)
-                    .withPeakReverseTorqueCurrent(-800);
+                kLeftConfigs.Feedback = feedback;
+                kLeftConfigs.MotorOutput = motorOutput;
+                kLeftConfigs.ClosedLoopRamps = closedLoopRamps;
+                kLeftConfigs.TorqueCurrent = torqueCurrent;
+                kLeftConfigs.CurrentLimits = currentLimits;
             }
         }
 
