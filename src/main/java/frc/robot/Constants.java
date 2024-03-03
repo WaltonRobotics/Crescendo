@@ -28,6 +28,7 @@ import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Velocity;
+import frc.robot.generated.TunerConstants;
 import frc.util.AllianceFlipUtil;
 
 public class Constants {
@@ -109,7 +110,7 @@ public class Constants {
             new PIDConstants(kPX),
             new PIDConstants(kPTheta),
             5,
-            Math.hypot(10.3125, 12.375),
+            TunerConstants.kDriveRadius,
             new ReplanningConfig());
     }
 
@@ -141,12 +142,12 @@ public class Constants {
     public class ShooterK {
         public static final class ShooterConfigs {
             /* stuff that works for speaker */
-            private static final double kPRightSpeaker = 1.8911;
+            private static final double kPRightSpeaker = 5;
             private static final double kSRightSpeaker = 6.1337; // Amps
             private static final double kVRightSpeaker = 0.11102;
             private static final double kARightSpeaker = 0.41568;
 
-            private static final double kPLeftSpeaker = 1.9293;
+            private static final double kPLeftSpeaker = 5;
             private static final double kSLeftSpeaker = 10.76; // Amps
             private static final double kVLeftSpeaker = 0.099297;
             private static final double kALeftSpeaker = 0.302;
@@ -233,7 +234,7 @@ public class Constants {
         public static final String kDbTabName = "Shooter";
 
         public static final Measure<Velocity<Angle>> kAmpTolerance = RotationsPerSecond.of(1);
-        public static final Measure<Velocity<Angle>> kBigShootTolerance = RotationsPerSecond.of(2);
+        public static final Measure<Velocity<Angle>> kBigShootTolerance = RotationsPerSecond.of(0.8);
 
         public static final int kRightId = 13;
         public static final int kLeftId = 14;

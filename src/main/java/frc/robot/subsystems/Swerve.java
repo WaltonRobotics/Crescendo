@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import com.choreo.lib.Choreo;
@@ -10,6 +11,7 @@ import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveDrivetrain;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveDrivetrainConstants;
+import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.ApplyChassisSpeeds;
@@ -22,12 +24,15 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathPlannerPath;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
@@ -42,6 +47,8 @@ import frc.robot.auton.AutonChooser;
 import frc.util.AdvantageScopeUtil;
 
 import static frc.robot.Constants.FieldK.*;
+import static frc.robot.generated.TunerConstants.kDriveRadius;
+import static frc.robot.Robot.*;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.AutoK.*;
 
@@ -55,10 +62,24 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private double m_lastSimTime;
 
 	private final ApplyChassisSpeeds m_autoRequest = new ApplyChassisSpeeds();
+	private final SwerveRequest.FieldCentric m_characterisationReq = new SwerveRequest.FieldCentric()
+		.withDeadband(kMaxSpeed * 0.1).withRotationalDeadband(kMaxAngularRate * 0.1) // Add a 10% deadband
+		.withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+
 	private final SwerveDriveBrake m_brake = new SwerveDriveBrake();
 	private final PIDController m_xController = new PIDController(kPX, 0.0, 0.0);
 	private final PIDController m_yController = new PIDController(kPY, 0.0, 0.0);
 	private final PIDController m_thetaController = new PIDController(kPTheta, 0.0, 0.0);
+
+	private final double m_characterisationSpeed = 0.1;
+	private final DoubleSupplier m_gyroYawRadiansSupplier = () -> getPigeon2().getYaw().getValueAsDouble();
+	private final SlewRateLimiter m_omegaLimiter = new SlewRateLimiter(1);
+
+	private double lastGyroYawRads = 0;
+	private double accumGyroYawRads = 0;
+
+	private double[] startWheelPositions = new double[4];
+	private double currentEffectiveWheelRadius = 0;
 
 	// private final SysIdSwerveTranslation characterization = new
 	// SysIdSwerveTranslation();
@@ -113,6 +134,32 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		if (Utils.isSimulation()) {
 			startSimThread();
 		}
+	}
+
+	public Command wheelRadiusCharacterisation(double omegaDirection) {
+		return runEnd(() -> {
+			setControl(m_characterisationReq
+				.withRotationalRate(m_omegaLimiter.calculate(m_characterisationSpeed * omegaDirection)));
+			lastGyroYawRads = m_gyroYawRadiansSupplier.getAsDouble();
+			accumGyroYawRads += MathUtil.angleModulus(m_gyroYawRadiansSupplier.getAsDouble() - lastGyroYawRads);
+			double averageWheelPosition = 0;
+			for (int i = 0; i < Modules.length; i++) {
+				startWheelPositions[i] = Modules[i].getPosition(true).angle.getRadians();
+				averageWheelPosition += startWheelPositions[i];
+			}
+			averageWheelPosition /= 4.0;
+			currentEffectiveWheelRadius = (accumGyroYawRads * kDriveRadius) / averageWheelPosition;
+		}, () -> {
+			setControl(m_characterisationReq.withRotationalRate(0));
+			if (accumGyroYawRads <= Math.PI * 2.0) {
+				System.out.println("not enough data for characterization");
+			} else {
+				System.out.println(
+					"effective wheel radius: "
+						+ Units.metersToInches(currentEffectiveWheelRadius)
+						+ " inches");
+			}
+		});
 	}
 
 	public Command applyRequest(Supplier<SwerveRequest> requestSupplier) {
