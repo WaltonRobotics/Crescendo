@@ -254,9 +254,9 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		});
 	}
 
-	public Command aim() {
+	public Command aim(double radians) {
 		return run(() -> {
-			m_desiredRot = AllianceFlipUtil.apply(Rotation2d.fromDegrees(0));
+			m_desiredRot = AllianceFlipUtil.apply(Rotation2d.fromRadians(radians));
 			var curPose = getState().Pose;
 			var thetaSpeed = m_thetaController.calculate(curPose.getRotation().getRadians(),
 				m_desiredRot.getRadians());

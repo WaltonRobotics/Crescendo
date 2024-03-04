@@ -120,7 +120,6 @@ public class Superstructure extends SubsystemBase {
     private final SynchronousInterrupt irq_shooterBeamBreak = new SynchronousInterrupt(shooterBeamBreak);
     private final Trigger irqTrg_beamBreak = new Trigger(sensorEventLoop, () -> beamBreakIrq);
 
-
     private final DoubleLogger log_state = WaltLogger.logDouble(kDbTabName, "state",
         PubSubOption.sendAll(true));
     private final BooleanLogger log_timothyEntered = WaltLogger.logBoolean(kDbTabName, "timothyEntered",
@@ -217,10 +216,10 @@ public class Superstructure extends SubsystemBase {
         // intakeReq && idle
         (trg_intakeReq.and(stateTrg_idle))
             .onTrue(Commands.runOnce(() -> m_state = NoteState.INTAKE));
+        
         stateTrg_intake.onTrue(
             // wait until aim is ±50 degrees to intake mode
             Commands.sequence(
-                Commands.print("it should be intaking"),
                 m_aim.intakeAngleNearCmd(),
                 Commands.parallel(m_intake.run(), m_conveyor.startSlow())));
 
@@ -229,7 +228,7 @@ public class Superstructure extends SubsystemBase {
 
         trg_frontSensorIrq.onTrue(cmdManipRumble(1, 0.5));
 
-        // note in shooter and not shooting
+        // note in shooter and not shooting or spinupping
         (irqTrg_beamBreak.and((extStateTrg_shooting.or(stateTrg_spinUp)).negate()))
             .onTrue(changeStateCmd(NoteState.ROLLER_BEAM_RETRACT));
         stateTrg_noteRetracting.onTrue(
@@ -239,23 +238,11 @@ public class Superstructure extends SubsystemBase {
 
         // !beamBreak && noteRetracting
         // Post-retract stop
-        ((irqTrg_beamBreak.negate().debounce(0.05)).and(stateTrg_noteRetracting))
+        ((irqTrg_beamBreak.negate().debounce(0.35)).and(stateTrg_noteRetracting))
             .onTrue(
                 Commands.sequence(
-                    Commands.waitSeconds(0.35),
                     changeStateCmd(NoteState.NOTE_READY),
                     m_conveyor.stop()));
-
-        // manipulator controls this now so idt this is necessary
-        // shot requested and note is ready
-        // state -> spinup, cmd spinup shooter
-        // (trg_shootReq.and(stateTrg_aimed))
-        // .onTrue(changeStateCmd(NoteState.SHOT_SPINUP));
-
-        // manipulator controls this now so idt this is necessary (2)
-        // ((trg_shootReq.negate()).and(stateTrg_shotSpinup)).onTrue(
-        // Commands.sequence(
-        // changeStateCmd(NoteState.AIMED), stopEverything()));
 
         (trg_spunUp.and(trg_atAngle))
             .onTrue(cmdDriverRumble(1, 0.5));
@@ -347,13 +334,17 @@ public class Superstructure extends SubsystemBase {
         );
     }
 
-
     public Command backwardsRun() {
         var shooterCmd = m_shooter.runBackwards();
         var conveyorCmd = m_conveyor.runBackwards();
 
-        return Commands.parallel(shooterCmd,
-            Commands.sequence(Commands.waitUntil(trg_spunUp), conveyorCmd));
+        return Commands.parallel(
+            shooterCmd,
+            Commands.sequence(
+                Commands.waitUntil(trg_spunUp), 
+                conveyorCmd
+            )
+        );
     }
 
     private void evaluateBeamBreakIrq() {

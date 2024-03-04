@@ -106,6 +106,8 @@ public class Robot extends TimedRobot {
 			Trajectories.leave.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.ALT_TWO_PC, AutonFactory.altTwoPc(superstructure, shooter, swerve),
 			Trajectories.leave.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.THREE, AutonFactory.threePc(superstructure, shooter, swerve), 
+			Trajectories.leave.getInitialPose());
 	}
 
 	private void driverRumble(double intensity) {
@@ -139,7 +141,7 @@ public class Robot extends TimedRobot {
 					-driver.getLeftX()))));
 		driver.x().whileTrue(swerve.goToAutonPose());
 		driver.leftBumper().onTrue(swerve.runOnce(() -> swerve.seedFieldRelative()));
-		driver.y().whileTrue(swerve.aim());
+		driver.y().whileTrue(swerve.aim(0));
 		driver.rightBumper().onTrue(swerve.resetPoseToSpeaker());
 
 		/* sysid buttons */
