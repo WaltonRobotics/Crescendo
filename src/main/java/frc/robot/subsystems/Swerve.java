@@ -263,7 +263,13 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			var speeds = ChassisSpeeds.fromFieldRelativeSpeeds(0, 0, thetaSpeed, m_desiredRot);
 
 			setControl(m_autoRequest.withSpeeds(speeds));
-		}).until(() -> MathUtil.isNear(m_desiredRot.getDegrees(), getState().Pose.getRotation().getDegrees(), 1));
+		}).until(() -> {
+			boolean check = MathUtil.isNear(m_desiredRot.getDegrees(), getState().Pose.getRotation().getDegrees(), 1);
+			if (check) {
+				System.out.println("it should end");
+			}
+			return check;
+		});
 	}
 
 	public Pose3d getPose3d() {

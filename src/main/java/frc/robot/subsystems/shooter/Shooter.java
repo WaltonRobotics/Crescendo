@@ -148,8 +148,8 @@ public class Shooter extends SubsystemBase {
         };
 
         Consumer<Boolean> stopSpin = (interrupted) -> {
-            // m_rightTarget = RotationsPerSecond.of(0);
-            // m_leftTarget = RotationsPerSecond.of(0);
+            m_rightTarget = RotationsPerSecond.of(0);
+            m_leftTarget = RotationsPerSecond.of(0);
             m_right.setControl(m_request.withVelocity(0).withSlot(0));
             m_left.setControl(m_request.withVelocity(0).withSlot(0));
             m_right.setControl(m_coast);
@@ -201,6 +201,10 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command subwoofer(BooleanSupplier idle) {
+        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), idle);
+    }
+
+    public Command podium(BooleanSupplier idle) {
         return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), idle);
     }
 

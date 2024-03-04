@@ -87,13 +87,14 @@ public class Superstructure extends SubsystemBase {
     private final Trigger trg_timothyFieldTrip = new Trigger(sensorEventLoop,
         () -> timothyFieldTrip);
 
-    private final Trigger stateTrg_idle = new Trigger(sensorEventLoop,
+    public final Trigger stateTrg_idle = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.IDLE);
     private final Trigger stateTrg_intake = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.INTAKE);
     private final Trigger stateTrg_noteRetracting = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.ROLLER_BEAM_RETRACT);
     private final Trigger stateTrg_spinUp = new Trigger(sensorEventLoop, () -> m_state == NoteState.SHOT_SPINUP);
+    private final Trigger stateTrg_shootOk = new Trigger(sensorEventLoop, () -> m_state == NoteState.SHOOT_OK);
     private final Trigger stateTrg_shooting = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.SHOOTING);
         private final Trigger stateTrg_leavingBeamBreak = new Trigger(sensorEventLoop,
@@ -118,7 +119,7 @@ public class Superstructure extends SubsystemBase {
     private double beamBreakIrqLastRising = 0;
     private double beamBreakIrqLastFalling = 0;
     private final SynchronousInterrupt irq_shooterBeamBreak = new SynchronousInterrupt(shooterBeamBreak);
-    private final Trigger irqTrg_beamBreak = new Trigger(sensorEventLoop, () -> beamBreakIrq);
+    private final Trigger irqTrg_beamBreak;
 
     private final DoubleLogger log_state = WaltLogger.logDouble(kDbTabName, "state",
         PubSubOption.sendAll(true));
@@ -153,10 +154,9 @@ public class Superstructure extends SubsystemBase {
         ai_frontVisiSight.enable();
 
         irq_shooterBeamBreak.setInterruptEdges(true, true);
-        // ai_shooterBeamBreak.enable();
 
         trg_frontSensorIrq = new Trigger(sensorEventLoop, () -> frontVisiSightSeenNote);
-        // trg_shooterSensor = new Trigger(sensorEventLoop, () -> shooterBeamBreak.get());
+        irqTrg_beamBreak = new Trigger(sensorEventLoop, () -> beamBreakIrq);
 
         trg_spunUp = new Trigger(m_shooter::spinUpFinished).debounce(0.05);
         trg_atAngle = new Trigger(m_aim::aimFinished);
@@ -231,6 +231,7 @@ public class Superstructure extends SubsystemBase {
         // note in shooter and not shooting or spinupping
         (irqTrg_beamBreak.and((extStateTrg_shooting.or(stateTrg_spinUp)).negate()))
             .onTrue(changeStateCmd(NoteState.ROLLER_BEAM_RETRACT));
+
         stateTrg_noteRetracting.onTrue(
             Commands.parallel(
                 m_intake.stop(),
@@ -244,12 +245,19 @@ public class Superstructure extends SubsystemBase {
                     changeStateCmd(NoteState.NOTE_READY),
                     m_conveyor.stop()));
 
+        // added back shoot ok
         (trg_spunUp.and(trg_atAngle))
-            .onTrue(cmdDriverRumble(1, 0.5));
+            .onTrue(
+                Commands.parallel(
+                    cmdDriverRumble(1, 0.5), 
+                    Commands.runOnce(
+                        () -> m_state = NoteState.SHOOT_OK)
+                    )
+                );
 
-        // if shooter spun up and state spinupping
+        // if shooter spun up and asked to shoot
         // state -> SHOOTING
-        (trg_spunUp.and(trg_atAngle).and(trg_shootReq).and(stateTrg_spinUp))
+        (stateTrg_shootOk.and(trg_shootReq))
             .onTrue(changeStateCmd(NoteState.SHOOTING));
 
         // if now shooting, note leaving, or note just left
@@ -262,13 +270,13 @@ public class Superstructure extends SubsystemBase {
             .onFalse(m_conveyor.stop());
 
         // if note in shooter sensor and state shooting
-        // state -> LEAVING_BEAM_BREAK, timothy says bye 😃
+        // state -> LEAVING_BEAM_BREAK, timothy says bye :D
         (irqTrg_beamBreak.and(stateTrg_shooting))
             .onTrue(Commands.parallel(
                 changeStateCmd(NoteState.LEAVING_BEAM_BREAK),
                 Commands.runOnce(() -> timothyFieldTrip = true)));
 
-        // if note not in shooter and state leaving and timothy waving bye 😄
+        // if note not in shooter and state leaving and timothy waving bye :D
         // state -> LEFT_BEAM_BREAK
         ((irqTrg_beamBreak.debounce(0.1)).negate().and(stateTrg_leavingBeamBreak).and(trg_timothyFieldTrip))
             .onTrue(changeStateCmd(NoteState.LEFT_BEAM_BREAK));
@@ -306,11 +314,11 @@ public class Superstructure extends SubsystemBase {
     }
 
     public Command aimAndSpinUp(Supplier<Measure<Angle>> target, boolean amp) {
-        return aimAndSpinUp(target, amp, false);
+        return aimAndSpinUp(target, amp, false, false);
     }
 
-    public Command aimAndSpinUp(Supplier<Measure<Angle>> target, boolean amp, boolean auton) {
-        var aimCmd = m_aim.toAngleUntilAt(target, amp ? Degrees.of(1) : Degrees.of(2)); // TODO make this unmagical 🙁
+    public Command aimAndSpinUp(Supplier<Measure<Angle>> target, boolean amp, boolean podium, boolean auton) {
+        var aimCmd = m_aim.toAngleUntilAt(target, amp ? Degrees.of(1) : Degrees.of(2)); // TODO make this unmagical :(
 
         var waitForNoteReady = Commands.waitUntil(() -> m_state.idx > NoteState.ROLLER_BEAM_RETRACT.idx)
             .andThen(Commands.print("====NOTE READY===="));
@@ -318,7 +326,7 @@ public class Superstructure extends SubsystemBase {
         Command shootCmd;
 
         if (auton) {
-            shootCmd = amp ? m_shooter.ampShot() : m_shooter.subwoofer(stateTrg_idle); 
+            shootCmd = podium ? m_shooter.subwoofer(stateTrg_idle) : m_shooter.subwoofer(stateTrg_idle); 
         } else {
             shootCmd = amp ? m_shooter.ampShot() : m_shooter.subwoofer();
         }
@@ -425,9 +433,10 @@ public class Superstructure extends SubsystemBase {
         ROLLER_BEAM_RETRACT(2), // Note hit top beam
         NOTE_READY(3),
         SHOT_SPINUP(4),
-        SHOOTING(5),
-        LEAVING_BEAM_BREAK(6),
-        LEFT_BEAM_BREAK(7);
+        SHOOT_OK(5),
+        SHOOTING(6),
+        LEAVING_BEAM_BREAK(7),
+        LEFT_BEAM_BREAK(8);
 
         public final int idx;
 
