@@ -137,6 +137,7 @@ public class Robot extends TimedRobot {
 					-driver.getLeftX()))));
 		driver.x().whileTrue(swerve.goToAutonPose());
 		driver.leftBumper().onTrue(swerve.runOnce(() -> swerve.seedFieldRelative()));
+		driver.leftTrigger().whileTrue(superstructure.aimAndSpinUp(() -> AimK.kPodiumAngle, false));
 
 		/* sysid buttons */
 		driver.back().and(driver.y()).whileTrue(swerve.sysIdDynamic(Direction.kForward));

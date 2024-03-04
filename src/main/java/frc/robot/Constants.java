@@ -324,6 +324,7 @@ public class Constants {
 
         public static final Measure<Angle> kSubwooferAngle = Rotations.of(0.066);
         public static final Measure<Angle> kAmpAngle = Rotations.of(0.234131);
+        public static final Measure<Angle> kPodiumAngle = Rotations.of(0.007);
     }
 
     // public class ClimberK {
