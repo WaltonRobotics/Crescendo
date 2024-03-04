@@ -112,17 +112,43 @@ public final class AutonFactory {
 	public static Command threePc(Superstructure superstructure, Shooter shooter, Swerve swerve) {
 		var firstTwo = altTwoPc(superstructure, shooter, swerve);
 		var pathFollow = AutoBuilder.followPath(Paths.three);
+		var intake = superstructure.autonIntakeCmd().asProxy();
 		var swerveAim = swerve.aim(0.413).asProxy(); // TODO unmagify
 		var aimAndSpinUp = superstructure.aimAndSpinUp(() -> kPodiumAngle, false, true);
 		var thirdShot = superstructure.autonShootReq().asProxy();
 		
 		return Commands.sequence(
 			firstTwo,
-			pathFollow,
+			Commands.parallel(
+				intake,
+				pathFollow
+			),
 			Commands.parallel(
 				swerveAim,
 				aimAndSpinUp,
 				thirdShot
+			)
+		);
+	}
+
+	public static Command fourPc(Superstructure superstructure, Shooter shooter, Swerve swerve) {
+		var firstThree = threePc(superstructure, shooter, swerve);
+		var pathFollow = AutoBuilder.followPath(Paths.four);
+		var intake = superstructure.autonIntakeCmd().asProxy();
+		var swerveAim = swerve.aim(0).asProxy();
+		var aimAndSpinUp = superstructure.aimAndSpinUp(() -> kPodiumAngle, false, true);
+		var fourthShot = superstructure.autonShootReq().asProxy();
+		
+		return Commands.sequence(
+			firstThree,
+			Commands.parallel(
+				intake, // maybe wait a bit
+				pathFollow
+			),
+			Commands.parallel(
+				swerveAim,
+				aimAndSpinUp,
+				fourthShot
 			)
 		);
 	}
@@ -155,6 +181,7 @@ public final class AutonFactory {
 				currentState++;
 				log_state.accept(
 					currentState);
-			});
+			}
+		);
 	}
 }

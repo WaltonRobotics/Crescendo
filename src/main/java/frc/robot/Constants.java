@@ -116,7 +116,8 @@ public class Constants {
             new PIDConstants(kPTheta),
             5,
             TunerConstants.kDriveRadius,
-            new ReplanningConfig());
+            new ReplanningConfig()
+        );
     }
 
     public class IntakeK {
@@ -135,7 +136,6 @@ public class Constants {
         public static final int kIntakeId = 10;
         public static final int kFeederId = 11;
         public static final int kVisiSightId = 2;
-
     }
 
     public class ConveyorK {
