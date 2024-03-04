@@ -172,7 +172,7 @@ public class Robot extends TimedRobot {
 			.onTrue(aim.decreaseAngle());
 		manipulator.povLeft().onTrue(aim.to90ish());
 		manipulator.povRight().onTrue(aim.amp());
-		manipulator.start().whileTrue(AutonFactory.shoot(superstructure, shooter, true));
+		manipulator.start().whileTrue(AutonFactory.shoot(superstructure, shooter));
 
 		/* sysid buttons */
 		manipulator.back().and(manipulator.y()).whileTrue(shooter.sysIdDynamic(Direction.kForward));
