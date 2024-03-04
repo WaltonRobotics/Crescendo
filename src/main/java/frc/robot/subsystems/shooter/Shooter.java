@@ -22,6 +22,7 @@ import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.ShooterK.ShooterConfigs;
@@ -35,6 +36,8 @@ import static frc.robot.Constants.kCanbus;
 import static frc.robot.Constants.kStickDeadband;
 import static frc.robot.Robot.*;
 
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
@@ -128,22 +131,37 @@ public class Shooter extends SubsystemBase {
     }
 
     private Command toVelo(Supplier<Measure<Velocity<Angle>>> velo) {
-        return runEnd(
-            () -> {
-                var velMeas = velo.get();
-                m_rightTarget = velMeas.times(m_spinAmt);
-                m_leftTarget = velMeas;
-                var right = m_rightTarget.in(RotationsPerSecond);
-                var left = m_leftTarget.in(RotationsPerSecond);
+        return toVelo(velo, () -> false);
+    };
 
-                // withSlot(0) to use slot 0 PIDFF gains for powerful shots
-                m_right.setControl(m_request.withVelocity(right).withSlot(0));
-                m_left.setControl(m_request.withVelocity(left).withSlot(0));
+    private Command toVelo(Supplier<Measure<Velocity<Angle>>> velo, BooleanSupplier idle) {
+        Runnable spin = () -> {
+            var velMeas = velo.get();
+            m_rightTarget = velMeas.times(m_spinAmt);
+            m_leftTarget = velMeas;
+            var right = m_rightTarget.in(RotationsPerSecond);
+            var left = m_leftTarget.in(RotationsPerSecond);
 
-            }, () -> {
-                m_right.setControl(m_coast);
-                m_left.setControl(m_coast);
-            });
+            // withSlot(0) to use slot 0 PIDFF gains for powerful shots
+            m_right.setControl(m_request.withVelocity(right).withSlot(0));
+            m_left.setControl(m_request.withVelocity(left).withSlot(0));
+        };
+
+        Consumer<Boolean> stopSpin = (interrupted) -> {
+            m_rightTarget = RotationsPerSecond.of(0);
+            m_leftTarget = RotationsPerSecond.of(0);
+            m_right.setControl(m_coast);
+            m_left.setControl(m_coast);
+            System.out.println("ToVelo_STOP");
+        };
+
+        return new FunctionalCommand(spin, () -> {}, stopSpin, idle);
+
+        // return runEnd(spin, stopSpin).until(() -> {
+        //     boolean isIdle = idle.getAsBoolean();
+        //     System.out.println("IdleCheckin: " + isIdle);
+        //     return isIdle;
+        // }).andThen(Commands.print("toVeloDONE"));
     }
 
     private Command toVeloNoSpin(Supplier<Measure<Velocity<Angle>>> velo) {
@@ -177,7 +195,11 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command subwoofer() {
-        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm));
+        return subwoofer(() -> false);
+    }
+
+    public Command subwoofer(BooleanSupplier idle) {
+        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), idle);
     }
 
     public Command ampShot() {

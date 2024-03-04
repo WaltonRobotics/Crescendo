@@ -49,6 +49,14 @@ public class Intake extends SubsystemBase {
             });
     }
 
+    public Command runLilSpins() {
+        return runEnd(() -> {
+            m_feeder.set(-0.5);
+        }, () -> {
+            m_feeder.set(0);
+        });
+    }
+
     public Command start() {
         return run(() -> {
             runMainRollers(12);

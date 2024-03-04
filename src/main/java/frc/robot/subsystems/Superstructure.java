@@ -189,7 +189,14 @@ public class Superstructure extends SubsystemBase {
 
     private Command changeStateCmd(NoteState state) {
         return Commands.runOnce(() -> {
+            if (m_state == state) {
+                System.out.println("[SUPERSTRUCTURE] IGNORING State Change FROM: " + state + " TO " + m_state.toString());
+                return;
+            }
+
+            var oldState = m_state;
             m_state = state;
+            System.out.println("[SUPERSTRUCTURE] State Change FROM: " + oldState + " TO " + m_state.toString());
         });
     }
 
@@ -297,17 +304,36 @@ public class Superstructure extends SubsystemBase {
         return Commands.parallel(shootCmd, conveyorCmd, intakeCmd);
     }
 
-    public Command aim(Supplier<Measure<Angle>> target, boolean amp) {
+    public Command aimAndSpinUp(Supplier<Measure<Angle>> target, boolean amp) {
+        return aimAndSpinUp(target, amp, false);
+    }
+
+    public Command aimAndSpinUp(Supplier<Measure<Angle>> target, boolean amp, boolean auton) {
         var aimCmd = m_aim.toAngleUntilAt(target, amp ? Degrees.of(1) : Degrees.of(2)); // TODO make this unmagical 🙁
+
+        var waitForNoteReady = Commands.waitUntil(() -> m_state.idx > NoteState.ROLLER_BEAM_RETRACT.idx)
+            .andThen(Commands.print("====NOTE READY===="));
+
+        Command shootCmd;
+
+        if (auton) {
+            shootCmd = amp ? m_shooter.ampShot() : m_shooter.subwoofer(stateTrg_idle); 
+        } else {
+            shootCmd = amp ? m_shooter.ampShot() : m_shooter.subwoofer();
+        }
 
         return Commands.sequence(
             Commands.parallel(
-                aimCmd,
-                Commands.waitUntil(() -> m_state.idx > NoteState.ROLLER_BEAM_RETRACT.idx)),
+                aimCmd.asProxy().andThen(Commands.print("AimAndSpinUp_AIM_DONE")),
+                waitForNoteReady.andThen(Commands.print("AimAndSpinUp_NOTERD_DONE"))
+            ),
             Commands.parallel(
-                amp ? m_shooter.ampShot() : m_shooter.subwoofer(),
-                changeStateCmd(NoteState.SHOT_SPINUP)));
+                shootCmd.asProxy().andThen(Commands.print("shooty shoot done (no yelling)")),
+                changeStateCmd(NoteState.SHOT_SPINUP)
+            )
+        );
     }
+
 
     public Command backwardsRun() {
         var shooterCmd = m_shooter.runBackwards();
@@ -343,6 +369,7 @@ public class Superstructure extends SubsystemBase {
         timothyEntered = true;
         timothyIn = true;
         autonIntake = false;
+        autonShoot = true;
         m_state = NoteState.SHOOTING;
     }
 
@@ -354,7 +381,11 @@ public class Superstructure extends SubsystemBase {
     }
 
     public Command waitUntilIdle() {
-        return Commands.waitUntil(() -> m_state == NoteState.IDLE);
+        return Commands.waitUntil(() -> isIdle());
+    }
+
+    public boolean isIdle() {
+        return m_state == NoteState.IDLE;
     }
 
     public enum NoteState {

@@ -22,7 +22,7 @@ public class Conveyor extends SubsystemBase {
     }
 
     public Command retract() {
-        return runEnd(() -> m_conveyor.set(-0.05), () -> m_conveyor.set(0));
+        return runEnd(() -> m_conveyor.set(-0.1), () -> m_conveyor.set(0));
     }
 
     public Command startSlow() {

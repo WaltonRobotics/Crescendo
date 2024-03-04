@@ -1,14 +1,18 @@
 package frc.robot.auton;
 
+import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.util.logging.WaltLogger;
+import frc.util.logging.WaltLogger.DoubleLogger;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
 
+import static frc.robot.Constants.AimK.kSubwooferAngle;
 import static frc.robot.auton.Paths.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -20,44 +24,67 @@ public final class AutonFactory {
 	private static double shooterTimeout = 0.25;
 	private static double intakeTimeout = 0.25;
 
-	public static Command oneMeter(Swerve swerve) {
+	public static DoubleLogger log_state = WaltLogger.logDouble(
+		"Auton", "currentCmd", PubSubOption.sendAll(true));
+	public static double currentState = 0;
+
+	public static Command oneMeter() {
 		return AutoBuilder.followPath(oneMeter);
 	}
 
-	public static Command simpleThing(Swerve swerve) {
+	public static Command simpleThing(
+		Swerve swerve) {
 		var resetPose = swerve.resetPose(simpleThing);
-		return Commands.sequence(resetPose, AutoBuilder.followPath(simpleThing));
+		
+		return Commands.sequence(
+			resetPose, AutoBuilder.followPath(
+				simpleThing));
 	}
 
-	public static Command leave(Superstructure superstructure, Swerve swerve) {
+	public static Command leave(Superstructure superstructure, Shooter shooter, Swerve swerve) {
 		var resetPose = swerve.resetPose(leave).asProxy();
 		var forceShoot = Commands.runOnce(() -> superstructure.forceStateToNoteReady()).asProxy();
-		var waitUntilIdle = superstructure.waitUntilIdle().asProxy();
+		var shoot = shoot(superstructure, shooter);
+		var initialShot = incrementState().andThen(forceShoot)
+			.andThen(incrementState())
+			.andThen(shoot);
+
 		var pathFollow = AutoBuilder.followPath(leave).asProxy();
-		return Commands.parallel(resetPose, forceShoot, Commands.sequence(
-			Commands.waitSeconds(0.2),
-			waitUntilIdle,
-			pathFollow));
+		return Commands.sequence(
+			Commands.parallel(resetPose, initialShot),
+			incrementState(),
+			pathFollow
+		);
 	}
 
-	public static Command twoPc(Superstructure superstructure, Swerve swerve) {
-		var leave = leave(superstructure, swerve);
+	public static Command twoPc(Superstructure superstructure, Shooter shooter, Swerve swerve) {
+		var leave = leave(superstructure, shooter, swerve);
 		var intake = superstructure.autonIntakeCmd().asProxy();
 		var pathFollow = AutoBuilder.followPath(twoPc).asProxy();
-		var shoot = Commands.runOnce(() -> superstructure.forceStateToNoteReady()).asProxy();
+		var aimAndSpinUp = superstructure.aimAndSpinUp(() -> kSubwooferAngle, false, false);
+		var shoot = Commands.runOnce(() -> superstructure.forceStateToShooting()).asProxy();
 
 		return Commands.sequence(
+			leave,
 			Commands.parallel(
-				leave,
+				intake,
+				pathFollow,
 				Commands.sequence(
-					Commands.waitSeconds(0.2),
-					intake)),
-			Commands.parallel(pathFollow,
-				Commands.waitUntil(superstructure.stateTrg_noteReady)),
-			shoot);
+					Commands.waitUntil(superstructure.stateTrg_noteReady),
+					Commands.parallel(
+						aimAndSpinUp,
+						Commands.sequence(
+							Commands.waitUntil(() -> pathFollow.isFinished()), 
+							shoot
+						)
+					)
+				)
+			)
+		);
 	}
 
-	public static Command threePiece(Swerve swerve, Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
+	public static Command threePiece(
+		Swerve swerve, Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
 		var toAngle = Commands.repeatingSequence(aim.toTarget());
 		var resetPoseCmd = swerve.resetPose(threePc);
 		var aimCmd1 = aim.setAimTarget().asProxy();
@@ -75,11 +102,17 @@ public final class AutonFactory {
 				Commands.parallel(
 					pathCmd,
 					Commands.sequence(
-						Commands.waitSeconds(0.45),
+						Commands.waitSeconds(
+							0.45),
 						aimCmd2,
-						intakeShotCycle(intake, conveyor, shooter))),
+						intakeShotCycle(
+							intake, conveyor, shooter))),
 				aimCmd3,
-				intakeShotCycle(intake, conveyor, shooter)));
+				intakeShotCycle(
+					intake, conveyor, shooter
+				)
+			)
+		);
 	}
 
 	public static Command fourPiece(Swerve swerve, Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
@@ -106,23 +139,35 @@ public final class AutonFactory {
 					pathCmd,
 					Commands.sequence(
 						// TODO: check timing :(
-						Commands.waitSeconds(0.58),
+						Commands.waitSeconds(
+							0.58),
 						aimCmd2,
-						intakeShotCycle(intake, conveyor, shooter),
-						Commands.waitSeconds(1.34),
+						intakeShotCycle(
+							intake, conveyor, shooter),
+						Commands.waitSeconds(
+							1.34),
 						intakeCmd1,
-						Commands.waitSeconds(1.62),
+						Commands.waitSeconds(
+							1.62),
 						aimCmd3,
 						shootCmd2,
-						Commands.waitSeconds(1.17),
+						Commands.waitSeconds(
+							1.17),
 						intakeCmd2,
-						Commands.waitSeconds(1.63),
+						Commands.waitSeconds(
+							1.63),
 						aimCmd4,
-						shootCmd3))));
+						shootCmd3
+					)
+				)
+			)
+		);
 	}
 
-	public static Command fivePiece(Swerve swerve, Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
-		var toAngle = Commands.repeatingSequence(aim.toTarget());
+	public static Command fivePiece(
+		Swerve swerve, Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
+		var toAngle = Commands.repeatingSequence(
+			aim.toTarget());
 		var resetPoseCmd = swerve.resetPose(fivePc);
 		var aimCmd1 = aim.setAimTarget().asProxy();
 		var aimCmd2 = aim.setAimTarget().asProxy();
@@ -142,24 +187,41 @@ public final class AutonFactory {
 				shootCmd,
 				Commands.parallel(
 					aimCmd2,
-					intakeShotCycle(intake, conveyor, shooter)),
+					intakeShotCycle(intake, conveyor, shooter)
+				),
 				Commands.parallel(
 					pathCmd,
 					Commands.sequence(
 						Commands.waitSeconds(0.52),
 						Commands.parallel(
 							aimCmd3,
-							intakeShotCycle(intake, conveyor, shooter))),
+							intakeShotCycle(
+								intake, conveyor, shooter)
+							)
+						),
 					Commands.sequence(
 						Commands.waitSeconds(1.38),
 						Commands.parallel(
 							aimCmd4,
-							intakeShotCycle(intake, conveyor, shooter))),
+							intakeShotCycle(intake, conveyor, shooter)
+						)
+					),
 					Commands.sequence(
 						Commands.waitSeconds(2.86),
-						finalIntake)),
+						finalIntake
+					)
+				),
 				aimCmd5,
-				finalShot));
+				finalShot
+			)
+		);
+	}
+
+	public static Command fivePcFollow(Swerve swerve) {
+		var resetPoseCmd = swerve.resetPose(fivePc);
+		var pathCmd = AutoBuilder.followPath(fivePc);
+
+		return resetPoseCmd.andThen(pathCmd);
 	}
 
 	private static Command intakeShotCycle(Intake intake, Conveyor conveyor, Shooter shooter) {
@@ -169,5 +231,32 @@ public final class AutonFactory {
 		var spinUpAndShoot = Commands.sequence(spinUpCmd, shootCmd).asProxy();
 		var intakeCmd = intake.outtake().withTimeout(intakeTimeout).asProxy();
 		return Commands.parallel(conveyCmd, intakeCmd, spinUpAndShoot);
+	}
+
+	private static Command shoot(Superstructure superstructure, Shooter shooter) {
+		var aimAndSpinUp = superstructure.aimAndSpinUp(() -> kSubwooferAngle, false, true);
+		var waitUntilSpunUp = Commands.waitUntil(() -> shooter.spinUpFinished());
+		var shoot = Commands.runOnce(() -> superstructure.forceStateToShooting()).asProxy();
+
+		return Commands.parallel(
+			Commands.print("aim and spin up"),
+			aimAndSpinUp.andThen(Commands.print("aimAndSpinUp_DONE")),
+			Commands.sequence(
+				Commands.print("waiting for spin up"),
+				waitUntilSpunUp.andThen(Commands.print("waitUntilSpunUp_DONE")),
+				Commands.print("shooting"),
+				shoot.andThen(Commands.print("shoot_DONE")),
+				Commands.print("shot")
+			)
+		);
+	}
+
+	private static Command incrementState() {
+		return Commands.runOnce(
+			() -> {
+				currentState++;
+				log_state.accept(
+					currentState);
+			});
 	}
 }

@@ -100,22 +100,10 @@ public class Robot extends TimedRobot {
 	private void mapAutonCommands() {
 		AutonChooser.setDefaultAuton(AutonOption.DO_NOTHING);
 		AutonChooser.assignAutonCommand(AutonOption.DO_NOTHING, Commands.none());
-		AutonChooser.assignAutonCommand(AutonOption.ONE_METER, AutonFactory.oneMeter(swerve),
-			Trajectories.oneMeter.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SIMPLE_THING, AutonFactory.simpleThing(swerve),
-			Trajectories.simpleThing.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.LEAVE, AutonFactory.leave(superstructure, swerve),
+		AutonChooser.assignAutonCommand(AutonOption.LEAVE, AutonFactory.leave(superstructure, shooter, swerve),
 			Trajectories.leave.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.TWO_PC, AutonFactory.twoPc(superstructure, swerve),
+		AutonChooser.assignAutonCommand(AutonOption.TWO_PC, AutonFactory.twoPc(superstructure, shooter, swerve),
 			Trajectories.leave.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.THREE_PC,
-			AutonFactory.threePiece(swerve, intake, shooter, aim, conveyor),
-			Trajectories.threePc.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.FOUR_PC,
-			AutonFactory.fourPiece(swerve, intake, shooter, aim, conveyor));
-		AutonChooser.assignAutonCommand(AutonOption.FIVE_PC,
-			AutonFactory.fivePiece(swerve, intake, shooter, aim, conveyor),
-			Trajectories.fivePc.getInitialPose());
 	}
 
 	private void driverRumble(double intensity) {
@@ -163,11 +151,12 @@ public class Robot extends TimedRobot {
 		/* manipulator controls */
 		manipulator.rightTrigger().whileTrue(intake.outtake());
 		manipulator.b().and(manipulator.povUp()).whileTrue(conveyor.runFast());
-		manipulator.rightBumper().whileTrue(superstructure.aim(() -> AimK.kSubwooferAngle, false));
-		manipulator.leftBumper().whileTrue(superstructure.aim(() -> AimK.kAmpAngle, true));
+		manipulator.rightBumper().whileTrue(superstructure.aimAndSpinUp(() -> AimK.kSubwooferAngle, false));
+		manipulator.leftBumper().whileTrue(superstructure.aimAndSpinUp(() -> AimK.kAmpAngle, true));
 		manipulator.b().and(manipulator.povDown())
 			.onTrue(Commands.runOnce(() -> superstructure.forceStateToShooting()));
 		manipulator.x().and((manipulator.back().and(manipulator.start())).negate()).whileTrue(aim.hardStop());
+		manipulator.y().whileTrue(intake.runLilSpins());
 
 		/* testing buttons */
 		manipulator.a().whileTrue(superstructure.backwardsRun());
