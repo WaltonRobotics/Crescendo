@@ -107,8 +107,8 @@ public class Constants {
     }
 
     public class AutoK {
-        public static final double kPX = 3.25; // 8
-        public static final double kPY = 3.25;
+        public static final double kPX = 3.5; // 8
+        public static final double kPY = 3.5;
         public static final double kPTheta = 6; // 1
 
         public static final HolonomicPathFollowerConfig kPathFollowerConfig = new HolonomicPathFollowerConfig(

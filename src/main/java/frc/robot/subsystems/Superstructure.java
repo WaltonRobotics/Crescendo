@@ -89,6 +89,8 @@ public class Superstructure extends SubsystemBase {
 
     private final Trigger stateTrg_idle = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.IDLE);
+    private final Trigger stateTrg_intake = new Trigger(sensorEventLoop,
+        () -> m_state == NoteState.INTAKE);
     private final Trigger stateTrg_noteRetracting = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.ROLLER_BEAM_RETRACT);
     private final Trigger stateTrg_spinUp = new Trigger(sensorEventLoop, () -> m_state == NoteState.SHOT_SPINUP);
@@ -112,8 +114,7 @@ public class Superstructure extends SubsystemBase {
             }
         });
 
-    /** true means beam is OK */
-    private boolean beamBreakIrq = true;
+    private boolean beamBreakIrq = false;
     private double beamBreakIrqLastRising = 0;
     private double beamBreakIrqLastFalling = 0;
     private final SynchronousInterrupt irq_shooterBeamBreak = new SynchronousInterrupt(shooterBeamBreak);
@@ -215,12 +216,13 @@ public class Superstructure extends SubsystemBase {
 
         // intakeReq && idle
         (trg_intakeReq.and(stateTrg_idle))
-            .onTrue(Commands.runOnce(() -> m_state = NoteState.INTAKE)
-                .alongWith(
-                    // wait until aim is ±50 degrees to intake mode
-                    Commands.sequence(
-                        m_aim.intakeAngleNearCmd(),
-                        Commands.parallel(m_intake.run(), m_conveyor.startSlow()))));
+            .onTrue(Commands.runOnce(() -> m_state = NoteState.INTAKE));
+        stateTrg_intake.onTrue(
+            // wait until aim is ±50 degrees to intake mode
+            Commands.sequence(
+                Commands.print("it should be intaking"),
+                m_aim.intakeAngleNearCmd(),
+                Commands.parallel(m_intake.run(), m_conveyor.startSlow())));
 
         // !(intakeReq || idle) => !intakeReq && !idle
         (trg_intakeReq.or(trg_frontSensorIrq)).onFalse(changeStateCmd(NoteState.IDLE));
@@ -237,7 +239,7 @@ public class Superstructure extends SubsystemBase {
 
         // !beamBreak && noteRetracting
         // Post-retract stop
-        (irqTrg_beamBreak.negate().and(stateTrg_noteRetracting))
+        ((irqTrg_beamBreak.negate().debounce(0.05)).and(stateTrg_noteRetracting))
             .onTrue(
                 Commands.sequence(
                     Commands.waitSeconds(0.35),
@@ -337,11 +339,10 @@ public class Superstructure extends SubsystemBase {
         return Commands.sequence(
             Commands.parallel(
                 aimCmd.asProxy().andThen(Commands.print("AimAndSpinUp_AIM_DONE")),
-                waitForNoteReady.andThen(Commands.print("AimAndSpinUp_NOTERD_DONE"))
-            ),
-            Commands.parallel(
+                Commands.sequence(
+                waitForNoteReady.andThen(Commands.print("AimAndSpinUp_NOTERD_DONE")),
                 shootCmd.asProxy().andThen(Commands.print("shooty shoot done (no yelling)")),
-                changeStateCmd(NoteState.SHOT_SPINUP)
+                changeStateCmd(NoteState.SHOT_SPINUP))
             )
         );
     }
@@ -411,10 +412,15 @@ public class Superstructure extends SubsystemBase {
         m_state = NoteState.SHOOTING;
     }
 
+    public Command autonShootReq() {
+        return runOnce(() -> autonShoot = true);
+    }
+
     public Command autonIntakeCmd() {
         return runOnce(() -> {
             autonIntake = true;
             autonShoot = false;
+            m_state = NoteState.INTAKE;
         });
     }
 

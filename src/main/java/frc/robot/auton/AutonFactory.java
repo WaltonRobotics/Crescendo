@@ -12,7 +12,7 @@ import frc.util.logging.WaltLogger.DoubleLogger;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
 
-// import static frc.robot.Constants.AimK.kPodiumAngle;
+import static frc.robot.Constants.AimK.kPodiumAngle;
 import static frc.robot.Constants.AimK.kSubwooferAngle;
 import static frc.robot.auton.Paths.*;
 
@@ -62,27 +62,34 @@ public final class AutonFactory {
 		var pathFollow = AutoBuilder.followPath(altTwo).asProxy();
 		var preloadShot = shoot(superstructure, shooter, true);
 		var intake = superstructure.autonIntakeCmd().asProxy();
-		var swerveAim = swerve.aim();
-		// var aimAndSpinUp = superstructure.aimAndSpinUp(() -> kPodiumAngle, false, true);
-		// var secondShot = Commands.runOnce(() -> superstructure.forceStateToShooting()).asProxy();
+		var swerveAim = swerve.aim().asProxy();
+		var aimAndSpinUp = superstructure.aimAndSpinUp(() -> kPodiumAngle, false, true);
+		var secondShot = superstructure.autonShootReq().asProxy();
 
 		return Commands.sequence(
 			Commands.parallel(
 				resetPose, 
 				preloadShot),
 			Commands.parallel(
-				intake.andThen(Commands.print("intake done")),
+				intake,
 				pathFollow
 			),
-			Commands.print("path done, waiting for note ready"),
+			// Commands.print("path done, waiting for note ready"),
 			Commands.parallel(
-				Commands.waitUntil(superstructure.stateTrg_noteReady),
-				swerveAim)
-			// Commands.print("note ready & aimed"),
-			// Commands.parallel(
-			// 	aimAndSpinUp,
-			// 	secondShot
-			// )
+				Commands.sequence(
+					Commands.waitUntil(superstructure.stateTrg_noteReady),
+					Commands.print("note ready")
+				)
+				// Commands.sequence(
+				// 	swerveAim,
+				// 	Commands.print("aimed")
+				// )
+			),
+			Commands.print("note ready & aimed"),
+			Commands.parallel(
+				aimAndSpinUp,
+				secondShot
+			)
 		);
 	}
 
@@ -193,8 +200,7 @@ public final class AutonFactory {
 		);
 	}
 
-	public static Command fivePiece(
-		Swerve swerve, Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
+	public static Command fivePiece(Swerve swerve, Intake intake, Shooter shooter, Aim aim, Conveyor conveyor) {
 		var toAngle = Commands.repeatingSequence(
 			aim.toTarget());
 		var resetPoseCmd = swerve.resetPose(fivePc);
