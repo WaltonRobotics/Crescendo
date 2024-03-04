@@ -42,23 +42,14 @@ public class Superstructure extends SubsystemBase {
         PubSubOption.sendAll(true));
     private final BooleanLogger log_frontVisiSightIrq = WaltLogger.logBoolean("Sensors", "frontVisiSightIrq",
         PubSubOption.sendAll(true));
+    private final BooleanLogger log_shooterBeamBreakIrq = WaltLogger.logBoolean("Sensors", "shooterBeamBreakIrq",
+        PubSubOption.sendAll(true));
     private final BooleanLogger log_shooterBeamBreak = WaltLogger.logBoolean("Sensors", "shooterBeamBreak",
         PubSubOption.sendAll(true));
     private final BooleanLogger log_autonIntakeReq = WaltLogger.logBoolean(kDbTabName, "autonIntakeReq",
         PubSubOption.sendAll(true));
     private final BooleanLogger log_autonShootReq = WaltLogger.logBoolean(kDbTabName, "autonShootReq",
-        PubSubOption.sendAll(true));
-
-    /** To be set on any edge from the AsyncIrq callback  */
-    private boolean frontVisiSightSeenNote = false;
-
-    private final AsynchronousInterrupt ai_frontVisiSight = new AsynchronousInterrupt(frontVisiSight,
-        (Boolean rising, Boolean falling) -> {
-            if ((rising || falling) && !frontVisiSightSeenNote) {
-                frontVisiSightSeenNote = true;
-                log_frontVisiSightIrq.accept(true);
-            }
-        });
+        PubSubOption.sendAll(true)); 
 
     private NoteState m_state;
 
@@ -86,7 +77,7 @@ public class Superstructure extends SubsystemBase {
     /** true = has note */
     private final Trigger trg_frontSensorIrq;
 
-    private final Trigger trg_spunUp;
+    public final Trigger trg_spunUp;
     private final Trigger trg_atAngle;
 
     private final Trigger trg_intakeReq;
@@ -112,6 +103,32 @@ public class Superstructure extends SubsystemBase {
         () -> m_state == NoteState.LEFT_BEAM_BREAK);
     public final Trigger stateTrg_noteReady = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.NOTE_READY);
+
+    /** To be set on any edge from the AsyncIrq callback  */
+    private boolean frontVisiSightSeenNote = false;
+    private final AsynchronousInterrupt ai_frontVisiSight = new AsynchronousInterrupt(frontVisiSight,
+        (Boolean rising, Boolean falling) -> {
+            if ((rising || falling) && !frontVisiSightSeenNote) {
+                frontVisiSightSeenNote = true;
+                log_frontVisiSightIrq.accept(true);
+            }
+        });
+
+    private boolean beamBreakIrq = false;
+    private final AsynchronousInterrupt ai_shooterBeamBreak = new AsynchronousInterrupt(shooterBeamBreak,
+        (Boolean rising, Boolean falling) -> {
+            if (rising) {
+                beamBreakIrq = true;
+                log_shooterBeamBreakIrq.accept(true);
+                System.out.println("SHOOTER BEAM RISING");
+            }
+            
+            if (falling) {
+                beamBreakIrq = false;
+                log_shooterBeamBreakIrq.accept(false);
+                System.out.println("SHOOTER BEAM FALLING");
+            }
+        });
 
     private final DoubleLogger log_state = WaltLogger.logDouble(kDbTabName, "state",
         PubSubOption.sendAll(true));
@@ -145,10 +162,13 @@ public class Superstructure extends SubsystemBase {
         ai_frontVisiSight.setInterruptEdges(true, true);
         ai_frontVisiSight.enable();
 
-        trg_frontSensorIrq = new Trigger(sensorEventLoop, () -> frontVisiSightSeenNote);
-        trg_shooterSensor = new Trigger(sensorEventLoop, bs_shooterBeamBreak);
+        ai_shooterBeamBreak.setInterruptEdges(true, true);
+        // ai_shooterBeamBreak.enable();
 
-        trg_spunUp = new Trigger(m_shooter::spinUpFinished).debounce(0.04);
+        trg_frontSensorIrq = new Trigger(sensorEventLoop, () -> frontVisiSightSeenNote);
+        trg_shooterSensor = new Trigger(sensorEventLoop, () -> beamBreakIrq);
+
+        trg_spunUp = new Trigger(m_shooter::spinUpFinished).debounce(0.05);
         trg_atAngle = new Trigger(m_aim::aimFinished);
 
         m_state = NoteState.IDLE;
@@ -351,18 +371,22 @@ public class Superstructure extends SubsystemBase {
         log_frontVisiSight.accept(bs_frontVisiSight.getAsBoolean());
         log_shooterBeamBreak.accept(bs_shooterBeamBreak.getAsBoolean());
         log_frontVisiSightIrq.accept(frontVisiSightSeenNote);
+        log_shooterBeamBreakIrq.accept(beamBreakIrq);
         log_driverIntakeReq.accept(trg_driverIntakeReq.getAsBoolean());
         log_autonIntakeReq.accept(autonIntake);
         log_autonShootReq.accept(autonShoot);
         log_aimReady.accept(trg_atAngle.getAsBoolean());
     }
 
-    public void forceStateToNoteReady() {
-        timothyEntered = true;
-        timothyIn = true;
-        autonShoot = false;
-        autonIntake = false;
-        m_state = NoteState.NOTE_READY;
+    public Command forceStateToNoteReady() {
+        return runOnce(() -> {
+            timothyEntered = true;
+            timothyIn = true;
+            autonShoot = false;
+            autonIntake = false;
+            m_state = NoteState.NOTE_READY;
+            System.out.println("ran");
+        });
     }
 
     public void forceStateToShooting() {
@@ -378,10 +402,6 @@ public class Superstructure extends SubsystemBase {
             autonIntake = true;
             autonShoot = false;
         });
-    }
-
-    public Command waitUntilIdle() {
-        return Commands.waitUntil(() -> isIdle());
     }
 
     public boolean isIdle() {

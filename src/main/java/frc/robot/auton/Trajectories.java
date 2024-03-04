@@ -10,4 +10,6 @@ public class Trajectories {
 	public static final ChoreoTrajectory threePc = Choreo.getTrajectory("3pc.1");
 	public static final ChoreoTrajectory fourPc = Choreo.getTrajectory("4pc.1");
 	public static final ChoreoTrajectory fivePc = Choreo.getTrajectory("5pc.1");
+	public static final ChoreoTrajectory altTwo = Choreo.getTrajectory("alt2.1");
+
 }

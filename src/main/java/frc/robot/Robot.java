@@ -104,6 +104,8 @@ public class Robot extends TimedRobot {
 			Trajectories.leave.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.TWO_PC, AutonFactory.twoPc(superstructure, shooter, swerve),
 			Trajectories.leave.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.ALT_TWO_PC, AutonFactory.altTwoPc(superstructure, shooter, swerve),
+			Trajectories.leave.getInitialPose());
 	}
 
 	private void driverRumble(double intensity) {
@@ -137,6 +139,8 @@ public class Robot extends TimedRobot {
 					-driver.getLeftX()))));
 		driver.x().whileTrue(swerve.goToAutonPose());
 		driver.leftBumper().onTrue(swerve.runOnce(() -> swerve.seedFieldRelative()));
+		driver.y().whileTrue(swerve.aim());
+		driver.rightBumper().onTrue(swerve.resetPoseToSpeaker());
 
 		/* sysid buttons */
 		driver.back().and(driver.y()).whileTrue(swerve.sysIdDynamic(Direction.kForward));
@@ -165,9 +169,7 @@ public class Robot extends TimedRobot {
 			.onTrue(aim.decreaseAngle());
 		manipulator.povLeft().onTrue(aim.to90ish());
 		manipulator.povRight().onTrue(aim.amp());
-
-		manipulator.start().whileTrue(Commands.startEnd(
-			() -> aim.setCoast(true), () -> aim.setCoast(false)));
+		manipulator.start().whileTrue(AutonFactory.shoot(superstructure, shooter, true));
 
 		/* sysid buttons */
 		manipulator.back().and(manipulator.y()).whileTrue(shooter.sysIdDynamic(Direction.kForward));
@@ -219,7 +221,6 @@ public class Robot extends TimedRobot {
 	@Override
 	public void autonomousInit() {
 		SignalLogger.start();
-		superstructure.forceStateToNoteReady();
 		m_autonomousCommand = getAutonomousCommand();
 		if (m_autonomousCommand != null) {
 			m_autonomousCommand.schedule();

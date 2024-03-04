@@ -109,7 +109,7 @@ public class Constants {
     public class AutoK {
         public static final double kPX = 3.25; // 8
         public static final double kPY = 3.25;
-        public static final double kPTheta = 5.15; // 1
+        public static final double kPTheta = 6; // 1
 
         public static final HolonomicPathFollowerConfig kPathFollowerConfig = new HolonomicPathFollowerConfig(
             new PIDConstants(kPX),
@@ -312,7 +312,6 @@ public class Constants {
         public static final int kHomeSwitch = 1;
 
         // 125:1 MaxPlanetary, 24:60 belt drive, 312.5:1 total
-        // this does not total to 312.5 : 1 banks it's 250 : 1
         public static final double kGearRatio = (125 * (60.0 / 24));
 
         public static final Measure<Distance> kLength = Inches.of(19.75);
@@ -324,6 +323,7 @@ public class Constants {
 
         public static final Measure<Angle> kSubwooferAngle = Rotations.of(0.066);
         public static final Measure<Angle> kAmpAngle = Rotations.of(0.234131);
+        public static final Measure<Angle> kPodiumAngle = Rotations.of(0.007);
     }
 
     // public class ClimberK {

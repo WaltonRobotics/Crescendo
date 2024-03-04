@@ -43,6 +43,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Vision.VisionMeasurement;
 import frc.robot.auton.AutonChooser;
 import frc.util.AdvantageScopeUtil;
+import frc.util.AllianceFlipUtil;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 
@@ -68,6 +69,8 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final PIDController m_xController = new PIDController(kPX, 0.0, 0.0);
 	private final PIDController m_yController = new PIDController(kPY, 0.0, 0.0);
 	private final PIDController m_thetaController = new PIDController(kPTheta, 0.0, 0.0);
+
+	private Rotation2d m_desiredRot;
 
 	private final double m_characterisationSpeed = 0.5;
 	public final DoubleSupplier m_gyroYawRadsSupplier;
@@ -131,6 +134,8 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			startSimThread();
 		}
 		m_gyroYawRadsSupplier = () -> getPigeon2().getAngle();
+		m_thetaController.enableContinuousInput(0, 2 * Math.PI);
+		m_desiredRot = new Rotation2d();
 	}
 
 	public Command wheelRadiusCharacterisation(double omegaDirection) {
@@ -247,6 +252,18 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 				setControl(m_autoRequest.withSpeeds(speeds));
 			}
 		});
+	}
+
+	public Command aim() {
+		return run(() -> {
+			m_desiredRot = AllianceFlipUtil.apply(Rotation2d.fromDegrees(0));
+			var curPose = getState().Pose;
+			var thetaSpeed = m_thetaController.calculate(curPose.getRotation().getRadians(),
+				m_desiredRot.getRadians());
+			var speeds = ChassisSpeeds.fromFieldRelativeSpeeds(0, 0, thetaSpeed, m_desiredRot);
+
+			setControl(m_autoRequest.withSpeeds(speeds));
+		}).until(() -> MathUtil.isNear(m_desiredRot.getDegrees(), getState().Pose.getRotation().getDegrees(), 1));
 	}
 
 	public Pose3d getPose3d() {
