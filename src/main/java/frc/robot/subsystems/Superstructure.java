@@ -226,11 +226,22 @@ public class Superstructure extends SubsystemBase {
         // !(intakeReq || idle) => !intakeReq && !idle
         (trg_intakeReq.or(trg_frontSensorIrq)).onFalse(changeStateCmd(NoteState.IDLE));
 
-        trg_frontSensorIrq.onTrue(cmdManipRumble(1, 0.5));
+        trg_frontSensorIrq
+            .onTrue(
+                Commands.parallel(
+                    cmdDriverRumble(1, 0.5),
+                    cmdManipRumble(1, 0.5)
+                )
+            );
 
         // note in shooter and not shooting or spinupping
         (irqTrg_beamBreak.and((extStateTrg_shooting.or(stateTrg_spinUp)).negate()))
-            .onTrue(changeStateCmd(NoteState.ROLLER_BEAM_RETRACT));
+            .onTrue(
+                Commands.parallel(
+                    changeStateCmd(NoteState.ROLLER_BEAM_RETRACT),
+                    Commands.runOnce(() -> driverRumbled = false)
+                )
+            );
 
         stateTrg_noteRetracting.onTrue(
             Commands.parallel(
