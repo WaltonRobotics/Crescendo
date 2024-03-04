@@ -13,6 +13,7 @@ import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.wpilibj.AsynchronousInterrupt;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.SynchronousInterrupt;
 import edu.wpi.first.wpilibj.event.EventLoop;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -73,7 +74,7 @@ public class Superstructure extends SubsystemBase {
     private final Trigger trg_autonShootReq = new Trigger(() -> autonShoot);
 
     /** true = has note */
-    private final Trigger trg_shooterSensor;
+    // private final Trigger trg_shooterSensor;
     /** true = has note */
     private final Trigger trg_frontSensorIrq;
 
@@ -93,14 +94,11 @@ public class Superstructure extends SubsystemBase {
     private final Trigger stateTrg_spinUp = new Trigger(sensorEventLoop, () -> m_state == NoteState.SHOT_SPINUP);
     private final Trigger stateTrg_shooting = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.SHOOTING);
-    private final Trigger extStateTrg_shooting = new Trigger(sensorEventLoop,
-        () -> m_state == NoteState.SHOOTING ||
-            m_state == NoteState.LEAVING_BEAM_BREAK ||
-            m_state == NoteState.LEFT_BEAM_BREAK);
-    private final Trigger stateTrg_leavingBeamBreak = new Trigger(sensorEventLoop,
+        private final Trigger stateTrg_leavingBeamBreak = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.LEAVING_BEAM_BREAK);
-    private final Trigger stateTrg_leftBeamBreak = new Trigger(sensorEventLoop,
+        private final Trigger stateTrg_leftBeamBreak = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.LEFT_BEAM_BREAK);
+    private final Trigger extStateTrg_shooting = stateTrg_shooting.or(stateTrg_leavingBeamBreak).or(stateTrg_leftBeamBreak);
     public final Trigger stateTrg_noteReady = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.NOTE_READY);
 
@@ -114,21 +112,13 @@ public class Superstructure extends SubsystemBase {
             }
         });
 
-    private boolean beamBreakIrq = false;
-    private final AsynchronousInterrupt ai_shooterBeamBreak = new AsynchronousInterrupt(shooterBeamBreak,
-        (Boolean rising, Boolean falling) -> {
-            if (rising) {
-                beamBreakIrq = true;
-                log_shooterBeamBreakIrq.accept(true);
-                System.out.println("SHOOTER BEAM RISING");
-            }
-            
-            if (falling) {
-                beamBreakIrq = false;
-                log_shooterBeamBreakIrq.accept(false);
-                System.out.println("SHOOTER BEAM FALLING");
-            }
-        });
+    /** true means beam is OK */
+    private boolean beamBreakIrq = true;
+    private double beamBreakIrqLastRising = 0;
+    private double beamBreakIrqLastFalling = 0;
+    private final SynchronousInterrupt irq_shooterBeamBreak = new SynchronousInterrupt(shooterBeamBreak);
+    private final Trigger irqTrg_beamBreak = new Trigger(sensorEventLoop, () -> beamBreakIrq);
+
 
     private final DoubleLogger log_state = WaltLogger.logDouble(kDbTabName, "state",
         PubSubOption.sendAll(true));
@@ -162,11 +152,11 @@ public class Superstructure extends SubsystemBase {
         ai_frontVisiSight.setInterruptEdges(true, true);
         ai_frontVisiSight.enable();
 
-        ai_shooterBeamBreak.setInterruptEdges(true, true);
+        irq_shooterBeamBreak.setInterruptEdges(true, true);
         // ai_shooterBeamBreak.enable();
 
         trg_frontSensorIrq = new Trigger(sensorEventLoop, () -> frontVisiSightSeenNote);
-        trg_shooterSensor = new Trigger(sensorEventLoop, () -> beamBreakIrq);
+        // trg_shooterSensor = new Trigger(sensorEventLoop, () -> shooterBeamBreak.get());
 
         trg_spunUp = new Trigger(m_shooter::spinUpFinished).debounce(0.05);
         trg_atAngle = new Trigger(m_aim::aimFinished);
@@ -221,6 +211,8 @@ public class Superstructure extends SubsystemBase {
     }
 
     private void configureStateTriggers() {
+        irqTrg_beamBreak.onTrue(Commands.none());
+
         // intakeReq && idle
         (trg_intakeReq.and(stateTrg_idle))
             .onTrue(Commands.runOnce(() -> m_state = NoteState.INTAKE)
@@ -236,7 +228,7 @@ public class Superstructure extends SubsystemBase {
         trg_frontSensorIrq.onTrue(cmdManipRumble(1, 0.5));
 
         // note in shooter and not shooting
-        (trg_shooterSensor.and((extStateTrg_shooting.or(stateTrg_spinUp)).negate()))
+        (irqTrg_beamBreak.and((extStateTrg_shooting.or(stateTrg_spinUp)).negate()))
             .onTrue(changeStateCmd(NoteState.ROLLER_BEAM_RETRACT));
         stateTrg_noteRetracting.onTrue(
             Commands.parallel(
@@ -245,7 +237,7 @@ public class Superstructure extends SubsystemBase {
 
         // !beamBreak && noteRetracting
         // Post-retract stop
-        (trg_shooterSensor.negate().and(stateTrg_noteRetracting))
+        (irqTrg_beamBreak.negate().and(stateTrg_noteRetracting))
             .onTrue(
                 Commands.sequence(
                     Commands.waitSeconds(0.35),
@@ -282,14 +274,14 @@ public class Superstructure extends SubsystemBase {
 
         // if note in shooter sensor and state shooting
         // state -> LEAVING_BEAM_BREAK, timothy says bye 😃
-        (trg_shooterSensor.and(stateTrg_shooting))
+        (irqTrg_beamBreak.and(stateTrg_shooting))
             .onTrue(Commands.parallel(
                 changeStateCmd(NoteState.LEAVING_BEAM_BREAK),
                 Commands.runOnce(() -> timothyFieldTrip = true)));
 
         // if note not in shooter and state leaving and timothy waving bye 😄
         // state -> LEFT_BEAM_BREAK
-        ((trg_shooterSensor.debounce(0.1)).negate().and(stateTrg_leavingBeamBreak).and(trg_timothyFieldTrip))
+        ((irqTrg_beamBreak.debounce(0.1)).negate().and(stateTrg_leavingBeamBreak).and(trg_timothyFieldTrip))
             .onTrue(changeStateCmd(NoteState.LEFT_BEAM_BREAK));
 
         // if left beam break
@@ -363,7 +355,29 @@ public class Superstructure extends SubsystemBase {
             Commands.sequence(Commands.waitUntil(trg_spunUp), conveyorCmd));
     }
 
+    private void evaluateBeamBreakIrq() {
+         double latestRising = irq_shooterBeamBreak.getRisingTimestamp();
+        double latestFalling = irq_shooterBeamBreak.getFallingTimestamp();
+        boolean risingNew = latestRising > beamBreakIrqLastRising;
+        if (risingNew) {
+            beamBreakIrqLastRising = latestRising;
+        }
+
+        boolean fallingNew = latestFalling > beamBreakIrqLastFalling;
+        if (fallingNew) {
+            beamBreakIrqLastFalling = latestFalling;
+        }
+
+        if (latestFalling > latestRising && fallingNew) {
+            beamBreakIrq = true;
+        } else if (latestRising > latestFalling && risingNew) {
+            beamBreakIrq = false;
+        }
+    }
+
     public void fastPeriodic() {
+        evaluateBeamBreakIrq();
+
         log_state.accept((double) m_state.idx);
         log_timothyEntered.accept(timothyEntered);
         log_timothyIn.accept(timothyIn);

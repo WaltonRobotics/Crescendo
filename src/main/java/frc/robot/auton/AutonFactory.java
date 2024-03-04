@@ -43,10 +43,10 @@ public final class AutonFactory {
 	}
 
 	public static Command leave(Superstructure superstructure, Shooter shooter, Swerve swerve) {
-		var resetPose = swerve.resetPose(path_Leave).asProxy();
+		var resetPose = swerve.resetPose(path_leave).asProxy();
 		var shoot = shoot(superstructure, shooter, true);
 
-		var pathFollow = AutoBuilder.followPath(path_Leave).asProxy();
+		var pathFollow = AutoBuilder.followPath(path_leave).asProxy();
 		return Commands.sequence(
 			Commands.parallel(
 				resetPose,
@@ -60,7 +60,6 @@ public final class AutonFactory {
 	public static Command altTwoPc(Superstructure superstructure, Shooter shooter, Swerve swerve) {
 		var resetPose = swerve.resetPose(altTwo).asProxy();
 		var pathFollow = AutoBuilder.followPath(altTwo).asProxy();
-		var forceReady = superstructure.forceStateToNoteReady();
 		var preloadShot = shoot(superstructure, shooter, true);
 		var intake = superstructure.autonIntakeCmd().asProxy();
 		var swerveAim = swerve.aim();
@@ -70,7 +69,7 @@ public final class AutonFactory {
 		return Commands.sequence(
 			Commands.parallel(
 				resetPose, 
-				Commands.sequence(forceReady, preloadShot)),
+				preloadShot),
 			Commands.parallel(
 				intake.andThen(Commands.print("intake done")),
 				pathFollow
