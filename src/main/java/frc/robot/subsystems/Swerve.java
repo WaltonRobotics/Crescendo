@@ -48,6 +48,7 @@ import frc.util.logging.WaltLogger.DoubleLogger;
 
 import static frc.robot.Constants.FieldK.*;
 import static frc.robot.generated.TunerConstants.kDriveRadius;
+import static frc.robot.generated.TunerConstants.kDriveRotationsPerMeter;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.AutoK.*;
 
@@ -139,7 +140,8 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			accumGyroYawRads = 0;
 			currentEffectiveWheelRadius = 0;
 			for (int i = 0; i < Modules.length; i++) {
-				startWheelPositions[i] = Modules[i].getPosition(true).angle.getRadians();
+				var pos = Modules[i].getPosition(true);
+				startWheelPositions[i] = pos.distanceMeters * kDriveRotationsPerMeter;
 			}
 			m_omegaLimiter.reset(0);
 		});
@@ -153,7 +155,8 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 				double averageWheelPosition = 0;
 				double[] wheelPositions = new double[4];
 				for (int i = 0; i < Modules.length; i++) {
-					wheelPositions[i] = Modules[i].getPosition(true).angle.getRadians();
+					var pos = Modules[i].getPosition(true);
+					wheelPositions[i] = pos.distanceMeters * kDriveRotationsPerMeter;
 					averageWheelPosition += Math.abs(wheelPositions[i] - startWheelPositions[i]);
 				}
 				averageWheelPosition /= 4.0;
