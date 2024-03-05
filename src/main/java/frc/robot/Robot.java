@@ -135,10 +135,11 @@ public class Robot extends TimedRobot {
 				.withRotationalRate(-driver.getRightX() * kMaxAngularRate);
 		}));
 		driver.a().whileTrue(swerve.applyRequest(() -> brake));
-		driver.b().whileTrue(swerve
+		driver.b().and(driver.rightTrigger().negate()).whileTrue(swerve
 			.applyRequest(
 				() -> point.withModuleDirection(new Rotation2d(-driver.getLeftY(),
 					-driver.getLeftX()))));
+		driver.b().and(driver.rightTrigger()).onTrue(Commands.runOnce(() -> superstructure.forceStateToShooting()));
 		driver.x().whileTrue(swerve.goToAutonPose());
 		driver.leftBumper().onTrue(swerve.runOnce(() -> swerve.seedFieldRelative()));
 		driver.y().whileTrue(swerve.aim(0));

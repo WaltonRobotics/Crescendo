@@ -193,26 +193,24 @@ public class Superstructure extends SubsystemBase {
         return Commands.parallel(shootCmd, conveyorCmd);
     }
 
-    private Command cmdDriverRumble(double intensity, double seconds) {
-        if (driverRumbled) {
-            return Commands.none();
-        }
+   private Command cmdDriverRumble(double intensity, double seconds) {
         return Commands.startEnd(
             () -> {
-                m_driverRumbler.accept(intensity);
-                driverRumbled = true;
+                if (!driverRumbled) {
+                    m_driverRumbler.accept(intensity);
+                    driverRumbled = true;
+                }
             },
             () -> m_driverRumbler.accept(0)).withTimeout(seconds);
     }
 
     private Command cmdManipRumble(double intensity, double seconds) {
-        if (manipulatorRumbled) {
-            return Commands.none();
-        }
         return Commands.startEnd(
             () -> {
-                m_manipRumbler.accept(intensity);
-                manipulatorRumbled = true;
+                if (!manipulatorRumbled) {
+                    m_manipRumbler.accept(intensity);
+                    manipulatorRumbled = true;
+                }
             },
             () -> m_manipRumbler.accept(0)).withTimeout(seconds);
     }
@@ -281,10 +279,9 @@ public class Superstructure extends SubsystemBase {
             .onTrue(
                 Commands.parallel(
                     cmdDriverRumble(1, 0.5), 
-                    Commands.runOnce(
-                        () -> m_state = NoteState.SHOOT_OK)
-                    )
-                );
+                    changeStateCmd(NoteState.SHOOT_OK)
+                )
+            );
 
         // if shooter spun up and asked to shoot
         // state -> SHOOTING

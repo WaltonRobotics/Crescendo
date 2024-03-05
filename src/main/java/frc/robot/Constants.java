@@ -227,7 +227,7 @@ public class Constants {
         public static final String kDbTabName = "Shooter";
 
         public static final Measure<Velocity<Angle>> kAmpTolerance = RotationsPerSecond.of(1);
-        public static final Measure<Velocity<Angle>> kBigShootTolerance = RotationsPerSecond.of(0.8);
+        public static final Measure<Velocity<Angle>> kBigShootTolerance = RotationsPerSecond.of(2);
 
         public static final int kRightId = 13;
         public static final int kLeftId = 14;
@@ -325,6 +325,8 @@ public class Constants {
         public static final Measure<Angle> kSubwooferAngle = Rotations.of(0.066);
         public static final Measure<Angle> kAmpAngle = Rotations.of(0.234131);
         public static final Measure<Angle> kPodiumAngle = Rotations.of(0.0074);
+
+        public static final Measure<Angle> kTolerance = Degrees.of(2);
     }
 
     // public class ClimberK {
