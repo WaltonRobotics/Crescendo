@@ -130,11 +130,8 @@ public class Shooter extends SubsystemBase {
         });
     }
 
-    private Command toVelo(Supplier<Measure<Velocity<Angle>>> velo) {
-        return toVelo(velo, () -> false);
-    };
 
-    private Command toVelo(Supplier<Measure<Velocity<Angle>>> velo, BooleanSupplier idle) {
+    private Command toVeloAuton(Supplier<Measure<Velocity<Angle>>> velo, BooleanSupplier idle) {
         Runnable spin = () -> {
             var velMeas = velo.get();
             m_rightTarget = velMeas.times(m_spinAmt);
@@ -148,22 +145,10 @@ public class Shooter extends SubsystemBase {
         };
 
         Consumer<Boolean> stopSpin = (interrupted) -> {
-            m_rightTarget = RotationsPerSecond.of(0);
-            m_leftTarget = RotationsPerSecond.of(0);
-            m_right.setControl(m_request.withVelocity(0).withSlot(0));
-            m_left.setControl(m_request.withVelocity(0).withSlot(0));
-            m_right.setControl(m_coast);
-            m_left.setControl(m_coast);
             System.out.println("ToVelo_STOP");
         };
 
         return new FunctionalCommand(spin, () -> {}, stopSpin, idle);
-
-        // return runEnd(spin, stopSpin).until(() -> {
-        //     boolean isIdle = idle.getAsBoolean();
-        //     System.out.println("IdleCheckin: " + isIdle);
-        //     return isIdle;
-        // }).andThen(Commands.print("toVeloDONE"));
     }
 
     private Command toVeloNoSpin(Supplier<Measure<Velocity<Angle>>> velo) {
@@ -174,7 +159,7 @@ public class Shooter extends SubsystemBase {
                 var right = m_rightTarget.in(RotationsPerSecond);
                 var left = m_leftTarget.in(RotationsPerSecond);
 
-                // withSlot(1) to use slot 1 PIDFF gains for powerful shots
+                // withSlot(1) to use slot 1 PIDFF gains for unpowerful shots
                 m_right.setControl(m_current.withVelocity(right).withSlot(1));
                 m_left.setControl(m_current.withVelocity(left).withSlot(1));
 
@@ -201,20 +186,15 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command subwoofer(BooleanSupplier idle) {
-        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), idle);
+        return toVeloAuton(() -> Rotations.per(Minute).of(kSubwooferRpm), idle);
     }
 
     public Command podium(BooleanSupplier idle) {
-        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), idle);
+        return toVeloAuton(() -> Rotations.per(Minute).of(kPodiumRpm), idle);
     }
 
     public Command ampShot() {
         return toVeloNoSpin(() -> Rotations.per(Minute).of(kAmpRpm));
-    }
-
-    public Command spinUp() {
-        return toVelo(m_leftTargetSupp)
-            .until(() -> spinUpFinished());
     }
 
     public boolean spinUpFinished() {

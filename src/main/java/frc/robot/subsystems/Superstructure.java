@@ -13,12 +13,12 @@ import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.wpilibj.AsynchronousInterrupt;
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.SynchronousInterrupt;
 import edu.wpi.first.wpilibj.event.EventLoop;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
@@ -38,8 +38,8 @@ public class Superstructure extends SubsystemBase {
     private final DigitalInput frontVisiSight = new DigitalInput(kVisiSightId);
     private final DigitalInput conveyorBeamBreak = new DigitalInput(0);
     private final DigitalInput shooterBeamBreak = new DigitalInput(1);
-    private final BooleanSupplier bs_frontVisiSight = () -> frontVisiSight.get();
 
+    private final BooleanSupplier bs_frontVisiSight = () -> frontVisiSight.get();
     private final BooleanSupplier bs_conveyorBeamBreak = () -> !conveyorBeamBreak.get();
     private final BooleanSupplier bs_shooterBeamBreak = () -> !shooterBeamBreak.get();
 
@@ -81,11 +81,6 @@ public class Superstructure extends SubsystemBase {
     private final Trigger trg_autonIntakeReq = new Trigger(() -> autonIntake);
     private final Trigger trg_autonShootReq = new Trigger(() -> autonShoot);
 
-    /** true = has note */
-    // private final Trigger trg_shooterSensor;
-    /** true = has note */
-    private final Trigger trg_frontSensorIrq;
-
     public final Trigger trg_spunUp;
     private final Trigger trg_atAngle;
 
@@ -94,7 +89,7 @@ public class Superstructure extends SubsystemBase {
 
     private final Trigger trg_timothyFieldTrip = new Trigger(sensorEventLoop,
         () -> timothyFieldTrip);
-    private final Trigger trg_auton = new Trigger(sensorEventLoop, () -> DriverStation.isAutonomousEnabled());
+    private final Trigger trg_auton = RobotModeTriggers.autonomous();
 
     public final Trigger stateTrg_idle = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.IDLE);
@@ -134,7 +129,11 @@ public class Superstructure extends SubsystemBase {
     private double shooterBeamBreakIrqLastFalling = 0;
     private final SynchronousInterrupt irq_shooterBeamBreak = new SynchronousInterrupt(shooterBeamBreak);
 
+    /** true = has note */
+    private final Trigger irqTrg_frontSensor;
+    /** true = has note */
     private final Trigger irqTrg_conveyorBeamBreak;
+    /** true = has note */
     private final Trigger irqTrg_shooterBeamBreak;
 
     private final DoubleLogger log_state = WaltLogger.logDouble(kDbTabName, "state",
@@ -172,11 +171,9 @@ public class Superstructure extends SubsystemBase {
         irq_conveyorBeamBreak.setInterruptEdges(true, true);
         irq_shooterBeamBreak.setInterruptEdges(true, true);
 
-        trg_frontSensorIrq = new Trigger(sensorEventLoop, () -> frontVisiSightSeenNote);
-        
+        irqTrg_frontSensor = new Trigger(sensorEventLoop, () -> frontVisiSightSeenNote);
         irqTrg_conveyorBeamBreak = new Trigger(sensorEventLoop, () -> conveyorBeamBreakIrq);
         irqTrg_shooterBeamBreak = new Trigger(sensorEventLoop, () -> shooterBeamBreakIrq);
-
 
         trg_spunUp = new Trigger(m_shooter::spinUpFinished).debounce(0.05);
         trg_atAngle = new Trigger(m_aim::aimFinished);
@@ -193,7 +190,7 @@ public class Superstructure extends SubsystemBase {
         return Commands.parallel(shootCmd, conveyorCmd);
     }
 
-   private Command cmdDriverRumble(double intensity, double seconds) {
+    private Command cmdDriverRumble(double intensity, double seconds) {
         return Commands.startEnd(
             () -> {
                 if (!driverRumbled) {
@@ -242,9 +239,9 @@ public class Superstructure extends SubsystemBase {
                 Commands.parallel(m_intake.run(), m_conveyor.startSlow())));
 
         // !(intakeReq || idle) => !intakeReq && !idle
-        (trg_intakeReq.or(trg_frontSensorIrq)).onFalse(changeStateCmd(NoteState.IDLE));
+        (trg_intakeReq.or(irqTrg_frontSensor)).onFalse(changeStateCmd(NoteState.IDLE));
 
-        trg_frontSensorIrq
+        (irqTrg_frontSensor.and(trg_auton.negate()))
             .onTrue(
                 Commands.parallel(
                     cmdDriverRumble(1, 0.5),
@@ -252,12 +249,20 @@ public class Superstructure extends SubsystemBase {
                 )
             );
 
-        // note in shooter and not shooting or spinupping
-        (irqTrg_conveyorBeamBreak.and((extStateTrg_shooting.or(stateTrg_spinUp)).negate()))
+        // note in shooter and not shooting or spinupping and not auton
+        (irqTrg_conveyorBeamBreak.and((extStateTrg_shooting.or(stateTrg_spinUp)).negate()).and(trg_auton.negate()))
             .onTrue(
                 Commands.parallel(
                     changeStateCmd(NoteState.ROLLER_BEAM_RETRACT),
                     Commands.runOnce(() -> driverRumbled = false)
+                )
+            );
+
+        // ^ but auton
+        (irqTrg_conveyorBeamBreak.and((extStateTrg_shooting.or(stateTrg_spinUp)).negate()).and(trg_auton))
+            .onTrue(
+                Commands.parallel(
+                    changeStateCmd(NoteState.NOTE_READY)
                 )
             );
 
@@ -277,10 +282,12 @@ public class Superstructure extends SubsystemBase {
         // added back shoot ok
         (trg_spunUp.and(trg_atAngle).and(stateTrg_noteReady))
             .onTrue(
-                Commands.parallel(
-                    cmdDriverRumble(1, 0.5), 
-                    changeStateCmd(NoteState.SHOOT_OK)
-                )
+                changeStateCmd(NoteState.SHOOT_OK)
+            );
+
+        (trg_spunUp.and(trg_atAngle).and(stateTrg_noteReady).and(trg_auton.negate()))
+            .onTrue(
+                cmdDriverRumble(1, 0.5)
             );
 
         // if shooter spun up and asked to shoot
@@ -317,7 +324,7 @@ public class Superstructure extends SubsystemBase {
                 Commands.waitSeconds(0.5),
                 changeStateCmd(NoteState.IDLE)));
 
-        stateTrg_idle
+        stateTrg_idle.and(trg_auton.negate())
             .onTrue(Commands.parallel(
                 Commands.runOnce(
                     () -> {
@@ -331,6 +338,21 @@ public class Superstructure extends SubsystemBase {
                         manipulatorRumbled = false;
                     }),
                 stopEverything(), m_aim.intakeAngleNearCmd()));
+
+        stateTrg_idle.and(trg_auton)
+            .onTrue(Commands.parallel(
+                Commands.runOnce(
+                    () -> {
+                        timothyEntered = false;
+                        timothyIn = false;
+                        timothyFieldTrip = false;
+                        frontVisiSightSeenNote = false;
+                        autonIntake = false;
+                        autonShoot = false;
+                        driverRumbled = false;
+                        manipulatorRumbled = false;
+                    }),
+                autonStop(), m_aim.intakeAngleNearCmd()));
     }
 
     public Command stopEverything() {
@@ -361,7 +383,7 @@ public class Superstructure extends SubsystemBase {
         Command shootCmd;
 
         if (auton) {
-            shootCmd = podium ? m_shooter.subwoofer(stateTrg_idle) : m_shooter.subwoofer(stateTrg_idle); 
+            shootCmd = podium ? m_shooter.podium(stateTrg_idle) : m_shooter.subwoofer(stateTrg_idle); 
         } else {
             shootCmd = amp ? m_shooter.ampShot() : m_shooter.subwoofer();
         }
