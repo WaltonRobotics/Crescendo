@@ -104,7 +104,7 @@ public class Robot extends TimedRobot {
 			Trajectories.leave.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.TWO_PC, AutonFactory.twoPc(superstructure, shooter, swerve),
 			Trajectories.leave.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.ALT_TWO_PC, AutonFactory.altTwoPc(superstructure, shooter, swerve),
+		AutonChooser.assignAutonCommand(AutonOption.TWO_PC_DIFF, AutonFactory.twoPcAmp(superstructure, shooter, swerve),
 			Trajectories.leave.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.THREE, AutonFactory.threePc(superstructure, shooter, swerve), 
 			Trajectories.leave.getInitialPose());
