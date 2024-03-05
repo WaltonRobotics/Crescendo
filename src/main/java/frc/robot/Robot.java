@@ -161,7 +161,7 @@ public class Robot extends TimedRobot {
 		manipulator.leftBumper().whileTrue(superstructure.aimAndSpinUp(() -> AimK.kAmpAngle, true));
 		manipulator.b().and(manipulator.povDown())
 			.onTrue(Commands.runOnce(() -> superstructure.forceStateToShooting()));
-		manipulator.b().and(manipulator.leftTrigger()).whileTrue(Commands.runOnce(() -> superstructure.forceStateToIntake()));
+		manipulator.b().and(manipulator.leftTrigger()).whileTrue(Commands.runOnce(() -> superstructure.forceStateToIdle()));
 		manipulator.x().and((manipulator.back().and(manipulator.start())).negate()).whileTrue(aim.hardStop());
 		manipulator.y().whileTrue(intake.runLilSpins());
 

@@ -76,8 +76,8 @@ public class Aim extends SubsystemBase {
     private Measure<Angle> m_targetAngle = Rotations.of(0);
     private Translation3d m_ampPose;
 
-    private final DigitalInput m_home = new DigitalInput(kHomeSwitch);
-    private final Trigger m_homeTrigger = new Trigger(m_home::get).negate();
+    // private final DigitalInput m_home = new DigitalInput(kHomeSwitch);
+    // private final Trigger m_homeTrigger = new Trigger(m_home::get).negate();
 
     private boolean m_isCoast;
 
@@ -111,8 +111,8 @@ public class Aim extends SubsystemBase {
             // In simulation, make sure the CANcoder starts at the correct position
             m_cancoder.setPosition(Units.radiansToRotations(m_aimSim.getAngleRads()) * 1.69);
         }
-        m_homeTrigger.onTrue(Commands.runOnce(() -> m_motor.setPosition(kInitAngle.in(Rotations)))
-            .ignoringDisable(true));
+        // m_homeTrigger.onTrue(Commands.runOnce(() -> m_motor.setPosition(kInitAngle.in(Rotations)))
+        //     .ignoringDisable(true));
 
         nte_isCoast = Shuffleboard.getTab(kDbTabName)
             .add("isCoast", false)

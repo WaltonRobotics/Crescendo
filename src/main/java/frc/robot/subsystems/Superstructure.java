@@ -35,13 +35,20 @@ public class Superstructure extends SubsystemBase {
     private final DoubleConsumer m_driverRumbler, m_manipRumbler;
 
     private final DigitalInput frontVisiSight = new DigitalInput(kVisiSightId);
-    private final DigitalInput shooterBeamBreak = new DigitalInput(0);
+    private final DigitalInput conveyorBeamBreak = new DigitalInput(0);
+    private final DigitalInput shooterBeamBreak = new DigitalInput(1);
     private final BooleanSupplier bs_frontVisiSight = () -> frontVisiSight.get();
 
+    private final BooleanSupplier bs_conveyorBeamBreak = () -> !conveyorBeamBreak.get();
     private final BooleanSupplier bs_shooterBeamBreak = () -> !shooterBeamBreak.get();
+
     private final BooleanLogger log_frontVisiSight = WaltLogger.logBoolean("Sensors", "frontVisiSight",
         PubSubOption.sendAll(true));
     private final BooleanLogger log_frontVisiSightIrq = WaltLogger.logBoolean("Sensors", "frontVisiSightIrq",
+        PubSubOption.sendAll(true));
+    private final BooleanLogger log_conveyorBeamBreakIrq = WaltLogger.logBoolean("Sensors", "conveyorBeamBreakIrq",
+        PubSubOption.sendAll(true));
+    private final BooleanLogger log_conveyorBeamBreak = WaltLogger.logBoolean("Sensors", "conveyorBeamBreak",
         PubSubOption.sendAll(true));
     private final BooleanLogger log_shooterBeamBreakIrq = WaltLogger.logBoolean("Sensors", "shooterBeamBreakIrq",
         PubSubOption.sendAll(true));
@@ -115,11 +122,18 @@ public class Superstructure extends SubsystemBase {
             }
         });
 
-    private boolean beamBreakIrq = false;
-    private double beamBreakIrqLastRising = 0;
-    private double beamBreakIrqLastFalling = 0;
+    private boolean conveyorBeamBreakIrq = false;
+    private double conveyorBeamBreakIrqLastRising = 0;
+    private double conveyorBeamBreakIrqLastFalling = 0;
+    private final SynchronousInterrupt irq_conveyorBeamBreak = new SynchronousInterrupt(conveyorBeamBreak);
+
+    private boolean shooterBeamBreakIrq = false;
+    private double shooterBeamBreakIrqLastRising = 0;
+    private double shooterBeamBreakIrqLastFalling = 0;
     private final SynchronousInterrupt irq_shooterBeamBreak = new SynchronousInterrupt(shooterBeamBreak);
-    private final Trigger irqTrg_beamBreak;
+
+    private final Trigger irqTrg_conveyorBeamBreak;
+    private final Trigger irqTrg_shooterBeamBreak;
 
     private final DoubleLogger log_state = WaltLogger.logDouble(kDbTabName, "state",
         PubSubOption.sendAll(true));
@@ -153,10 +167,14 @@ public class Superstructure extends SubsystemBase {
         ai_frontVisiSight.setInterruptEdges(true, true);
         ai_frontVisiSight.enable();
 
+        irq_conveyorBeamBreak.setInterruptEdges(true, true);
         irq_shooterBeamBreak.setInterruptEdges(true, true);
 
         trg_frontSensorIrq = new Trigger(sensorEventLoop, () -> frontVisiSightSeenNote);
-        irqTrg_beamBreak = new Trigger(sensorEventLoop, () -> beamBreakIrq);
+        
+        irqTrg_conveyorBeamBreak = new Trigger(sensorEventLoop, () -> conveyorBeamBreakIrq);
+        irqTrg_shooterBeamBreak = new Trigger(sensorEventLoop, () -> shooterBeamBreakIrq);
+
 
         trg_spunUp = new Trigger(m_shooter::spinUpFinished).debounce(0.05);
         trg_atAngle = new Trigger(m_aim::aimFinished);
@@ -211,7 +229,7 @@ public class Superstructure extends SubsystemBase {
     }
 
     private void configureStateTriggers() {
-        irqTrg_beamBreak.onTrue(Commands.none());
+        irqTrg_conveyorBeamBreak.onTrue(Commands.none());
 
         // intakeReq && idle
         (trg_intakeReq.and(stateTrg_idle))
@@ -235,7 +253,7 @@ public class Superstructure extends SubsystemBase {
             );
 
         // note in shooter and not shooting or spinupping
-        (irqTrg_beamBreak.and((extStateTrg_shooting.or(stateTrg_spinUp)).negate()))
+        (irqTrg_conveyorBeamBreak.and((extStateTrg_shooting.or(stateTrg_spinUp)).negate()))
             .onTrue(
                 Commands.parallel(
                     changeStateCmd(NoteState.ROLLER_BEAM_RETRACT),
@@ -250,14 +268,14 @@ public class Superstructure extends SubsystemBase {
 
         // !beamBreak && noteRetracting
         // Post-retract stop
-        ((irqTrg_beamBreak.negate().debounce(0.35)).and(stateTrg_noteRetracting))
+        ((irqTrg_conveyorBeamBreak.negate().debounce(0.35)).and(stateTrg_noteRetracting))
             .onTrue(
                 Commands.sequence(
                     changeStateCmd(NoteState.NOTE_READY),
                     m_conveyor.stop()));
 
         // added back shoot ok
-        (trg_spunUp.and(trg_atAngle))
+        (trg_spunUp.and(trg_atAngle).and(stateTrg_noteReady))
             .onTrue(
                 Commands.parallel(
                     cmdDriverRumble(1, 0.5), 
@@ -282,14 +300,14 @@ public class Superstructure extends SubsystemBase {
 
         // if note in shooter sensor and state shooting
         // state -> LEAVING_BEAM_BREAK, timothy says bye :D
-        (irqTrg_beamBreak.and(stateTrg_shooting))
+        (irqTrg_shooterBeamBreak.and(stateTrg_shooting))
             .onTrue(Commands.parallel(
                 changeStateCmd(NoteState.LEAVING_BEAM_BREAK),
                 Commands.runOnce(() -> timothyFieldTrip = true)));
 
         // if note not in shooter and state leaving and timothy waving bye :D
         // state -> LEFT_BEAM_BREAK
-        ((irqTrg_beamBreak.debounce(0.1)).negate().and(stateTrg_leavingBeamBreak).and(trg_timothyFieldTrip))
+        ((irqTrg_shooterBeamBreak.debounce(0.1)).negate().and(stateTrg_leavingBeamBreak).and(trg_timothyFieldTrip))
             .onTrue(changeStateCmd(NoteState.LEFT_BEAM_BREAK));
 
         // if left beam break
@@ -366,37 +384,62 @@ public class Superstructure extends SubsystemBase {
         );
     }
 
-    private void evaluateBeamBreakIrq() {
-         double latestRising = irq_shooterBeamBreak.getRisingTimestamp();
-        double latestFalling = irq_shooterBeamBreak.getFallingTimestamp();
-        boolean risingNew = latestRising > beamBreakIrqLastRising;
+    private void evaluateConveyorIrq() {
+        double latestRising = irq_conveyorBeamBreak.getRisingTimestamp();
+        double latestFalling = irq_conveyorBeamBreak.getFallingTimestamp();
+        boolean risingNew = latestRising > conveyorBeamBreakIrqLastRising;
         if (risingNew) {
-            beamBreakIrqLastRising = latestRising;
+            conveyorBeamBreakIrqLastRising = latestRising;
         }
 
-        boolean fallingNew = latestFalling > beamBreakIrqLastFalling;
+        boolean fallingNew = latestFalling > conveyorBeamBreakIrqLastFalling;
         if (fallingNew) {
-            beamBreakIrqLastFalling = latestFalling;
+            conveyorBeamBreakIrqLastFalling = latestFalling;
         }
 
         if (latestFalling > latestRising && fallingNew) {
-            beamBreakIrq = true;
+            conveyorBeamBreakIrq = true;
         } else if (latestRising > latestFalling && risingNew) {
-            beamBreakIrq = false;
+            conveyorBeamBreakIrq = false;
+        }
+    }
+
+    private void evaluateShooterIrq() {
+        double latestRising = irq_shooterBeamBreak.getRisingTimestamp();
+        double latestFalling = irq_shooterBeamBreak.getFallingTimestamp();
+        boolean risingNew = latestRising > shooterBeamBreakIrqLastRising;
+        if (risingNew) {
+            // System.out.println("rising");
+            shooterBeamBreakIrqLastRising = latestRising;
+        }
+
+        boolean fallingNew = latestFalling > shooterBeamBreakIrqLastFalling;
+        if (fallingNew) {
+            // System.out.println("falling");
+            shooterBeamBreakIrqLastFalling = latestFalling;
+        }
+
+        if (latestFalling > latestRising && fallingNew) {
+            shooterBeamBreakIrq = true;
+        } else if (latestRising > latestFalling && risingNew) {
+            shooterBeamBreakIrq = false;
         }
     }
 
     public void fastPeriodic() {
-        evaluateBeamBreakIrq();
+        evaluateConveyorIrq();
+        evaluateShooterIrq();
 
         log_state.accept((double) m_state.idx);
         log_timothyEntered.accept(timothyEntered);
         log_timothyIn.accept(timothyIn);
         log_timothyFieldTrip.accept(timothyFieldTrip);
         log_frontVisiSight.accept(bs_frontVisiSight.getAsBoolean());
+        log_conveyorBeamBreak.accept(bs_conveyorBeamBreak.getAsBoolean());
         log_shooterBeamBreak.accept(bs_shooterBeamBreak.getAsBoolean());
         log_frontVisiSightIrq.accept(frontVisiSightSeenNote);
-        log_shooterBeamBreakIrq.accept(beamBreakIrq);
+        log_conveyorBeamBreakIrq.accept(conveyorBeamBreakIrq);
+        log_shooterBeamBreakIrq.accept(shooterBeamBreakIrq);
         log_driverIntakeReq.accept(trg_driverIntakeReq.getAsBoolean());
         log_autonIntakeReq.accept(autonIntake);
         log_autonShootReq.accept(autonShoot);
@@ -422,16 +465,8 @@ public class Superstructure extends SubsystemBase {
         m_state = NoteState.SHOOTING;
     }
 
-    public void forceStateToIntake() {
-        timothyEntered = false;
-        timothyIn = false;
-        timothyFieldTrip = false;
-        frontVisiSightSeenNote = false;
-        autonIntake = false;
-        autonShoot = false;
-        driverRumbled = false;
-        manipulatorRumbled = false;
-        m_state = NoteState.INTAKE;
+    public void forceStateToIdle() {
+        m_state = NoteState.IDLE;
     }
 
     public Command autonShootReq() {
