@@ -1,5 +1,5 @@
 {
-    "version": "v0.3",
+    "version": "v0.2.1",
     "robotConfiguration": {
         "mass": 74.08797700309194,
         "rotationalInertia": 6,
@@ -234,27 +234,26 @@
                     "timestamp": 1.6317345577942568
                 }
             ],
-            "trajectoryWaypoints": [],
             "constraints": [
                 {
                     "scope": [
                         "first"
                     ],
-                    "type": "StopPoint"
+                    "type": "StopPoint",
+                    "uuid": "a92767a1-9a62-433a-ba18-614605ef3a1d"
                 },
                 {
                     "scope": [
                         "last"
                     ],
-                    "type": "StopPoint"
+                    "type": "StopPoint",
+                    "uuid": "a3015169-e24e-4c49-a710-519cd6c8a65d"
                 }
             ],
             "usesControlIntervalGuessing": true,
             "defaultControlIntervalCount": 40,
             "usesDefaultFieldObstacles": true,
-            "circleObstacles": [],
-            "eventMarkers": [],
-            "isTrajectoryStale": true
+            "circleObstacles": []
         },
         "4": {
             "waypoints": [
@@ -287,27 +286,26 @@
                 }
             ],
             "trajectory": [],
-            "trajectoryWaypoints": [],
             "constraints": [
                 {
                     "scope": [
                         "first"
                     ],
-                    "type": "StopPoint"
+                    "type": "StopPoint",
+                    "uuid": "3a3f4e0d-589c-4bdd-ac27-df886ed6f9d4"
                 },
                 {
                     "scope": [
                         "last"
                     ],
-                    "type": "StopPoint"
+                    "type": "StopPoint",
+                    "uuid": "1485b4a8-794f-4a80-a1d9-ab0a4cc578e0"
                 }
             ],
             "usesControlIntervalGuessing": true,
             "defaultControlIntervalCount": 40,
             "usesDefaultFieldObstacles": true,
-            "circleObstacles": [],
-            "eventMarkers": [],
-            "isTrajectoryStale": true
+            "circleObstacles": []
         },
         "alt2": {
             "waypoints": [
@@ -431,35 +429,34 @@
                     "timestamp": 0.9516889285866393
                 }
             ],
-            "trajectoryWaypoints": [],
             "constraints": [
                 {
                     "scope": [
                         "first"
                     ],
-                    "type": "StopPoint"
+                    "type": "StopPoint",
+                    "uuid": "f53b3d7c-1a6b-40d8-a6eb-7b2203fd42d6"
                 },
                 {
                     "scope": [
                         1
                     ],
-                    "type": "StopPoint"
+                    "type": "StopPoint",
+                    "uuid": "1984c75b-00ce-45b4-8ae8-995343f62a8d"
                 },
                 {
                     "scope": [
                         "last"
                     ],
-                    "type": "StopPoint"
+                    "type": "StopPoint",
+                    "uuid": "7991f2df-6399-4d39-a16d-66f3ef6ae3af"
                 }
             ],
             "usesControlIntervalGuessing": true,
             "defaultControlIntervalCount": 40,
             "usesDefaultFieldObstacles": true,
-            "circleObstacles": [],
-            "eventMarkers": [],
-            "isTrajectoryStale": true
+            "circleObstacles": []
         }
     },
-    "splitTrajectoriesAtStopPoints": false,
-    "usesObstacles": false
+    "splitTrajectoriesAtStopPoints": false
 }

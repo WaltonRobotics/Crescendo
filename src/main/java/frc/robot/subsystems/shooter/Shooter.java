@@ -129,26 +129,6 @@ public class Shooter extends SubsystemBase {
     }
 
 
-    private Command toVeloAuton(Supplier<Measure<Velocity<Angle>>> velo, BooleanSupplier idle) {
-        Runnable spin = () -> {
-            var velMeas = velo.get();
-            m_rightTarget = velMeas.times(m_spinAmt);
-            m_leftTarget = velMeas;
-            var right = m_rightTarget.in(RotationsPerSecond);
-            var left = m_leftTarget.in(RotationsPerSecond);
-
-            // withSlot(0) to use slot 0 PIDFF gains for powerful shots
-            m_right.setControl(m_request.withVelocity(right).withSlot(0));
-            m_left.setControl(m_request.withVelocity(left).withSlot(0));
-        };
-
-        Consumer<Boolean> stopSpin = (interrupted) -> {
-            System.out.println("ToVelo_STOP");
-        };
-
-        return new FunctionalCommand(spin, () -> {}, stopSpin, idle);
-    }
-
     private Command toVelo(Supplier<Measure<Velocity<Angle>>> velo, BooleanSupplier idle) {
         Runnable spin = () -> {
             var velMeas = velo.get();
@@ -173,6 +153,12 @@ public class Shooter extends SubsystemBase {
         };
 
         return new FunctionalCommand(spin, () -> {}, stopSpin, idle);
+
+        // return runEnd(spin, stopSpin).until(() -> {
+        //     boolean isIdle = idle.getAsBoolean();
+        //     System.out.println("IdleCheckin: " + isIdle);
+        //     return isIdle;
+        // }).andThen(Commands.print("toVeloDONE"));
     }
 
     private Command toVeloNoSpin(Supplier<Measure<Velocity<Angle>>> velo) {
@@ -209,11 +195,11 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command subwoofer(BooleanSupplier idle) {
-        return toVeloAuton(() -> Rotations.per(Minute).of(kSubwooferRpm), idle);
+        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), idle);
     }
 
     public Command podium(BooleanSupplier idle) {
-        return toVeloAuton(() -> Rotations.per(Minute).of(kPodiumRpm), idle);
+        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), idle);
     }
 
     public Command ampShot() {
