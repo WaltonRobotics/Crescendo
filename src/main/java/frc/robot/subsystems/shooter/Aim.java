@@ -3,6 +3,7 @@ package frc.robot.subsystems.shooter;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
+import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -55,6 +56,7 @@ public class Aim extends SubsystemBase {
 
     private final MotionMagicExpoVoltage m_request = new MotionMagicExpoVoltage(0);
     private final CoastOut m_coastRequest = new CoastOut();
+    private final StaticBrake m_brakeRequest = new StaticBrake();
 
     private final DCMotor m_aimGearbox = DCMotor.getFalcon500(1);
     private final SingleJointedArmSim m_aimSim = new SingleJointedArmSim(
@@ -174,6 +176,7 @@ public class Aim extends SubsystemBase {
     private Command toAngle(Measure<Angle> angle) {
         return runOnce(
             () -> {
+                m_targetAngle = angle;
                 m_motor.setControl(m_request.withPosition(angle.in(Rotations)));
             });
     }
@@ -181,8 +184,10 @@ public class Aim extends SubsystemBase {
     private Command toAngleUntilAt(Measure<Angle> angle, Measure<Angle> tolerance) {
         var goThere = startEnd(
             () -> {
+                m_targetAngle = angle;
                 m_motor.setControl(m_request.withPosition(angle.in(Rotations)));
             }, () -> {
+                m_motor.setControl(m_brakeRequest);
             });
         return goThere.until(() -> {
             var error = Rotations.of(Math.abs(m_motor.getClosedLoopError().getValueAsDouble()));
@@ -193,8 +198,10 @@ public class Aim extends SubsystemBase {
     public Command toAngleUntilAt(Supplier<Measure<Angle>> angle, Measure<Angle> tolerance) {
         var goThere = startEnd(
             () -> {
+                m_targetAngle = angle.get();
                 m_motor.setControl(m_request.withPosition(angle.get().in(Rotations)));
             }, () -> {
+                m_motor.setControl(m_brakeRequest);
             });
         return goThere.until(() -> {
             var error = Rotations.of(Math.abs(m_motor.getClosedLoopError().getValueAsDouble()));

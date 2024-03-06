@@ -148,25 +148,25 @@ public class Constants {
         public static final class ShooterConfigs {
             /* stuff that works for speaker */
             private static final double kPRightSpeaker = 0.3;
-            private static final double kSRightSpeaker = 0.050223; // Amps
-            private static final double kVRightSpeaker = 0.06486;
-            private static final double kARightSpeaker = 0.036428;
+            private static final double kSRightSpeaker = 0.25884; // volts
+            private static final double kVRightSpeaker = 0.063367;
+            private static final double kARightSpeaker = 0.018238;
 
             private static final double kPLeftSpeaker = 0.3;
-            private static final double kSLeftSpeaker = 0.20785; // Amps
-            private static final double kVLeftSpeaker = 0.061338;
-            private static final double kALeftSpeaker = 0.024424;
+            private static final double kSLeftSpeaker = 0.2612; // volts
+            private static final double kVLeftSpeaker = 0.061983;
+            private static final double kALeftSpeaker = 0.019191;
 
             /* stuff that works for amp */
-            private static final double kPRightAmp = 4;
-            private static final double kSRightAmp = 3; // Amps
-            private static final double kVRightAmp = 0.725;
-            private static final double kARightAmp = 0.45;
+            private static final double kPRightAmp = 0.1;
+            private static final double kSRightAmp = 0.25884; // volts
+            private static final double kVRightAmp = 0.063367;
+            private static final double kARightAmp = 0.018238;
 
-            private static final double kPLeftAmp = 5.5;
-            private static final double kSLeftAmp = 4.5; // Amps
-            private static final double kVLeftAmp = 0.75;
-            private static final double kALeftAmp = 0.45;
+            private static final double kPLeftAmp = 0.1;
+            private static final double kSLeftAmp = 0.2612; // volts
+            private static final double kVLeftAmp = 0.061983;
+            private static final double kALeftAmp = 0.019191;
 
             public static final TalonFXConfiguration kRightConfigs = new TalonFXConfiguration();
             public static final TalonFXConfiguration kLeftConfigs = new TalonFXConfiguration();
@@ -236,7 +236,7 @@ public class Constants {
 
         public static final double kSubwooferRpm = 7300;
         public static final double kPodiumRpm = 7600;
-        public static final double kAmpRpm = 850;
+        public static final double kAmpRpm = 800;
 
         public static final double kGearRatio = 18.0 / 36.0;
 
@@ -323,7 +323,7 @@ public class Constants {
         public static final Measure<Angle> kMaxAngle = Rotations.of(0.45);
 
         public static final Measure<Angle> kSubwooferAngle = Rotations.of(0.066);
-        public static final Measure<Angle> kAmpAngle = Rotations.of(0.234131);
+        public static final Measure<Angle> kAmpAngle = Rotations.of(0.195);
         public static final Measure<Angle> kPodiumAngle = Rotations.of(0.0074);
 
         public static final Measure<Angle> kTolerance = Degrees.of(2);

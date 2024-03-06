@@ -280,7 +280,7 @@ public class Superstructure extends SubsystemBase {
                     m_conveyor.stop()));
 
         // added back shoot ok
-        (trg_spunUp.and(trg_atAngle).and(stateTrg_noteReady))
+        (trg_spunUp.and(trg_atAngle).and(stateTrg_spinUp))
             .onTrue(
                 changeStateCmd(NoteState.SHOOT_OK)
             );
@@ -337,7 +337,7 @@ public class Superstructure extends SubsystemBase {
                         driverRumbled = false;
                         manipulatorRumbled = false;
                     }),
-                stopEverything(), m_aim.intakeAngleNearCmd()));
+                stopEverything()));
 
         stateTrg_idle.and(trg_auton)
             .onTrue(Commands.parallel(
@@ -375,7 +375,7 @@ public class Superstructure extends SubsystemBase {
     }
 
     public Command aimAndSpinUp(Supplier<Measure<Angle>> target, boolean amp, boolean podium, boolean auton) {
-        var aimCmd = m_aim.toAngleUntilAt(target, amp ? Degrees.of(1) : Degrees.of(2)); // TODO make this unmagical :(
+        var aimCmd = m_aim.toAngleUntilAt(target, amp ? Degrees.of(0.25) : Degrees.of(2)); // TODO make this unmagical :(
 
         var waitForNoteReady = Commands.waitUntil(() -> m_state.idx > NoteState.ROLLER_BEAM_RETRACT.idx)
             .andThen(Commands.print("====NOTE READY===="));
@@ -388,13 +388,22 @@ public class Superstructure extends SubsystemBase {
             shootCmd = amp ? m_shooter.ampShot() : m_shooter.subwoofer();
         }
 
+        var aimCmd2 = amp ? m_aim.toAngleUntilAt(() -> target.get().plus(Degrees.of(20)), Degrees.of(0)) : Commands.none();
+
         return Commands.sequence(
             Commands.parallel(
                 aimCmd.asProxy().andThen(Commands.print("AimAndSpinUp_AIM_DONE")),
                 Commands.sequence(
-                waitForNoteReady.andThen(Commands.print("AimAndSpinUp_NOTERD_DONE")),
-                shootCmd.asProxy().andThen(Commands.print("shooty shoot done (no yelling)")),
-                changeStateCmd(NoteState.SHOT_SPINUP))
+                    waitForNoteReady.andThen(Commands.print("AimAndSpinUp_NOTERD_DONE")),
+                    changeStateCmd(NoteState.SHOT_SPINUP),
+                    Commands.parallel(
+                        shootCmd.asProxy().andThen(Commands.print("shooty shoot done (no yelling)")),
+                        Commands.sequence(
+                            Commands.waitUntil(irqTrg_conveyorBeamBreak),
+                            aimCmd2.asProxy().andThen(Commands.print("aim"))
+                        )
+                    )
+                )
             )
         );
     }
