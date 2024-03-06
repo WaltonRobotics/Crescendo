@@ -408,6 +408,29 @@ public class Superstructure extends SubsystemBase {
         );
     }
 
+    public Command ampSpinUp(Supplier<Measure<Angle>> target) {
+        // var aimCmd = m_aim.toAngleUntilAt(target, amp ? Degrees.of(0.25) : Degrees.of(2)); // TODO make this unmagical :(
+
+        var waitForNoteReady = Commands.waitUntil(() -> m_state.idx > NoteState.ROLLER_BEAM_RETRACT.idx)
+            .andThen(Commands.print("====NOTE READY===="));
+
+        Command shootCmd = m_shooter.ampShot();
+
+        var aimCmd2 = m_aim.toAngleUntilAt(() -> target.get().plus(Degrees.of(20)), Degrees.of(0));
+
+        return Commands.sequence(
+            waitForNoteReady.andThen(Commands.print("AimAndSpinUp_NOTERD_DONE")),
+            changeStateCmd(NoteState.SHOT_SPINUP),
+            Commands.parallel(
+                shootCmd.asProxy().andThen(Commands.print("shooty shoot done (no yelling)")),
+                Commands.sequence(
+                    Commands.waitUntil(irqTrg_conveyorBeamBreak),
+                    aimCmd2.asProxy().andThen(Commands.print("aim"))
+                )
+            )  
+        );
+    }
+
     public Command backwardsRun() {
         var shooterCmd = m_shooter.runBackwards();
         var conveyorCmd = m_conveyor.runBackwards();

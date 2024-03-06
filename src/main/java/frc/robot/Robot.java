@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 
 import org.photonvision.PhotonCamera;
@@ -159,12 +160,12 @@ public class Robot extends TimedRobot {
 		manipulator.rightTrigger().whileTrue(intake.outtake());
 		manipulator.b().and(manipulator.povUp()).whileTrue(conveyor.runFast());
 		manipulator.rightBumper().whileTrue(superstructure.aimAndSpinUp(() -> AimK.kSubwooferAngle, false));
-		manipulator.leftBumper().whileTrue(superstructure.aimAndSpinUp(() -> AimK.kAmpAngle, true));
+		manipulator.leftBumper().whileTrue(superstructure.ampSpinUp(() -> AimK.kAmpAngle));
 		manipulator.b().and(manipulator.povDown())
 			.onTrue(Commands.runOnce(() -> superstructure.forceStateToShooting()));
 		manipulator.b().and(manipulator.leftTrigger()).whileTrue(Commands.runOnce(() -> superstructure.forceStateToIdle()));
 		manipulator.x().and((manipulator.back().and(manipulator.start())).negate()).whileTrue(aim.hardStop());
-		manipulator.y().whileTrue(intake.runLilSpins());
+		manipulator.y().onTrue(aim.toAngleUntilAt(() -> AimK.kAmpAngle, Degrees.of(0.25)));
 
 		/* testing buttons */
 		manipulator.a().whileTrue(superstructure.backwardsRun());
