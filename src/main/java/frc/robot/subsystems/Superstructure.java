@@ -13,7 +13,6 @@ import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.wpilibj.AsynchronousInterrupt;
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.SynchronousInterrupt;
 import edu.wpi.first.wpilibj.event.EventLoop;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -94,7 +93,6 @@ public class Superstructure extends SubsystemBase {
 
     private final Trigger trg_timothyFieldTrip = new Trigger(sensorEventLoop,
         () -> timothyFieldTrip);
-    private final Trigger trg_auton = new Trigger(sensorEventLoop, () -> DriverStation.isAutonomousEnabled());
 
     public final Trigger stateTrg_idle = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.IDLE);
