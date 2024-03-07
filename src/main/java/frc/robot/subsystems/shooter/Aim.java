@@ -210,7 +210,7 @@ public class Aim extends SubsystemBase {
     }
 
     public Command intakeAngleNearCmd() {
-        return toAngleUntilAt(Degrees.of(0), Degrees.of(5));
+        return toAngleUntilAt(Degrees.of(0), Degrees.of(10));
     }
 
     public void setCoast(boolean coast) {
@@ -223,6 +223,19 @@ public class Aim extends SubsystemBase {
             () -> {
                 setCoast(coast);
             });
+    }
+
+    public Command rezero() {
+        return Commands.runOnce(() -> {
+            var offset = AimConfigs.cancoderConfig.MagnetSensor.MagnetOffset;
+            var zero = m_cancoder.getAbsolutePosition().getValueAsDouble() - offset;
+            m_cancoder.getConfigurator().apply(
+                AimConfigs.cancoderConfig.withMagnetSensor(
+                    AimConfigs.cancoderConfig.MagnetSensor.withMagnetOffset(-zero)
+                )
+            );
+            System.out.println("new offset: " + -zero);
+        });
     }
 
     public Command aim() {

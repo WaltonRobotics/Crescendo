@@ -234,7 +234,7 @@ public class Superstructure extends SubsystemBase {
         stateTrg_intake.onTrue(
             // wait until aim is ±50 degrees to intake mode
             Commands.sequence(
-                m_aim.hardStop(),
+                m_aim.intakeAngleNearCmd(),
                 Commands.parallel(m_intake.run(), m_conveyor.startSlow())));
 
         // !(intakeReq || idle) => !intakeReq && !idle
