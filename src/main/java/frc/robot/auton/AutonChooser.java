@@ -18,9 +18,8 @@ public class AutonChooser {
         SIMPLE_THING("0 - simple thing", Trajectories.simpleThing),
         LEAVE("1 - leave", Trajectories.leave),
         TWO_PC("2 - speaker", Trajectories.leave),
-        THREE_PC("3 - speaker", Trajectories.threePc),
-        FOUR_PC("4 - speaker", Trajectories.fourPc),
-        FIVE_PC("5 - speaker", Trajectories.fivePc);
+        TWO_PC_DIFF("2 - amp side", Trajectories.twoDiff),
+        THREE("3 - speaker", Trajectories.leave);
 
         public final String m_description;
         public final ChoreoTrajectory m_traj;

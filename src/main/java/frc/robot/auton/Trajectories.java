@@ -7,7 +7,8 @@ public class Trajectories {
 	public static final ChoreoTrajectory oneMeter = Choreo.getTrajectory("oneMeter.1");
 	public static final ChoreoTrajectory simpleThing = Choreo.getTrajectory("simpleThing.1");
 	public static final ChoreoTrajectory leave = Choreo.getTrajectory("leave.1");
-	public static final ChoreoTrajectory threePc = Choreo.getTrajectory("3pc.1");
-	public static final ChoreoTrajectory fourPc = Choreo.getTrajectory("4pc.1");
-	public static final ChoreoTrajectory fivePc = Choreo.getTrajectory("5pc.1");
+	public static final ChoreoTrajectory twoPc = Choreo.getTrajectory("alt2.1");
+	public static final ChoreoTrajectory twoDiff = Choreo.getTrajectory("2again.1");
+	public static final ChoreoTrajectory three = Choreo.getTrajectory("3.1");
+	public static final ChoreoTrajectory four = Choreo.getTrajectory("4.1");
 }

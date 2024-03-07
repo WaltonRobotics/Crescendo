@@ -5,6 +5,7 @@ import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static frc.robot.Robot.kMaxSpeed;
 
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
@@ -38,6 +39,7 @@ import frc.util.AllianceFlipUtil;
 
 public class Constants {
     public static boolean kDebugLoggingEnabled = true;
+    public static final double kMetersPerInch = 0.0254;
 
     public static final double kStickDeadband = 0.1;
     public static final String kCanbus = "fd";
@@ -107,16 +109,17 @@ public class Constants {
     }
 
     public class AutoK {
-        public static final double kPX = 3.25; // 8
-        public static final double kPY = 3.25;
-        public static final double kPTheta = 5.15; // 1
+        public static final double kPX = 10;
+        public static final double kPY = 10;
+        public static final double kPTheta = 6.5; // 1
 
         public static final HolonomicPathFollowerConfig kPathFollowerConfig = new HolonomicPathFollowerConfig(
             new PIDConstants(kPX),
             new PIDConstants(kPTheta),
-            5,
+            kMaxSpeed,
             TunerConstants.kDriveRadius,
-            new ReplanningConfig());
+            new ReplanningConfig()
+        );
     }
 
     public class IntakeK {
@@ -125,9 +128,9 @@ public class Constants {
 
             static {
                 kConfigs.CurrentLimits = kConfigs.CurrentLimits
-                    .withStatorCurrentLimit(70)
+                    .withStatorCurrentLimit(120)
                     .withStatorCurrentLimitEnable(true)
-                    .withSupplyCurrentLimit(40)
+                    .withSupplyCurrentLimit(55)
                     .withSupplyCurrentLimitEnable(true);
             }
         }
@@ -135,7 +138,6 @@ public class Constants {
         public static final int kIntakeId = 10;
         public static final int kFeederId = 11;
         public static final int kVisiSightId = 2;
-
     }
 
     public class ConveyorK {
@@ -148,25 +150,25 @@ public class Constants {
         public static final class ShooterConfigs {
             /* stuff that works for speaker */
             private static final double kPRightSpeaker = 0.3;
-            private static final double kSRightSpeaker = 0.050223; // Amps
-            private static final double kVRightSpeaker = 0.06486;
-            private static final double kARightSpeaker = 0.036428;
+            private static final double kSRightSpeaker = 0.25884; // volts
+            private static final double kVRightSpeaker = 0.063367;
+            private static final double kARightSpeaker = 0.018238;
 
             private static final double kPLeftSpeaker = 0.3;
-            private static final double kSLeftSpeaker = 0.20785; // Amps
-            private static final double kVLeftSpeaker = 0.061338;
-            private static final double kALeftSpeaker = 0.024424;
+            private static final double kSLeftSpeaker = 0.2612; // volts
+            private static final double kVLeftSpeaker = 0.061983;
+            private static final double kALeftSpeaker = 0.019191;
 
             /* stuff that works for amp */
-            private static final double kPRightAmp = 4;
-            private static final double kSRightAmp = 3; // Amps
-            private static final double kVRightAmp = 0.725;
-            private static final double kARightAmp = 0.45;
+            private static final double kPRightAmp = 0.1;
+            private static final double kSRightAmp = 0.25884; // volts
+            private static final double kVRightAmp = 0.063367;
+            private static final double kARightAmp = 0.018238;
 
-            private static final double kPLeftAmp = 5.5;
-            private static final double kSLeftAmp = 4.5; // Amps
-            private static final double kVLeftAmp = 0.75;
-            private static final double kALeftAmp = 0.45;
+            private static final double kPLeftAmp = 0.1;
+            private static final double kSLeftAmp = 0.2612; // volts
+            private static final double kVLeftAmp = 0.061983;
+            private static final double kALeftAmp = 0.019191;
 
             public static final TalonFXConfiguration kRightConfigs = new TalonFXConfiguration();
             public static final TalonFXConfiguration kLeftConfigs = new TalonFXConfiguration();
@@ -227,7 +229,7 @@ public class Constants {
         public static final String kDbTabName = "Shooter";
 
         public static final Measure<Velocity<Angle>> kAmpTolerance = RotationsPerSecond.of(1);
-        public static final Measure<Velocity<Angle>> kBigShootTolerance = RotationsPerSecond.of(0.8);
+        public static final Measure<Velocity<Angle>> kBigShootTolerance = RotationsPerSecond.of(2);
 
         public static final int kRightId = 13;
         public static final int kLeftId = 14;
@@ -235,7 +237,8 @@ public class Constants {
         public static final double kSpinAmt = 0.7;
 
         public static final double kSubwooferRpm = 7300;
-        public static final double kAmpRpm = 850;
+        public static final double kPodiumRpm = 7600;
+        public static final double kAmpRpm = 800;
 
         public static final double kGearRatio = 18.0 / 36.0;
 
@@ -300,7 +303,7 @@ public class Constants {
                     .withReverseSoftLimitEnable(true);
 
                 cancoderConfig.MagnetSensor = cancoderConfig.MagnetSensor
-                    .withMagnetOffset(-0.272705078125)
+                    .withMagnetOffset(0.0966796875)
                     .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
                     .withAbsoluteSensorRange(AbsoluteSensorRangeValue.Signed_PlusMinusHalf);
             }
@@ -312,7 +315,6 @@ public class Constants {
         public static final int kHomeSwitch = 1;
 
         // 125:1 MaxPlanetary, 24:60 belt drive, 312.5:1 total
-        // this does not total to 312.5 : 1 banks it's 250 : 1
         public static final double kGearRatio = (125 * (60.0 / 24));
 
         public static final Measure<Distance> kLength = Inches.of(19.75);
@@ -322,9 +324,11 @@ public class Constants {
         public static final Measure<Angle> kInitAngle = Degrees.of(90);
         public static final Measure<Angle> kMaxAngle = Rotations.of(0.45);
 
-        public static final Measure<Angle> kSubwooferAngle = Rotations.of(0.066);
-        public static final Measure<Angle> kAmpAngle = Rotations.of(0.234131);
-        public static final Measure<Angle> kPodiumAngle = Rotations.of(0.007);
+        public static final Measure<Angle> kSubwooferAngle = Rotations.of(0.08);
+        public static final Measure<Angle> kAmpAngle = Rotations.of(0.195);
+        public static final Measure<Angle> kPodiumAngle = Degrees.of(8.25);
+
+        public static final Measure<Angle> kTolerance = Degrees.of(2);
     }
 
     // public class ClimberK {

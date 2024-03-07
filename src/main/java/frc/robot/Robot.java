@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 
 import org.photonvision.PhotonCamera;
@@ -104,6 +105,10 @@ public class Robot extends TimedRobot {
 			Trajectories.leave.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.TWO_PC, AutonFactory.twoPc(superstructure, shooter, swerve),
 			Trajectories.leave.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.TWO_PC_DIFF, AutonFactory.twoPcAmp(superstructure, shooter, swerve),
+			Trajectories.leave.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.THREE, AutonFactory.threePc(superstructure, shooter, swerve), 
+			Trajectories.leave.getInitialPose());
 	}
 
 	private void driverRumble(double intensity) {
@@ -131,13 +136,17 @@ public class Robot extends TimedRobot {
 				.withRotationalRate(-driver.getRightX() * kMaxAngularRate);
 		}));
 		driver.a().whileTrue(swerve.applyRequest(() -> brake));
-		driver.b().whileTrue(swerve
+		driver.b().and(driver.rightTrigger().negate()).whileTrue(swerve
 			.applyRequest(
 				() -> point.withModuleDirection(new Rotation2d(-driver.getLeftY(),
 					-driver.getLeftX()))));
+		driver.b().and(driver.rightTrigger()).onTrue(Commands.runOnce(() -> superstructure.forceStateToShooting()));
 		driver.x().whileTrue(swerve.goToAutonPose());
 		driver.leftBumper().onTrue(swerve.runOnce(() -> swerve.seedFieldRelative()));
-		driver.leftTrigger().whileTrue(superstructure.aimAndSpinUp(() -> AimK.kPodiumAngle, false));
+		driver.y().whileTrue(swerve.aim(0));
+		driver.rightBumper().onTrue(swerve.resetPoseToSpeaker());
+		driver.leftTrigger().whileTrue(superstructure.aimAndSpinUp(AimK.kPodiumAngle, true));
+		driver.povUp().whileTrue(AutonFactory.followThree(swerve));
 
 		/* sysid buttons */
 		driver.back().and(driver.y()).whileTrue(swerve.sysIdDynamic(Direction.kForward));
@@ -147,17 +156,20 @@ public class Robot extends TimedRobot {
 
 		/* characterisation buttons */
 		driver.back().and(driver.a()).whileTrue(swerve.wheelRadiusCharacterisation(-1));
-		driver.start().and(driver.a()).whileTrue(swerve.wheelRadiusCharacterisation(1));
+		driver.start().and(driver
+		.a()).whileTrue(swerve.wheelRadiusCharacterisation(1));
 
 		/* manipulator controls */
 		manipulator.rightTrigger().whileTrue(intake.outtake());
 		manipulator.b().and(manipulator.povUp()).whileTrue(conveyor.runFast());
-		manipulator.rightBumper().whileTrue(superstructure.aimAndSpinUp(() -> AimK.kSubwooferAngle, false));
-		manipulator.leftBumper().whileTrue(superstructure.aimAndSpinUp(() -> AimK.kAmpAngle, true));
+		manipulator.rightBumper().whileTrue(superstructure.subwooferSpinUp());
+		manipulator.leftBumper().whileTrue(superstructure.ampSpinUp(AimK.kAmpAngle));
 		manipulator.b().and(manipulator.povDown())
 			.onTrue(Commands.runOnce(() -> superstructure.forceStateToShooting()));
+		manipulator.b().and(manipulator.leftTrigger()).whileTrue(Commands.runOnce(() -> superstructure.forceStateToIdle()));
 		manipulator.x().and((manipulator.back().and(manipulator.start())).negate()).whileTrue(aim.hardStop());
-		manipulator.y().whileTrue(intake.runLilSpins());
+		manipulator.leftBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kAmpAngle, Degrees.of(0.25)));
+		manipulator.rightBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kSubwooferAngle, Degrees.of(2)));
 
 		/* testing buttons */
 		manipulator.a().whileTrue(superstructure.backwardsRun());
@@ -166,9 +178,6 @@ public class Robot extends TimedRobot {
 			.onTrue(aim.decreaseAngle());
 		manipulator.povLeft().onTrue(aim.to90ish());
 		manipulator.povRight().onTrue(aim.amp());
-
-		manipulator.start().whileTrue(Commands.startEnd(
-			() -> aim.setCoast(true), () -> aim.setCoast(false)));
 
 		/* sysid buttons */
 		manipulator.back().and(manipulator.y()).whileTrue(shooter.sysIdDynamic(Direction.kForward));
@@ -220,7 +229,6 @@ public class Robot extends TimedRobot {
 	@Override
 	public void autonomousInit() {
 		SignalLogger.start();
-		superstructure.forceStateToNoteReady();
 		m_autonomousCommand = getAutonomousCommand();
 		if (m_autonomousCommand != null) {
 			m_autonomousCommand.schedule();

@@ -15,7 +15,6 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
@@ -31,7 +30,6 @@ import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.AimK.AimConfigs;
 import frc.util.AllianceFlipUtil;
 import frc.util.logging.WaltLogger;
@@ -76,8 +74,8 @@ public class Aim extends SubsystemBase {
     private Measure<Angle> m_targetAngle = Rotations.of(0);
     private Translation3d m_ampPose;
 
-    private final DigitalInput m_home = new DigitalInput(kHomeSwitch);
-    private final Trigger m_homeTrigger = new Trigger(m_home::get).negate();
+    // private final DigitalInput m_home = new DigitalInput(kHomeSwitch);
+    // private final Trigger m_homeTrigger = new Trigger(m_home::get).negate();
 
     private boolean m_isCoast;
 
@@ -111,8 +109,8 @@ public class Aim extends SubsystemBase {
             // In simulation, make sure the CANcoder starts at the correct position
             m_cancoder.setPosition(Units.radiansToRotations(m_aimSim.getAngleRads()) * 1.69);
         }
-        m_homeTrigger.onTrue(Commands.runOnce(() -> m_motor.setPosition(kInitAngle.in(Rotations)))
-            .ignoringDisable(true));
+        // m_homeTrigger.onTrue(Commands.runOnce(() -> m_motor.setPosition(kInitAngle.in(Rotations)))
+        //     .ignoringDisable(true));
 
         nte_isCoast = Shuffleboard.getTab(kDbTabName)
             .add("isCoast", false)
@@ -150,14 +148,14 @@ public class Aim extends SubsystemBase {
 
     public Command increaseAngle() {
         return Commands.runOnce(() -> {
-            m_targetAngle = m_targetAngle.plus(Degrees.of(1));
+            m_targetAngle = m_targetAngle.plus(Degrees.of(0.5));
             m_motor.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
         });
     }
 
     public Command decreaseAngle() {
         return Commands.runOnce(() -> {
-            m_targetAngle = m_targetAngle.minus(Degrees.of(1));
+            m_targetAngle = m_targetAngle.minus(Degrees.of(0.5));
             m_motor.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
         });
     }
@@ -176,18 +174,20 @@ public class Aim extends SubsystemBase {
     private Command toAngle(Measure<Angle> angle) {
         return runOnce(
             () -> {
+                m_targetAngle = angle;
                 m_motor.setControl(m_request.withPosition(angle.in(Rotations)));
             });
     }
 
-    private Command toAngleUntilAt(Measure<Angle> angle, Measure<Angle> tolerance) {
+    public Command toAngleUntilAt(Measure<Angle> angle, Measure<Angle> tolerance) {
         var goThere = startEnd(
             () -> {
+                m_targetAngle = angle;
                 m_motor.setControl(m_request.withPosition(angle.in(Rotations)));
-            }, () -> {
-            });
+            }, () -> {});
         return goThere.until(() -> {
             var error = Rotations.of(Math.abs(m_motor.getClosedLoopError().getValueAsDouble()));
+            log_closedLoopError.accept(error.in(Rotations));
             return error.lte(tolerance);
         });
     }
@@ -195,11 +195,12 @@ public class Aim extends SubsystemBase {
     public Command toAngleUntilAt(Supplier<Measure<Angle>> angle, Measure<Angle> tolerance) {
         var goThere = startEnd(
             () -> {
+                m_targetAngle = angle.get();
                 m_motor.setControl(m_request.withPosition(angle.get().in(Rotations)));
-            }, () -> {
-            });
+            }, () -> {});
         return goThere.until(() -> {
             var error = Rotations.of(Math.abs(m_motor.getClosedLoopError().getValueAsDouble()));
+            log_closedLoopError.accept(error.in(Rotations));
             return error.lte(tolerance);
         });
     }
@@ -310,7 +311,7 @@ public class Aim extends SubsystemBase {
     @Override
     public void periodic() {
         log_motorSpeed.accept(m_motor.get());
-        log_motorPos.accept(m_motor.getPosition().getValueAsDouble());
+        log_motorPos.accept(Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()));
         log_targetAngle.accept(getTargetAngle());
         log_cancoderPos.accept(m_cancoder.getPosition().getValueAsDouble());
 

@@ -5,7 +5,6 @@ import static frc.robot.Constants.ShooterK.*;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.controls.CoastOut;
-import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -45,7 +44,6 @@ public class Shooter extends SubsystemBase {
     private final TalonFX m_left = new TalonFX(kLeftId, kCanbus);
     private final TalonFX m_right = new TalonFX(kRightId, kCanbus);
     private final VelocityVoltage m_request = new VelocityVoltage(0);
-    private final VelocityTorqueCurrentFOC m_current = new VelocityTorqueCurrentFOC(0);
     private final VoltageOut m_voltage = new VoltageOut(0);
     private final CoastOut m_coast = new CoastOut();
 
@@ -130,9 +128,6 @@ public class Shooter extends SubsystemBase {
         });
     }
 
-    private Command toVelo(Supplier<Measure<Velocity<Angle>>> velo) {
-        return toVelo(velo, () -> false);
-    };
 
     private Command toVelo(Supplier<Measure<Velocity<Angle>>> velo, BooleanSupplier idle) {
         Runnable spin = () -> {
@@ -150,6 +145,8 @@ public class Shooter extends SubsystemBase {
         Consumer<Boolean> stopSpin = (interrupted) -> {
             m_rightTarget = RotationsPerSecond.of(0);
             m_leftTarget = RotationsPerSecond.of(0);
+            m_right.setControl(m_request.withVelocity(0).withSlot(0));
+            m_left.setControl(m_request.withVelocity(0).withSlot(0));
             m_right.setControl(m_coast);
             m_left.setControl(m_coast);
             System.out.println("ToVelo_STOP");
@@ -172,10 +169,9 @@ public class Shooter extends SubsystemBase {
                 var right = m_rightTarget.in(RotationsPerSecond);
                 var left = m_leftTarget.in(RotationsPerSecond);
 
-                // withSlot(1) to use slot 1 PIDFF gains for powerful shots
-                m_right.setControl(m_current.withVelocity(right).withSlot(1));
-                m_left.setControl(m_current.withVelocity(left).withSlot(1));
-
+                // withSlot(1) to use slot 1 PIDFF gains for unpowerful shots
+                m_right.setControl(m_request.withVelocity(right).withSlot(1));
+                m_left.setControl(m_request.withVelocity(left).withSlot(1));
             }, () -> {
                 m_right.setControl(m_coast);
                 m_left.setControl(m_coast);
@@ -195,20 +191,19 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command subwoofer() {
-        return subwoofer(() -> false);
+        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), () -> false);
     }
 
     public Command subwoofer(BooleanSupplier idle) {
         return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), idle);
     }
 
-    public Command ampShot() {
-        return toVeloNoSpin(() -> Rotations.per(Minute).of(kAmpRpm));
+    public Command podium(BooleanSupplier idle) {
+        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), idle);
     }
 
-    public Command spinUp() {
-        return toVelo(m_leftTargetSupp)
-            .until(() -> spinUpFinished());
+    public Command ampShot() {
+        return toVeloNoSpin(() -> Rotations.per(Minute).of(kAmpRpm));
     }
 
     public boolean spinUpFinished() {

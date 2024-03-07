@@ -43,6 +43,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Vision.VisionMeasurement;
 import frc.robot.auton.AutonChooser;
 import frc.util.AdvantageScopeUtil;
+import frc.util.AllianceFlipUtil;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 
@@ -70,7 +71,9 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final PIDController m_yController = new PIDController(kPY, 0.0, 0.0);
 	private final PIDController m_thetaController = new PIDController(kPTheta, 0.0, 0.0);
 
-	private final double m_characterisationSpeed = 0.5;
+	private Rotation2d m_desiredRot;
+
+	private final double m_characterisationSpeed = 1;
 	public final DoubleSupplier m_gyroYawRadsSupplier;
 	private final SlewRateLimiter m_omegaLimiter = new SlewRateLimiter(1);
 
@@ -132,6 +135,8 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			startSimThread();
 		}
 		m_gyroYawRadsSupplier = () -> getPigeon2().getAngle();
+		m_thetaController.enableContinuousInput(0, 2 * Math.PI);
+		m_desiredRot = new Rotation2d();
 	}
 
 	public Command wheelRadiusCharacterisation(double omegaDirection) {
@@ -140,8 +145,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			accumGyroYawRads = 0;
 			currentEffectiveWheelRadius = 0;
 			for (int i = 0; i < Modules.length; i++) {
-				var pos = Modules[i].getPosition(true);
-				startWheelPositions[i] = pos.distanceMeters * kDriveRotationsPerMeter;
+				startWheelPositions[i] = Modules[i].getPosition(true).angle.getRadians();
 			}
 			m_omegaLimiter.reset(0);
 		});
@@ -155,8 +159,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 				double averageWheelPosition = 0;
 				double[] wheelPositions = new double[4];
 				for (int i = 0; i < Modules.length; i++) {
-					var pos = Modules[i].getPosition(true);
-					wheelPositions[i] = pos.distanceMeters * kDriveRotationsPerMeter;
+					wheelPositions[i] = Modules[i].getPosition(true).angle.getRadians();
 					averageWheelPosition += Math.abs(wheelPositions[i] - startWheelPositions[i]);
 				}
 				averageWheelPosition /= 4.0;
@@ -252,6 +255,24 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		});
 	}
 
+	public Command aim(double radians) {
+		return run(() -> {
+			m_desiredRot = AllianceFlipUtil.apply(Rotation2d.fromRadians(radians));
+			var curPose = getState().Pose;
+			var thetaSpeed = m_thetaController.calculate(curPose.getRotation().getRadians(),
+				m_desiredRot.getRadians());
+			var speeds = ChassisSpeeds.fromFieldRelativeSpeeds(0, 0, thetaSpeed, m_desiredRot);
+
+			setControl(m_autoRequest.withSpeeds(speeds));
+		}).until(() -> {
+			boolean check = MathUtil.isNear(m_desiredRot.getDegrees(), getState().Pose.getRotation().getDegrees(), 1);
+			if (check) {
+				System.out.println("it should end");
+			}
+			return check;
+		});
+	}
+
 	public Pose3d getPose3d() {
 		var txr2d = getState().Pose.getTranslation();
 		// we're on the floor. I hope. (i'm going to make the robot fly! >:D)
@@ -307,5 +328,6 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	public void periodic() {
 		log_rotationSpeed.accept(Units.radiansToRotations(getState().speeds.omegaRadiansPerSecond));
+		
 	}
 }
