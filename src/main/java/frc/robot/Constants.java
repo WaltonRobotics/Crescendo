@@ -5,6 +5,7 @@ import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static frc.robot.Robot.kMaxSpeed;
 
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
@@ -38,6 +39,7 @@ import frc.util.AllianceFlipUtil;
 
 public class Constants {
     public static boolean kDebugLoggingEnabled = true;
+    public static final double kMetersPerInch = 0.0254;
 
     public static final double kStickDeadband = 0.1;
     public static final String kCanbus = "fd";
@@ -107,14 +109,14 @@ public class Constants {
     }
 
     public class AutoK {
-        public static final double kPX = 3.5; // 8
-        public static final double kPY = 3.5;
+        public static final double kPX = 10;
+        public static final double kPY = 10;
         public static final double kPTheta = 6.5; // 1
 
         public static final HolonomicPathFollowerConfig kPathFollowerConfig = new HolonomicPathFollowerConfig(
             new PIDConstants(kPX),
             new PIDConstants(kPTheta),
-            5,
+            kMaxSpeed,
             TunerConstants.kDriveRadius,
             new ReplanningConfig()
         );
@@ -126,9 +128,9 @@ public class Constants {
 
             static {
                 kConfigs.CurrentLimits = kConfigs.CurrentLimits
-                    .withStatorCurrentLimit(70)
+                    .withStatorCurrentLimit(120)
                     .withStatorCurrentLimitEnable(true)
-                    .withSupplyCurrentLimit(40)
+                    .withSupplyCurrentLimit(55)
                     .withSupplyCurrentLimitEnable(true);
             }
         }
@@ -301,7 +303,7 @@ public class Constants {
                     .withReverseSoftLimitEnable(true);
 
                 cancoderConfig.MagnetSensor = cancoderConfig.MagnetSensor
-                    .withMagnetOffset(-0.272705078125)
+                    .withMagnetOffset(0.0966796875)
                     .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
                     .withAbsoluteSensorRange(AbsoluteSensorRangeValue.Signed_PlusMinusHalf);
             }
@@ -322,9 +324,9 @@ public class Constants {
         public static final Measure<Angle> kInitAngle = Degrees.of(90);
         public static final Measure<Angle> kMaxAngle = Rotations.of(0.45);
 
-        public static final Measure<Angle> kSubwooferAngle = Rotations.of(0.066);
+        public static final Measure<Angle> kSubwooferAngle = Rotations.of(0.08);
         public static final Measure<Angle> kAmpAngle = Rotations.of(0.195);
-        public static final Measure<Angle> kPodiumAngle = Rotations.of(0.0074);
+        public static final Measure<Angle> kPodiumAngle = Degrees.of(8.25);
 
         public static final Measure<Angle> kTolerance = Degrees.of(2);
     }

@@ -6,8 +6,6 @@ import static frc.robot.Constants.RobotK.kDbTabName;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleConsumer;
-import java.util.function.Supplier;
-
 import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
@@ -236,7 +234,7 @@ public class Superstructure extends SubsystemBase {
         stateTrg_intake.onTrue(
             // wait until aim is ±50 degrees to intake mode
             Commands.sequence(
-                m_aim.intakeAngleNearCmd(),
+                m_aim.hardStop(),
                 Commands.parallel(m_intake.run(), m_conveyor.startSlow())));
 
         // !(intakeReq || idle) => !intakeReq && !idle
@@ -339,32 +337,14 @@ public class Superstructure extends SubsystemBase {
         return Commands.parallel(shootCmd, conveyorCmd, intakeCmd);
     }
 
-    public Command autonStop() {
-        var conveyorCmd = m_conveyor.stop();
-        var intakeCmd = m_intake.stop();
-
-        return Commands.parallel(Commands.print("auton stop"), conveyorCmd, intakeCmd);
-    }
-
-    public Command aimAndSpinUp(Supplier<Measure<Angle>> target, boolean amp) {
-        return aimAndSpinUp(target, amp, false, false);
-    }
-
-    public Command aimAndSpinUp(Supplier<Measure<Angle>> target, boolean amp, boolean podium, boolean auton) {
-        var aimCmd = m_aim.toAngleUntilAt(target, amp ? Degrees.of(0.25) : Degrees.of(2)); // TODO make this unmagical :(
+    public Command aimAndSpinUp(Measure<Angle> target, boolean podium) {
+        var aimCmd = m_aim.toAngleUntilAt(target, Degrees.of(1)); // TODO make this unmagical :(
 
         var waitForNoteReady = Commands.waitUntil(() -> m_state.idx > NoteState.ROLLER_BEAM_RETRACT.idx)
             .andThen(Commands.print("====NOTE READY===="));
 
-        Command shootCmd;
+        var shootCmd = podium ? m_shooter.podium(stateTrg_idle) : m_shooter.subwoofer(stateTrg_idle); 
 
-        if (auton) {
-            shootCmd = podium ? m_shooter.subwoofer(stateTrg_idle) : m_shooter.subwoofer(stateTrg_idle); 
-        } else {
-            shootCmd = amp ? m_shooter.ampShot() : m_shooter.subwoofer();
-        }
-
-        var aimCmd2 = amp ? m_aim.toAngleUntilAt(() -> target.get().plus(Degrees.of(20)), Degrees.of(0)) : Commands.none();
 
         return Commands.sequence(
             Commands.parallel(
@@ -373,26 +353,20 @@ public class Superstructure extends SubsystemBase {
                     waitForNoteReady.andThen(Commands.print("AimAndSpinUp_NOTERD_DONE")),
                     changeStateCmd(NoteState.SHOT_SPINUP),
                     Commands.parallel(
-                        shootCmd.asProxy().andThen(Commands.print("shooty shoot done (no yelling)")),
-                        Commands.sequence(
-                            Commands.waitUntil(irqTrg_conveyorBeamBreak),
-                            aimCmd2.asProxy().andThen(Commands.print("aim"))
-                        )
+                        shootCmd.asProxy().andThen(Commands.print("shooty shoot done (no yelling)"))
                     )
                 )
             )
         );
     }
 
-    public Command ampSpinUp(Supplier<Measure<Angle>> target) {
-        // var aimCmd = m_aim.toAngleUntilAt(target, amp ? Degrees.of(0.25) : Degrees.of(2)); // TODO make this unmagical :(
-
+    public Command ampSpinUp(Measure<Angle> target) {
         var waitForNoteReady = Commands.waitUntil(() -> m_state.idx > NoteState.ROLLER_BEAM_RETRACT.idx)
             .andThen(Commands.print("====NOTE READY===="));
 
         Command shootCmd = m_shooter.ampShot();
 
-        var aimCmd2 = m_aim.toAngleUntilAt(() -> target.get().plus(Degrees.of(20)), Degrees.of(0));
+        var aimCmd2 = m_aim.toAngleUntilAt(() -> target.plus(Degrees.of(20)), Degrees.of(0));
 
         return Commands.sequence(
             waitForNoteReady.andThen(Commands.print("AimAndSpinUp_NOTERD_DONE")),
@@ -404,6 +378,19 @@ public class Superstructure extends SubsystemBase {
                     aimCmd2.asProxy().andThen(Commands.print("aim"))
                 )
             )  
+        );
+    }
+
+    public Command subwooferSpinUp() {
+        var waitForNoteReady = Commands.waitUntil(() -> m_state.idx > NoteState.ROLLER_BEAM_RETRACT.idx)
+            .andThen(Commands.print("====NOTE READY===="));
+
+        Command shootCmd = m_shooter.subwoofer();
+
+        return Commands.sequence(
+            waitForNoteReady.andThen(Commands.print("AimAndSpinUp_NOTERD_DONE")),
+            changeStateCmd(NoteState.SHOT_SPINUP),
+            shootCmd.asProxy().andThen(Commands.print("shooty shoot done (no yelling)"))
         );
     }
 

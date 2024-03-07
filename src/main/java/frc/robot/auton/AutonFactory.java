@@ -9,6 +9,7 @@ import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 import frc.robot.subsystems.Superstructure;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static frc.robot.Constants.AimK.kPodiumAngle;
 import static frc.robot.Constants.AimK.kSubwooferAngle;
 
@@ -53,7 +54,7 @@ public final class AutonFactory {
 		var preloadShot = shoot(superstructure, shooter);
 		var intake = superstructure.autonIntakeCmd().asProxy();
 		var swerveAim = swerve.aim(0).asProxy();
-		var aimAndSpinUp = superstructure.aimAndSpinUp(() -> kPodiumAngle, false, true, true).until(superstructure.stateTrg_idle);
+		var aimAndSpinUp = superstructure.aimAndSpinUp(Degrees.of(5.2), true).until(superstructure.stateTrg_idle);
 		var secondShot = superstructure.autonShootReq().asProxy();
 
 		return Commands.sequence(
@@ -71,7 +72,7 @@ public final class AutonFactory {
 					Commands.print("note ready")
 				),
 				Commands.sequence(
-					swerveAim,
+					swerveAim.withTimeout(0.2),
 					Commands.print("aimed")
 				)
 			),
@@ -89,7 +90,7 @@ public final class AutonFactory {
 		var preloadShot = shoot(superstructure, shooter);
 		var intake = superstructure.autonIntakeCmd().asProxy();
 		var swerveAim = swerve.aim(0.4).asProxy();
-		var aimAndSpinUp = superstructure.aimAndSpinUp(() -> kPodiumAngle, false, true, true).until(superstructure.stateTrg_idle);
+		var aimAndSpinUp = superstructure.aimAndSpinUp(kPodiumAngle, true).until(superstructure.stateTrg_idle);
 		var secondShot = superstructure.autonShootReq().asProxy();
 
 		return Commands.sequence(
@@ -107,7 +108,7 @@ public final class AutonFactory {
 					Commands.print("note ready")
 				),
 				Commands.sequence(
-					swerveAim,
+					swerveAim.withTimeout(1),
 					Commands.print("aimed")
 				)
 			),
@@ -119,6 +120,18 @@ public final class AutonFactory {
 		);
 	}
 
+	public static Command followThree(Swerve swerve) {
+		var reset = swerve.resetPose(Paths.twoPc).asProxy();
+		var pathFollow1 = AutoBuilder.followPath(Paths.twoPc).asProxy();
+		var pathFollow2 = AutoBuilder.followPath(Paths.three).asProxy();
+
+		return Commands.sequence(
+			reset,
+			pathFollow1,
+			pathFollow2
+		);
+	}
+
 	public static Command threePc(Superstructure superstructure, Shooter shooter, Swerve swerve) {
 		var twoPc = twoPc(superstructure, shooter, swerve);
 
@@ -126,7 +139,7 @@ public final class AutonFactory {
 		var pathFollow2 = AutoBuilder.followPath(Paths.three).asProxy();
 		var intake2 = superstructure.autonIntakeCmd().asProxy();
 		var swerveAim2 = swerve.aim(0.5).asProxy();
-		var aimAndSpinUp2 = superstructure.aimAndSpinUp(() -> kPodiumAngle, false, true, true);
+		var aimAndSpinUp2 = superstructure.aimAndSpinUp(Degrees.of(1), true);
 		var thirdShot = superstructure.autonShootReq().asProxy();
 		
 		return Commands.sequence(
@@ -134,11 +147,14 @@ public final class AutonFactory {
 			twoPc,
 			/* 3 piece */
 			Commands.parallel(
-				intake2,
+				Commands.sequence(
+					Commands.waitSeconds(0.1),
+					intake2
+				),
 				pathFollow2
 			),
 			Commands.parallel(
-				swerveAim2.withTimeout(0.1),
+				swerveAim2.withTimeout(0.2),
 				aimAndSpinUp2,
 				thirdShot
 			)
@@ -146,7 +162,7 @@ public final class AutonFactory {
 	}
 
 	public static Command shoot(Superstructure superstructure, Shooter shooter) {
-		var aimAndSpinUp = superstructure.aimAndSpinUp(() -> kSubwooferAngle, false, false, true).until(superstructure.stateTrg_idle);
+		var aimAndSpinUp = superstructure.aimAndSpinUp(kSubwooferAngle, false).until(superstructure.stateTrg_idle);
 		var waitUntilSpunUp = Commands.waitUntil(() -> shooter.spinUpFinished());
 		var noteReady = superstructure.forceStateToNoteReady().asProxy();
 		var shoot = Commands.runOnce(() -> superstructure.forceStateToShooting()).asProxy();

@@ -145,6 +145,8 @@ public class Robot extends TimedRobot {
 		driver.leftBumper().onTrue(swerve.runOnce(() -> swerve.seedFieldRelative()));
 		driver.y().whileTrue(swerve.aim(0));
 		driver.rightBumper().onTrue(swerve.resetPoseToSpeaker());
+		driver.leftTrigger().whileTrue(superstructure.aimAndSpinUp(AimK.kPodiumAngle, true));
+		driver.povUp().whileTrue(AutonFactory.followThree(swerve));
 
 		/* sysid buttons */
 		driver.back().and(driver.y()).whileTrue(swerve.sysIdDynamic(Direction.kForward));
@@ -154,18 +156,20 @@ public class Robot extends TimedRobot {
 
 		/* characterisation buttons */
 		driver.back().and(driver.a()).whileTrue(swerve.wheelRadiusCharacterisation(-1));
-		driver.start().and(driver.a()).whileTrue(swerve.wheelRadiusCharacterisation(1));
+		driver.start().and(driver
+		.a()).whileTrue(swerve.wheelRadiusCharacterisation(1));
 
 		/* manipulator controls */
 		manipulator.rightTrigger().whileTrue(intake.outtake());
 		manipulator.b().and(manipulator.povUp()).whileTrue(conveyor.runFast());
-		manipulator.rightBumper().whileTrue(superstructure.aimAndSpinUp(() -> AimK.kSubwooferAngle, false));
-		manipulator.leftBumper().whileTrue(superstructure.ampSpinUp(() -> AimK.kAmpAngle));
+		manipulator.rightBumper().whileTrue(superstructure.subwooferSpinUp());
+		manipulator.leftBumper().whileTrue(superstructure.ampSpinUp(AimK.kAmpAngle));
 		manipulator.b().and(manipulator.povDown())
 			.onTrue(Commands.runOnce(() -> superstructure.forceStateToShooting()));
 		manipulator.b().and(manipulator.leftTrigger()).whileTrue(Commands.runOnce(() -> superstructure.forceStateToIdle()));
 		manipulator.x().and((manipulator.back().and(manipulator.start())).negate()).whileTrue(aim.hardStop());
-		manipulator.y().onTrue(aim.toAngleUntilAt(() -> AimK.kAmpAngle, Degrees.of(0.25)));
+		manipulator.leftBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kAmpAngle, Degrees.of(0.25)));
+		manipulator.rightBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kSubwooferAngle, Degrees.of(2)));
 
 		/* testing buttons */
 		manipulator.a().whileTrue(superstructure.backwardsRun());

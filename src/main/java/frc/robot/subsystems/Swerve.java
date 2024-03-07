@@ -49,6 +49,7 @@ import frc.util.logging.WaltLogger.DoubleLogger;
 
 import static frc.robot.Constants.FieldK.*;
 import static frc.robot.generated.TunerConstants.kDriveRadius;
+import static frc.robot.generated.TunerConstants.kDriveRotationsPerMeter;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.AutoK.*;
 
@@ -72,7 +73,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	private Rotation2d m_desiredRot;
 
-	private final double m_characterisationSpeed = 0.5;
+	private final double m_characterisationSpeed = 1;
 	public final DoubleSupplier m_gyroYawRadsSupplier;
 	private final SlewRateLimiter m_omegaLimiter = new SlewRateLimiter(1);
 
@@ -144,7 +145,9 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			accumGyroYawRads = 0;
 			currentEffectiveWheelRadius = 0;
 			for (int i = 0; i < Modules.length; i++) {
-				startWheelPositions[i] = Modules[i].getPosition(true).angle.getRadians();
+				var pos = Modules[i].getPosition(true);
+				var wheelRotations = pos.distanceMeters * kDriveRotationsPerMeter;
+				startWheelPositions[i] = Units.rotationsToRadians(wheelRotations);
 			}
 			m_omegaLimiter.reset(0);
 		});
@@ -158,7 +161,9 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 				double averageWheelPosition = 0;
 				double[] wheelPositions = new double[4];
 				for (int i = 0; i < Modules.length; i++) {
-					wheelPositions[i] = Modules[i].getPosition(true).angle.getRadians();
+					var pos = Modules[i].getPosition(true);
+					var wheelRotations = pos.distanceMeters * kDriveRotationsPerMeter;
+					wheelPositions[i] = Units.rotationsToRadians(wheelRotations);
 					averageWheelPosition += Math.abs(wheelPositions[i] - startWheelPositions[i]);
 				}
 				averageWheelPosition /= 4.0;
@@ -327,5 +332,6 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	public void periodic() {
 		log_rotationSpeed.accept(Units.radiansToRotations(getState().speeds.omegaRadiansPerSecond));
+		
 	}
 }
