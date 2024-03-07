@@ -129,10 +129,6 @@ public class TunerConstants {
 	public static final double kDriveRotationsPerMeter = rotationsPerWheelRotation / metersPerWheelRotation;
 	public static final double kDriveRadius = Math.hypot(kFrontLeftXPosInches, kFrontLeftYPosInches);
 
-	private static double rotationsPerWheelRotation = kDriveGearRatio;
-	private static double metersPerWheelRotation = 2 * Math.PI * Units.inchesToMeters(kWheelRadiusInches);
-	public static final double kDriveRotationsPerMeter = rotationsPerWheelRotation / metersPerWheelRotation;
-
 	private static final SwerveModuleConstants FrontLeft = ConstantCreator.createModuleConstants(
 		kFrontLeftSteerMotorId, kFrontLeftDriveMotorId, kFrontLeftEncoderId, kFrontLeftEncoderOffset,
 		Units.inchesToMeters(kFrontLeftXPosInches), Units.inchesToMeters(kFrontLeftYPosInches), kInvertLeftSide);

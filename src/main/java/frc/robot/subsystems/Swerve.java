@@ -49,7 +49,6 @@ import frc.util.logging.WaltLogger.DoubleLogger;
 
 import static frc.robot.Constants.FieldK.*;
 import static frc.robot.generated.TunerConstants.kDriveRadius;
-import static frc.robot.generated.TunerConstants.kDriveRotationsPerMeter;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.AutoK.*;
 
