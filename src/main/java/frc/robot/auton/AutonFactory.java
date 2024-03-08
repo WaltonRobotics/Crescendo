@@ -20,6 +20,14 @@ public final class AutonFactory {
 		"Auton", "currentCmd", PubSubOption.sendAll(true));
 	public static double currentState = 0;
 
+	private static Command parallel(Command... commands) {
+		return Commands.parallel(commands);
+	}
+
+	private static Command sequence(Command... commands) {
+		return Commands.sequence(commands);
+	}
+
 	public static Command oneMeter() {
 		return AutoBuilder.followPath(Paths.oneMeter);
 	}
@@ -167,13 +175,15 @@ public final class AutonFactory {
 		var pathFollow = AutoBuilder.followPath(Paths.threePointFive).asProxy();
 		var intake = superstructure.autonIntakeCmd().asProxy();
 
-		return Commands.sequence(
+		return sequence( // 3pc then (path and (wait then intake))
 			threePc,
-			Commands.parallel(
-				Commands.waitSeconds(0.1),
-				intake
-			),
-			pathFollow
+			parallel( // path and (wait then intake) 
+				sequence( // wait then intake
+					Commands.waitSeconds(0.8),
+					intake
+				),
+				pathFollow
+			)
 		);
 	}
 
