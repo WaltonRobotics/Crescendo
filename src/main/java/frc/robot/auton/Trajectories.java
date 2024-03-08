@@ -9,4 +9,5 @@ public class Trajectories {
 	public static final ChoreoTrajectory leave = Choreo.getTrajectory("1_leave.1");
 	public static final ChoreoTrajectory twoPc = Choreo.getTrajectory("alt2.1");
 	public static final ChoreoTrajectory three = Choreo.getTrajectory("3.1");
+	public static final ChoreoTrajectory threePointFive = Choreo.getTrajectory("3point5.1");
 }

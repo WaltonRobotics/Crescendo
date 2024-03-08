@@ -161,6 +161,22 @@ public final class AutonFactory {
 		);
 	}
 
+	public static Command threePointFive(Superstructure superstructure, Shooter shooter, Swerve swerve) {
+		var threePc = threePc(superstructure, shooter, swerve);
+
+		var pathFollow = AutoBuilder.followPath(Paths.threePointFive).asProxy();
+		var intake = superstructure.autonIntakeCmd().asProxy();
+
+		return Commands.sequence(
+			threePc,
+			Commands.parallel(
+				Commands.waitSeconds(0.1),
+				intake
+			),
+			pathFollow
+		);
+	}
+
 	public static Command shoot(Superstructure superstructure, Shooter shooter) {
 		var aimAndSpinUp = superstructure.aimAndSpinUp(kSubwooferAngle, false).until(superstructure.stateTrg_idle);
 		var noteReady = superstructure.forceStateToNoteReady().asProxy();

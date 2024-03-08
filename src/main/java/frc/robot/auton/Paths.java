@@ -9,4 +9,6 @@ public class Paths {
     public static final PathPlannerPath twoPc = PathPlannerPath.fromChoreoTrajectory("alt2.1");
     public static final PathPlannerPath twoDiff = PathPlannerPath.fromChoreoTrajectory("2again.1");
     public static final PathPlannerPath three = PathPlannerPath.fromChoreoTrajectory("3.1");
+    public static final PathPlannerPath threePointFive = PathPlannerPath.fromChoreoTrajectory("3point5.1");
+
 }
