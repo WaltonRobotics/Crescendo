@@ -111,11 +111,15 @@ public class Robot extends TimedRobot {
 	}
 
 	private void driverRumble(double intensity) {
-		driver.getHID().setRumble(RumbleType.kBothRumble, intensity);
+		if (!DriverStation.isAutonomous()) {
+			driver.getHID().setRumble(RumbleType.kBothRumble, intensity);
+		}
 	}
 
 	private void manipulatorRumble(double intensity) {
-		manipulator.getHID().setRumble(RumbleType.kBothRumble, intensity);
+		if (!DriverStation.isAutonomous()) {
+			manipulator.getHID().setRumble(RumbleType.kBothRumble, intensity);
+		}
 	}
 
 	private void configureBindings() {
