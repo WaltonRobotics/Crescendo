@@ -480,12 +480,11 @@ public class Superstructure extends SubsystemBase {
         });
     }
 
-    public void forceStateToShooting() {
+    public void preloadShootReq() {
         timothyEntered = true;
         timothyIn = true;
         autonIntake = false;
         autonShoot = true;
-        m_state = NoteState.SHOOTING;
     }
 
     public void forceStateToIdle() {

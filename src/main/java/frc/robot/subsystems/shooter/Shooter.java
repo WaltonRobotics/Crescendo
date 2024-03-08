@@ -208,6 +208,8 @@ public class Shooter extends SubsystemBase {
 
     public boolean spinUpFinished() {
         if (m_leftTarget.baseUnitMagnitude() == 0) {
+            m_leftOk = false;
+            m_rightOk = false;
             return false;
         }
         var leftMeas = m_leftTargetSupp.get();

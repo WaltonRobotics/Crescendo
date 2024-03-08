@@ -36,8 +36,8 @@ public final class AutonFactory {
 	public static Command leave(Superstructure superstructure, Shooter shooter, Swerve swerve) {
 		var resetPose = swerve.resetPose(Paths.leave).asProxy();
 		var shoot = shoot(superstructure, shooter);
-
 		var pathFollow = AutoBuilder.followPath(Paths.leave).asProxy();
+		
 		return Commands.sequence(
 			Commands.parallel(
 				resetPose,
@@ -54,7 +54,7 @@ public final class AutonFactory {
 		var preloadShot = shoot(superstructure, shooter);
 		var intake = superstructure.autonIntakeCmd().asProxy();
 		var swerveAim = swerve.aim(0).asProxy();
-		var aimAndSpinUp = superstructure.aimAndSpinUp(Degrees.of(4), true).until(superstructure.stateTrg_idle);
+		var aimAndSpinUp = superstructure.aimAndSpinUp(Degrees.of(3.2), true).until(superstructure.stateTrg_idle);
 		var secondShot = superstructure.autonShootReq().asProxy();
 
 		return Commands.sequence(
@@ -163,22 +163,15 @@ public final class AutonFactory {
 
 	public static Command shoot(Superstructure superstructure, Shooter shooter) {
 		var aimAndSpinUp = superstructure.aimAndSpinUp(kSubwooferAngle, false).until(superstructure.stateTrg_idle);
-		var waitUntilSpunUp = Commands.waitUntil(() -> shooter.spinUpFinished());
 		var noteReady = superstructure.forceStateToNoteReady().asProxy();
-		var shoot = Commands.runOnce(() -> superstructure.forceStateToShooting()).asProxy();
+		var shoot = Commands.runOnce(() -> superstructure.preloadShootReq()).asProxy();
 
 		return Commands.sequence(
 			noteReady,
 			Commands.parallel(
 				Commands.print("aim and spin up"),
 				aimAndSpinUp.andThen(Commands.print("aimAndSpinUp_DONE")),
-				Commands.sequence(
-					Commands.print("waiting for spin up"),
-					waitUntilSpunUp.andThen(Commands.print("waitUntilSpunUp_DONE")),
-					Commands.print("shooting"),
-					shoot.andThen(Commands.print("shoot_DONE")),
-					Commands.print("shot")
-				)
+				shoot.andThen(Commands.print("shoot_DONE"))
 			)
 		);
 	}

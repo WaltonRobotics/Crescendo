@@ -1,5 +1,5 @@
 {
-    "version": "v0.2.1",
+    "version": "v0.3",
     "robotConfiguration": {
         "mass": 74.08797700309194,
         "rotationalInertia": 6,
@@ -144,26 +144,27 @@
                     "timestamp": 0.9655882596878084
                 }
             ],
+            "trajectoryWaypoints": [],
             "constraints": [
                 {
                     "scope": [
                         "first"
                     ],
-                    "type": "StopPoint",
-                    "uuid": "e808d6a9-2957-48ff-824f-5b8ab35f4295"
+                    "type": "StopPoint"
                 },
                 {
                     "scope": [
                         "last"
                     ],
-                    "type": "StopPoint",
-                    "uuid": "7e2c1777-a6c8-4071-8f7e-9baae4ddb827"
+                    "type": "StopPoint"
                 }
             ],
             "usesControlIntervalGuessing": true,
             "defaultControlIntervalCount": 40,
             "usesDefaultFieldObstacles": true,
-            "circleObstacles": []
+            "circleObstacles": [],
+            "eventMarkers": [],
+            "isTrajectoryStale": true
         },
         "alt2": {
             "waypoints": [
@@ -287,34 +288,35 @@
                     "timestamp": 0.9516889285866393
                 }
             ],
+            "trajectoryWaypoints": [],
             "constraints": [
                 {
                     "scope": [
                         "first"
                     ],
-                    "type": "StopPoint",
-                    "uuid": "afdf3790-7b12-415a-9606-ad2b13102be3"
+                    "type": "StopPoint"
                 },
                 {
                     "scope": [
                         1
                     ],
-                    "type": "StopPoint",
-                    "uuid": "2961a306-8c08-4a37-a361-9064e98c8d53"
+                    "type": "StopPoint"
                 },
                 {
                     "scope": [
                         "last"
                     ],
-                    "type": "StopPoint",
-                    "uuid": "a1cd008a-1a9d-41be-94a4-b4b5d7f35422"
+                    "type": "StopPoint"
                 }
             ],
             "usesControlIntervalGuessing": true,
             "defaultControlIntervalCount": 40,
             "usesDefaultFieldObstacles": true,
-            "circleObstacles": []
+            "circleObstacles": [],
+            "eventMarkers": [],
+            "isTrajectoryStale": true
         }
     },
-    "splitTrajectoriesAtStopPoints": false
+    "splitTrajectoriesAtStopPoints": false,
+    "usesObstacles": false
 }

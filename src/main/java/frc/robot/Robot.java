@@ -104,11 +104,9 @@ public class Robot extends TimedRobot {
 		AutonChooser.assignAutonCommand(AutonOption.LEAVE, AutonFactory.leave(superstructure, shooter, swerve),
 			Trajectories.leave.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.TWO_PC, AutonFactory.twoPc(superstructure, shooter, swerve),
-			Trajectories.leave.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.TWO_PC_DIFF, AutonFactory.twoPcAmp(superstructure, shooter, swerve),
-			Trajectories.leave.getInitialPose());
+			Trajectories.twoPc.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.THREE, AutonFactory.threePc(superstructure, shooter, swerve), 
-			Trajectories.leave.getInitialPose());
+			Trajectories.twoPc.getInitialPose());
 	}
 
 	private void driverRumble(double intensity) {
@@ -140,7 +138,7 @@ public class Robot extends TimedRobot {
 			.applyRequest(
 				() -> point.withModuleDirection(new Rotation2d(-driver.getLeftY(),
 					-driver.getLeftX()))));
-		driver.b().and(driver.rightTrigger()).onTrue(Commands.runOnce(() -> superstructure.forceStateToShooting()));
+		driver.b().and(driver.rightTrigger()).onTrue(Commands.runOnce(() -> superstructure.preloadShootReq()));
 		driver.x().whileTrue(swerve.goToAutonPose());
 		driver.leftBumper().onTrue(swerve.runOnce(() -> swerve.seedFieldRelative()));
 		driver.y().whileTrue(swerve.aim(0));
@@ -164,7 +162,7 @@ public class Robot extends TimedRobot {
 		manipulator.rightBumper().whileTrue(superstructure.subwooferSpinUp());
 		manipulator.leftBumper().whileTrue(superstructure.ampSpinUp(AimK.kAmpAngle));
 		manipulator.b().and(manipulator.povUp())
-			.onTrue(Commands.runOnce(() -> superstructure.forceStateToShooting()));
+			.onTrue(Commands.runOnce(() -> superstructure.preloadShootReq()));
 		manipulator.b().and(manipulator.leftTrigger()).whileTrue(Commands.runOnce(() -> superstructure.forceStateToIdle()));
 		manipulator.x().and((manipulator.back().or(manipulator.start()).or(manipulator.b())).negate())
 			.whileTrue(aim.intakeAngleNearCmd());
