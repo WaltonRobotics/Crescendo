@@ -54,7 +54,7 @@ public final class AutonFactory {
 		var preloadShot = shoot(superstructure, shooter);
 		var intake = superstructure.autonIntakeCmd().asProxy();
 		var swerveAim = swerve.aim(0).asProxy();
-		var aimAndSpinUp = superstructure.aimAndSpinUp(Degrees.of(5.2), true).until(superstructure.stateTrg_idle);
+		var aimAndSpinUp = superstructure.aimAndSpinUp(Degrees.of(4), true).until(superstructure.stateTrg_idle);
 		var secondShot = superstructure.autonShootReq().asProxy();
 
 		return Commands.sequence(
