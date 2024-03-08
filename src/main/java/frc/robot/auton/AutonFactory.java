@@ -177,6 +177,7 @@ public final class AutonFactory {
 
 		return sequence( // 3pc then (path and (wait then intake))
 			threePc,
+			Commands.waitUntil(superstructure.stateTrg_idle),
 			parallel( // path and (wait then intake) 
 				sequence( // wait then intake
 					Commands.waitSeconds(0.8),
