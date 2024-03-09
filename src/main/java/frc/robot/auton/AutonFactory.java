@@ -146,7 +146,7 @@ public final class AutonFactory {
 		/* everything from 3 piece */
 		var pathFollow2 = AutoBuilder.followPath(Paths.three).asProxy();
 		var intake2 = superstructure.autonIntakeCmd().asProxy();
-		var swerveAim2 = swerve.aim(0.5).asProxy();
+		var swerveAim2 = swerve.aim(0.4).asProxy();
 		var aimAndSpinUp2 = superstructure.aimAndSpinUp(Degrees.of(1), true);
 		var thirdShot = superstructure.autonShootReq().asProxy();
 		
@@ -162,7 +162,7 @@ public final class AutonFactory {
 				pathFollow2
 			),
 			Commands.parallel(
-				swerveAim2.withTimeout(0.2),
+				swerveAim2.withTimeout(0.3),
 				aimAndSpinUp2,
 				thirdShot
 			)
