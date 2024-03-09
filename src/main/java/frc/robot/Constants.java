@@ -303,7 +303,7 @@ public class Constants {
                     .withReverseSoftLimitEnable(true);
 
                 cancoderConfig.MagnetSensor = cancoderConfig.MagnetSensor
-                    .withMagnetOffset(-0.037841796875)
+                    .withMagnetOffset(-0.133056640625)
                     .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
                     .withAbsoluteSensorRange(AbsoluteSensorRangeValue.Signed_PlusMinusHalf);
             }
