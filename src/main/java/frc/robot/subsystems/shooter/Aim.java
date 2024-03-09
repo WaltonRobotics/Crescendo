@@ -96,6 +96,7 @@ public class Aim extends SubsystemBase {
     private final GenericEntry nte_isCoast;
 
     private final Measure<Angle> kAngleAllowedError = Degrees.of(1);
+    private final Measure<Angle> kAngleAllowedErrorAmp = Degrees.of(2);
 
     public Aim(Supplier<Pose3d> robotPoseSupplier) {
         m_robotPoseSupplier = robotPoseSupplier;
@@ -120,6 +121,9 @@ public class Aim extends SubsystemBase {
 
     public boolean aimFinished() {
         var error = Rotations.of(m_motor.getClosedLoopError().getValueAsDouble());
+        if (m_motor.getClosedLoopReference().getValueAsDouble() >= 0.195) {
+            return error.lte(kAngleAllowedErrorAmp);
+        }
         return error.lte(kAngleAllowedError);
     }
 
