@@ -214,13 +214,11 @@ public class Superstructure extends SubsystemBase {
     private Command changeStateCmd(NoteState state) {
         return Commands.runOnce(() -> {
             if (m_state == state) {
-                System.out.println("[SUPERSTRUCTURE] IGNORING State Change FROM: " + state + " TO " + m_state.toString());
                 return;
             }
 
             var oldState = m_state;
             m_state = state;
-            System.out.println("[SUPERSTRUCTURE] State Change FROM: " + oldState + " TO " + m_state.toString());
         });
     }
 
@@ -432,13 +430,11 @@ public class Superstructure extends SubsystemBase {
         double latestFalling = irq_shooterBeamBreak.getFallingTimestamp();
         boolean risingNew = latestRising > shooterBeamBreakIrqLastRising;
         if (risingNew) {
-            // System.out.println("rising");
             shooterBeamBreakIrqLastRising = latestRising;
         }
 
         boolean fallingNew = latestFalling > shooterBeamBreakIrqLastFalling;
         if (fallingNew) {
-            // System.out.println("falling");
             shooterBeamBreakIrqLastFalling = latestFalling;
         }
 
@@ -476,7 +472,6 @@ public class Superstructure extends SubsystemBase {
             autonShoot = false;
             autonIntake = false;
             m_state = NoteState.NOTE_READY;
-            System.out.println("ran");
         });
     }
 

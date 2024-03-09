@@ -266,7 +266,6 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		}).until(() -> {
 			boolean check = MathUtil.isNear(m_desiredRot.getDegrees(), getState().Pose.getRotation().getDegrees(), 1);
 			if (check) {
-				System.out.println("it should end");
 			}
 			return check;
 		});

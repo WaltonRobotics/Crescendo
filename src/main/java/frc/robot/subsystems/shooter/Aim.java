@@ -342,7 +342,6 @@ public class Aim extends SubsystemBase {
         if (dashCoast != m_isCoast) {
             m_isCoast = dashCoast;
             setCoast(m_isCoast);
-            System.out.println("Changing coast from SD: " + m_isCoast);
         }
     }
 
