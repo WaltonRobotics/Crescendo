@@ -105,6 +105,9 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final DoubleLogger log_rotationSpeed = WaltLogger.logDouble("Swerve", "rot_sec",
 		PubSubOption.sendAll(true));
 
+	private final DoubleLogger log_desiredRot = WaltLogger.logDouble("Swerve", "desiredRot");
+	private final DoubleLogger log_rot = WaltLogger.logDouble("Swerve", "rotation");
+
 	public void addVisionMeasurement(VisionMeasurement measurement) {
 		m_odometry.addVisionMeasurement(
 			measurement.measure(), measurement.latency(), measurement.stdDevs());
@@ -326,6 +329,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	public void periodic() {
 		log_rotationSpeed.accept(Units.radiansToRotations(getState().speeds.omegaRadiansPerSecond));
-		
+		log_desiredRot.accept(m_desiredRot.getDegrees());
+		log_rot.accept(getState().Pose.getRotation().getDegrees());
 	}
 }
