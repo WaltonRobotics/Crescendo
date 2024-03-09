@@ -427,7 +427,7 @@
             "usesDefaultFieldObstacles": true,
             "circleObstacles": [],
             "eventMarkers": [],
-            "isTrajectoryStale": true
+            "isTrajectoryStale": false
         },
         "4": {
             "waypoints": [
