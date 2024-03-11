@@ -75,7 +75,6 @@ public class Shooter extends SubsystemBase {
     private final BooleanLogger log_leftOk = WaltLogger.logBoolean(kDbTabName, "leftOk");
     private final BooleanLogger log_rightOk = WaltLogger.logBoolean(kDbTabName, "rightOk");
 
-    private double time = 0;
     private boolean found = false;
     private final FlywheelSim m_flywheelSim = new FlywheelSim(DCMotor.getFalcon500(1), kGearRatio, kMoi);
 
@@ -192,7 +191,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command podium(BooleanSupplier idle) {
-        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), idle);
+        return toVelo(() -> Rotations.per(Minute).of(kPodiumRpm), idle);
     }
 
     public Command ampShot() {
@@ -274,7 +273,6 @@ public class Shooter extends SubsystemBase {
             found = true;
         }
 
-        time += kSimInterval;
         m_flywheelSim.update(kSimInterval);
     }
 

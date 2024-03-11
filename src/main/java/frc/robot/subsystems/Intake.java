@@ -25,7 +25,6 @@ public class Intake extends SubsystemBase {
     private final DoubleLogger log_supplyVoltage = WaltLogger.logDouble("Intake", "supplyVoltage");
 
     private final DoubleLogger log_middleStatorCurrent = WaltLogger.logDouble("Intake/MiddleRoller", "statorCurrent");
-    private final DoubleLogger log_middleSupplyCurrent = WaltLogger.logDouble("Intake/MiddleRoller", "supplyCurrent");
     private final DoubleLogger log_middleOutputVoltage = WaltLogger.logDouble("Intake/MiddleRoller", "outputVoltage");
     private final DoubleLogger log_middleSupplyVoltage = WaltLogger.logDouble("Intake/MiddleRoller", "supplyVoltage");
 

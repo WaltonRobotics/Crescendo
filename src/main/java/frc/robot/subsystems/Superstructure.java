@@ -217,7 +217,6 @@ public class Superstructure extends SubsystemBase {
                 return;
             }
 
-            var oldState = m_state;
             m_state = state;
         });
     }
