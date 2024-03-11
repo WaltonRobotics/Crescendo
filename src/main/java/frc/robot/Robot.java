@@ -102,14 +102,12 @@ public class Robot extends TimedRobot {
 	private void mapAutonCommands() {
 		AutonChooser.setDefaultAuton(AutonOption.DO_NOTHING);
 		AutonChooser.assignAutonCommand(AutonOption.DO_NOTHING, Commands.none());
-		AutonChooser.assignAutonCommand(AutonOption.LEAVE, AutonFactory.leave(superstructure, shooter, swerve),
-			Trajectories.leave.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.TWO_PC, AutonFactory.twoPc(superstructure, shooter, swerve),
-			Trajectories.twoPc.getInitialPose());
+			Trajectories.ampSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.THREE, AutonFactory.threePc(superstructure, shooter, swerve), 
-			Trajectories.twoPc.getInitialPose());
+			Trajectories.ampSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.THREE_POINT_FIVE, AutonFactory.threePointFive(superstructure, shooter, swerve), 
-			Trajectories.twoPc.getInitialPose());
+			Trajectories.ampSide.getInitialPose());
 	}
 
 	private void driverRumble(double intensity) {

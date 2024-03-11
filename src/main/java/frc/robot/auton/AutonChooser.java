@@ -14,10 +14,9 @@ import edu.wpi.first.wpilibj2.command.Commands;
 public class AutonChooser {
     public enum AutonOption {
         DO_NOTHING("0 - do nothing", new ChoreoTrajectory()),
-        LEAVE("1 - not amp side", Trajectories.leave),
-        TWO_PC("2 - speaker", Trajectories.twoPc),
-        THREE("3 - speaker", Trajectories.twoPc),
-        THREE_POINT_FIVE("3.5 - speaker", Trajectories.twoPc);
+        TWO_PC("2 - wing", Trajectories.ampSide),
+        THREE("3 - wing", Trajectories.ampSide),
+        THREE_POINT_FIVE("3.5 - wing + midline", Trajectories.ampSide);
 
         public final String m_description;
         public final ChoreoTrajectory m_traj;
