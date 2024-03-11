@@ -120,6 +120,9 @@ public class Aim extends SubsystemBase {
     }
 
     public boolean aimFinished() {
+        if (m_targetAngle.baseUnitMagnitude() == 0) {
+            return false;
+        }
         var error = Rotations.of(m_motor.getClosedLoopError().getValueAsDouble());
         if (m_motor.getClosedLoopReference().getValueAsDouble() >= 0.195) {
             return error.lte(kAngleAllowedErrorAmp);
