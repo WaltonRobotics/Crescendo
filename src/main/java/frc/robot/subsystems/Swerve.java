@@ -45,6 +45,7 @@ import frc.robot.auton.AutonChooser;
 import frc.util.AdvantageScopeUtil;
 import frc.util.AllianceFlipUtil;
 import frc.util.logging.WaltLogger;
+import frc.util.logging.WaltLogger.DoubleArrayLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 
 import static frc.robot.Constants.FieldK.*;
@@ -107,6 +108,10 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	private final DoubleLogger log_desiredRot = WaltLogger.logDouble("Swerve", "desiredRot");
 	private final DoubleLogger log_rot = WaltLogger.logDouble("Swerve", "rotation");
+	private final DoubleArrayLogger log_poseError = WaltLogger.logDoubleArray("Swerve", "poseError");
+	private double[] m_poseError;
+	private final DoubleArrayLogger log_desiredPose = WaltLogger.logDoubleArray("Swerve", "desiredPose");
+	private double[] m_desiredPose;
 
 	public void addVisionMeasurement(VisionMeasurement measurement) {
 		m_odometry.addVisionMeasurement(
@@ -139,6 +144,8 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		m_gyroYawRadsSupplier = () -> getPigeon2().getAngle();
 		m_thetaController.enableContinuousInput(0, 2 * Math.PI);
 		m_desiredRot = new Rotation2d();
+		m_poseError = new double[3];
+		m_desiredPose = new double[3];
 	}
 
 	public Command wheelRadiusCharacterisation(double omegaDirection) {
@@ -331,5 +338,13 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		log_rotationSpeed.accept(Units.radiansToRotations(getState().speeds.omegaRadiansPerSecond));
 		log_desiredRot.accept(m_desiredRot.getDegrees());
 		log_rot.accept(getState().Pose.getRotation().getDegrees());
+		m_poseError[0] = m_xController.getPositionError();
+		m_poseError[1] = m_yController.getPositionError();
+		m_poseError[2] = Units.radiansToDegrees(m_thetaController.getPositionError());
+		log_poseError.accept(m_poseError);
+		m_desiredPose[0] = m_xController.getSetpoint();
+		m_desiredPose[1] = m_yController.getSetpoint();
+		m_desiredPose[2] = Units.radiansToDegrees(m_thetaController.getSetpoint());
+		log_desiredPose.accept(m_desiredPose);
 	}
 }
