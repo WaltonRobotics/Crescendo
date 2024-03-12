@@ -261,7 +261,7 @@ public class Superstructure extends SubsystemBase {
 
         // !beamBreak && noteRetracting
         // Post-retract stop
-        ((irqTrg_conveyorBeamBreak.negate().debounce(0.35)).and(stateTrg_noteRetracting))
+        ((irqTrg_conveyorBeamBreak.negate()).and(stateTrg_noteRetracting))
             .onTrue(
                 Commands.sequence(
                     changeStateCmd(NoteState.NOTE_READY),
@@ -299,16 +299,13 @@ public class Superstructure extends SubsystemBase {
 
         // if note not in shooter and state leaving and timothy waving bye :D
         // state -> LEFT_BEAM_BREAK
-        ((irqTrg_shooterBeamBreak.debounce(0.1)).negate().and(stateTrg_leavingBeamBreak).and(trg_timothyFieldTrip))
+        ((irqTrg_shooterBeamBreak.negate()).and(stateTrg_leavingBeamBreak).and(trg_timothyFieldTrip))
             .onTrue(changeStateCmd(NoteState.LEFT_BEAM_BREAK));
 
-        // if left beam break
-        // wait for 0.5 sec
+        // if left beam break for 0.1 sec
         // state -> IDLE
-        stateTrg_leftBeamBreak
-            .onTrue(Commands.sequence(
-                Commands.waitSeconds(0.5),
-                changeStateCmd(NoteState.IDLE)));
+        (stateTrg_leftBeamBreak.debounce(0.1))
+            .onTrue(changeStateCmd(NoteState.IDLE));
 
         stateTrg_idle
             .onTrue(Commands.parallel(
