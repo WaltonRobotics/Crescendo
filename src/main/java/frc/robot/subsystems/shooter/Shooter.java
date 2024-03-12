@@ -8,11 +8,6 @@ import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
-import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
@@ -32,12 +27,8 @@ import frc.util.logging.WaltLogger.DoubleLogger;
 import static frc.robot.Constants.ShooterK.FlywheelSimK.*;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.Constants.kCanbus;
-import static frc.robot.Constants.kStickDeadband;
-import static frc.robot.Robot.*;
-
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public class Shooter extends SubsystemBase {
@@ -229,23 +220,6 @@ public class Shooter extends SubsystemBase {
                 m_left.set(0);
                 m_right.set(0);
             });
-    }
-
-    // idk i just wrote a couple methods cuz they might be able to be used but i'm
-    // prob gonna have to redo everything anyway ^-^ tehe
-
-    public Pose2d getAdjustedPose(Supplier<Pose3d> robotPose, DoubleSupplier x, DoubleSupplier y,
-        DoubleSupplier omega) {
-        var xPower = MathUtil.applyDeadband(x.getAsDouble(), kStickDeadband);
-        var yPower = MathUtil.applyDeadband(y.getAsDouble(), kStickDeadband);
-        var omegaPower = MathUtil.applyDeadband(omega.getAsDouble(), kStickDeadband);
-        var futureXVelo = xPower * kMaxSpeed;
-        var futureYVelo = yPower * kMaxSpeed;
-        var futureOmegaVelo = omegaPower * kMaxAngularRate;
-        var curPose = robotPose.get().toPose2d();
-        var adjustedPose = curPose.plus(new Transform2d(futureXVelo * m_shotTime, futureYVelo * m_shotTime,
-            Rotation2d.fromRadians(futureOmegaVelo * m_shotTime)));
-        return adjustedPose;
     }
 
     public void periodic() {
