@@ -149,16 +149,9 @@ public class Shooter extends SubsystemBase {
             m_left.setControl(m_request.withVelocity(0).withSlot(0));
             m_right.setControl(m_coast);
             m_left.setControl(m_coast);
-            System.out.println("ToVelo_STOP");
         };
 
         return new FunctionalCommand(spin, () -> {}, stopSpin, idle);
-
-        // return runEnd(spin, stopSpin).until(() -> {
-        //     boolean isIdle = idle.getAsBoolean();
-        //     System.out.println("IdleCheckin: " + isIdle);
-        //     return isIdle;
-        // }).andThen(Commands.print("toVeloDONE"));
     }
 
     private Command toVeloNoSpin(Supplier<Measure<Velocity<Angle>>> velo) {
@@ -208,6 +201,8 @@ public class Shooter extends SubsystemBase {
 
     public boolean spinUpFinished() {
         if (m_leftTarget.baseUnitMagnitude() == 0) {
+            m_leftOk = false;
+            m_rightOk = false;
             return false;
         }
         var leftMeas = m_leftTargetSupp.get();
@@ -276,7 +271,6 @@ public class Shooter extends SubsystemBase {
         m_flywheelSim.setInputVoltage(volts);
 
         if (m_flywheelSim.getAngularVelocityRPM() >= m_leftTarget.in(Rotations.per(Minute)) && !found) {
-            System.out.println("found it at " + time + " seconds");
             found = true;
         }
 

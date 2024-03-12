@@ -7,9 +7,15 @@ import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.util.logging.WaltLogger;
+import frc.util.logging.WaltLogger.DoubleLogger;
 
 public class Conveyor extends SubsystemBase {
     private final CANSparkMax m_conveyor = new CANSparkMax(kConveyorId, MotorType.kBrushless);
+
+    private final DoubleLogger log_statorCurrent = WaltLogger.logDouble("Conveyor", "statorCurrent");
+    private final DoubleLogger log_outputVoltage = WaltLogger.logDouble("Conveyor", "outputVoltage");
+    private final DoubleLogger log_supplyVoltage = WaltLogger.logDouble("Conveyor", "supplyVoltage");
 
     public Command runFast() {
         var go = runEnd(() -> {
@@ -41,5 +47,12 @@ public class Conveyor extends SubsystemBase {
 
     public Command stop() {
         return run(() -> m_conveyor.set(0));
+    }
+
+    @Override
+    public void periodic() {
+        log_statorCurrent.accept(m_conveyor.getOutputCurrent());
+        log_outputVoltage.accept(m_conveyor.getAppliedOutput());
+        log_supplyVoltage.accept(m_conveyor.getBusVoltage());
     }
 }

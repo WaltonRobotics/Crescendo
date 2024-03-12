@@ -31,7 +31,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.AimK;
 import frc.robot.Constants.FieldK.SpeakerK;
 import frc.robot.auton.AutonChooser;
@@ -82,6 +81,8 @@ public class Robot extends TimedRobot {
 	private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
 		.withDeadband(kMaxSpeed * 0.1).withRotationalDeadband(kMaxAngularRate * 0.1) // Add a 5% deadband
 		.withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+	private final SwerveRequest.RobotCentric robotCentric = new SwerveRequest.RobotCentric()
+		.withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 	private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
 	private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 	private final Telemetry logger = new Telemetry(kMaxSpeed);
@@ -104,19 +105,23 @@ public class Robot extends TimedRobot {
 		AutonChooser.assignAutonCommand(AutonOption.LEAVE, AutonFactory.leave(superstructure, shooter, swerve),
 			Trajectories.leave.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.TWO_PC, AutonFactory.twoPc(superstructure, shooter, swerve),
-			Trajectories.leave.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.TWO_PC_DIFF, AutonFactory.twoPcAmp(superstructure, shooter, swerve),
-			Trajectories.leave.getInitialPose());
+			Trajectories.twoPc.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.THREE, AutonFactory.threePc(superstructure, shooter, swerve), 
-			Trajectories.leave.getInitialPose());
+			Trajectories.twoPc.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.THREE_POINT_FIVE, AutonFactory.threePointFive(superstructure, shooter, swerve), 
+			Trajectories.twoPc.getInitialPose());
 	}
 
 	private void driverRumble(double intensity) {
-		driver.getHID().setRumble(RumbleType.kBothRumble, intensity);
+		if (!DriverStation.isAutonomous()) {
+			driver.getHID().setRumble(RumbleType.kBothRumble, intensity);
+		}
 	}
 
 	private void manipulatorRumble(double intensity) {
-		manipulator.getHID().setRumble(RumbleType.kBothRumble, intensity);
+		if (!DriverStation.isAutonomous()) {
+			manipulator.getHID().setRumble(RumbleType.kBothRumble, intensity);
+		}
 	}
 
 	private void configureBindings() {
@@ -135,55 +140,66 @@ public class Robot extends TimedRobot {
 				.withVelocityY(leftX * kMaxSpeed)
 				.withRotationalRate(-driver.getRightX() * kMaxAngularRate);
 		}));
+
+		// swerve brake
 		driver.a().whileTrue(swerve.applyRequest(() -> brake));
+
+		// TODO: nikki rember
 		driver.b().and(driver.rightTrigger().negate()).whileTrue(swerve
 			.applyRequest(
 				() -> point.withModuleDirection(new Rotation2d(-driver.getLeftY(),
 					-driver.getLeftX()))));
+
+		// force shot
 		driver.b().and(driver.rightTrigger()).onTrue(Commands.runOnce(() -> superstructure.forceStateToShooting()));
-		driver.x().whileTrue(swerve.goToAutonPose());
+		
+		// Drive to auton start pose
+		// driver.x().whileTrue(swerve.goToAutonPose());
+
+		// rezero
 		driver.leftBumper().onTrue(swerve.runOnce(() -> swerve.seedFieldRelative()));
-		driver.y().whileTrue(swerve.aim(0));
-		driver.rightBumper().onTrue(swerve.resetPoseToSpeaker());
+
+		// aim to 0
+		// driver.y().whileTrue(swerve.aim(0));
+
+		// auton pose reset
+		// driver.rightBumper().onTrue(swerve.resetPoseToSpeaker());
+
+		// podium shot
 		driver.leftTrigger().whileTrue(superstructure.aimAndSpinUp(AimK.kPodiumAngle, true));
-		driver.povUp().whileTrue(AutonFactory.followThree(swerve));
 
-		/* sysid buttons */
-		driver.back().and(driver.y()).whileTrue(swerve.sysIdDynamic(Direction.kForward));
-		driver.back().and(driver.x()).whileTrue(swerve.sysIdDynamic(Direction.kReverse));
-		driver.start().and(driver.y()).whileTrue(swerve.sysIdQuasistatic(Direction.kForward));
-		driver.start().and(driver.x()).whileTrue(swerve.sysIdQuasistatic(Direction.kReverse));
-
-		/* characterisation buttons */
-		driver.back().and(driver.a()).whileTrue(swerve.wheelRadiusCharacterisation(-1));
-		driver.start().and(driver
-		.a()).whileTrue(swerve.wheelRadiusCharacterisation(1));
+		// wheel pointy straight for pit
+		driver.povUp().and(driver.start()).whileTrue(swerve.applyRequest(() -> robotCentric.withVelocityX(0.5)));
 
 		/* manipulator controls */
+
+		// reject note
 		manipulator.rightTrigger().whileTrue(intake.outtake());
-		manipulator.b().and(manipulator.povUp()).whileTrue(conveyor.runFast());
+
+		// subwoofer shot prep
 		manipulator.rightBumper().whileTrue(superstructure.subwooferSpinUp());
+
+		// amp shot prep
 		manipulator.leftBumper().whileTrue(superstructure.ampSpinUp(AimK.kAmpAngle));
-		manipulator.b().and(manipulator.povDown())
+
+		// manip force shot
+		manipulator.b().and(manipulator.povUp())
 			.onTrue(Commands.runOnce(() -> superstructure.forceStateToShooting()));
+
+		// manip force FSM reset
 		manipulator.b().and(manipulator.leftTrigger()).whileTrue(Commands.runOnce(() -> superstructure.forceStateToIdle()));
-		manipulator.x().and((manipulator.back().and(manipulator.start())).negate()).whileTrue(aim.hardStop());
+
+		// aim safe angle
+		manipulator.x().whileTrue(aim.intakeAngleNearCmd());
+
+		// aim rezero
+		manipulator.b().and(manipulator.povDown()).onTrue(aim.rezero());
+
+		// aim amp
 		manipulator.leftBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kAmpAngle, Degrees.of(0.25)));
+		
+		// aim subwoofer
 		manipulator.rightBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kSubwooferAngle, Degrees.of(2)));
-
-		/* testing buttons */
-		manipulator.a().whileTrue(superstructure.backwardsRun());
-		manipulator.povUp().onTrue(aim.increaseAngle());
-		manipulator.povDown().and(manipulator.b().negate())
-			.onTrue(aim.decreaseAngle());
-		manipulator.povLeft().onTrue(aim.to90ish());
-		manipulator.povRight().onTrue(aim.amp());
-
-		/* sysid buttons */
-		manipulator.back().and(manipulator.y()).whileTrue(shooter.sysIdDynamic(Direction.kForward));
-		manipulator.back().and(manipulator.x()).whileTrue(shooter.sysIdDynamic(Direction.kReverse));
-		manipulator.start().and(manipulator.y()).whileTrue(shooter.sysIdQuasistatic(Direction.kForward));
-		manipulator.start().and(manipulator.x()).whileTrue(shooter.sysIdQuasistatic(Direction.kReverse));
 	}
 
 	private Command getAutonomousCommand() {

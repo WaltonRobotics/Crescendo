@@ -96,6 +96,7 @@ public class Aim extends SubsystemBase {
     private final GenericEntry nte_isCoast;
 
     private final Measure<Angle> kAngleAllowedError = Degrees.of(1);
+    private final Measure<Angle> kAngleAllowedErrorAmp = Degrees.of(2);
 
     public Aim(Supplier<Pose3d> robotPoseSupplier) {
         m_robotPoseSupplier = robotPoseSupplier;
@@ -120,6 +121,9 @@ public class Aim extends SubsystemBase {
 
     public boolean aimFinished() {
         var error = Rotations.of(m_motor.getClosedLoopError().getValueAsDouble());
+        if (m_motor.getClosedLoopReference().getValueAsDouble() >= 0.195) {
+            return error.lte(kAngleAllowedErrorAmp);
+        }
         return error.lte(kAngleAllowedError);
     }
 
@@ -210,7 +214,7 @@ public class Aim extends SubsystemBase {
     }
 
     public Command intakeAngleNearCmd() {
-        return toAngleUntilAt(Degrees.of(0), Degrees.of(5));
+        return toAngleUntilAt(Degrees.of(0), Degrees.of(10));
     }
 
     public void setCoast(boolean coast) {
@@ -223,6 +227,19 @@ public class Aim extends SubsystemBase {
             () -> {
                 setCoast(coast);
             });
+    }
+
+    public Command rezero() {
+        return Commands.runOnce(() -> {
+            var offset = AimConfigs.cancoderConfig.MagnetSensor.MagnetOffset;
+            var zero = m_cancoder.getAbsolutePosition().getValueAsDouble() - offset;
+            m_cancoder.getConfigurator().apply(
+                AimConfigs.cancoderConfig.withMagnetSensor(
+                    AimConfigs.cancoderConfig.MagnetSensor.withMagnetOffset(-zero)
+                )
+            );
+            System.out.println("new offset: " + -zero);
+        });
     }
 
     public Command aim() {
@@ -325,7 +342,6 @@ public class Aim extends SubsystemBase {
         if (dashCoast != m_isCoast) {
             m_isCoast = dashCoast;
             setCoast(m_isCoast);
-            System.out.println("Changing coast from SD: " + m_isCoast);
         }
     }
 
