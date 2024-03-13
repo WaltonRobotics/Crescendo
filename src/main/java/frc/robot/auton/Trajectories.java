@@ -10,4 +10,6 @@ public class Trajectories {
 	public static final ChoreoTrajectory ampStart = Choreo.getTrajectory("amp_start");
 	
 	public static final ChoreoTrajectory clear3Center = Choreo.getTrajectory("clear_3_center");
+	
+	public static final ChoreoTrajectory clearCenter = Choreo.getTrajectory("clear_center");
 }

@@ -16,4 +16,10 @@ public class Paths {
     public static final PathPlannerPath center1 = PathPlannerPath.fromChoreoTrajectory("clear_3_center.1");
     public static final PathPlannerPath center2 = PathPlannerPath.fromChoreoTrajectory("clear_3_center.2");
     public static final PathPlannerPath center3 = PathPlannerPath.fromChoreoTrajectory("clear_3_center.3");
+
+    public static final PathPlannerPath clearCenter1 = PathPlannerPath.fromChoreoTrajectory("clear_center.1");
+    public static final PathPlannerPath clearCenter2 = PathPlannerPath.fromChoreoTrajectory("clear_center.2");
+    public static final PathPlannerPath clearCenter3 = PathPlannerPath.fromChoreoTrajectory("clear_center.3");
+    public static final PathPlannerPath clearCenter4 = PathPlannerPath.fromChoreoTrajectory("clear_center.4");
+    public static final PathPlannerPath clearCenter5 = PathPlannerPath.fromChoreoTrajectory("clear_center.5");
 }
