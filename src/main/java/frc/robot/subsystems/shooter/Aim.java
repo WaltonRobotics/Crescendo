@@ -1,8 +1,10 @@
 package frc.robot.subsystems.shooter;
 
+import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.controls.CoastOut;
-import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
+import com.ctre.phoenix6.controls.DynamicMotionMagicVoltage;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -15,6 +17,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
@@ -30,15 +33,14 @@ import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.AimK.AimConfigs;
 import frc.util.AllianceFlipUtil;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 
 import static frc.robot.Constants.FieldK.*;
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Radians;
-import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.*;
 import static frc.robot.Constants.kCanbus;
 import static frc.robot.Constants.AimK.*;
 import static frc.robot.Constants.FieldK.SpeakerK.*;
@@ -53,7 +55,8 @@ public class Aim extends SubsystemBase {
     private final TalonFX m_motor = new TalonFX(kAimId, kCanbus);
     private final CANcoder m_cancoder = new CANcoder(15, kCanbus);
 
-    private final MotionMagicExpoVoltage m_request = new MotionMagicExpoVoltage(0);
+    // TODO determine values
+    private final DynamicMotionMagicVoltage m_dynamicRequest = new DynamicMotionMagicVoltage(0, 20, 40, 200);
     private final CoastOut m_coastRequest = new CoastOut();
 
     private final DCMotor m_aimGearbox = DCMotor.getFalcon500(1);
@@ -98,6 +101,18 @@ public class Aim extends SubsystemBase {
     private final Measure<Angle> kAngleAllowedError = Degrees.of(1);
     private final Measure<Angle> kAngleAllowedErrorAmp = Degrees.of(2);
 
+    private final VoltageOut m_voltage = new VoltageOut(0);
+
+    private final SysIdRoutine m_sysId = new SysIdRoutine(
+        new SysIdRoutine.Config(
+            Volts.of(1).per(Second),
+            Volts.of(1.25 ),
+            Seconds.of(15),
+            (state) -> SignalLogger.writeString("state", state.toString())),
+        new SysIdRoutine.Mechanism((Measure<Voltage> volts) -> {
+            m_motor.setControl(m_voltage.withOutput(volts.in(Volts)));
+        }, null, this));
+
     public Aim(Supplier<Pose3d> robotPoseSupplier) {
         m_robotPoseSupplier = robotPoseSupplier;
 
@@ -119,6 +134,19 @@ public class Aim extends SubsystemBase {
             .getEntry();
     }
 
+    private void determineMotionMagicValues() {
+        // TODO make these not all 0
+        if (m_targetAngle.lt(Rotations.of(m_motor.getPosition().getValueAsDouble()))) {
+            m_dynamicRequest.Velocity = 20;
+            m_dynamicRequest.Acceleration = 40;
+            m_dynamicRequest.Jerk = 200;
+        } else {
+            m_dynamicRequest.Velocity = 160;
+            m_dynamicRequest.Acceleration = 500;
+            m_dynamicRequest.Jerk = 8000;
+        }
+    }
+
     public boolean aimFinished() {
         if (m_targetAngle.baseUnitMagnitude() == 0) {
             return false;
@@ -138,14 +166,16 @@ public class Aim extends SubsystemBase {
     public Command to90ish() {
         return runOnce(() -> {
             m_targetAngle = Rotations.of(0.275879);
-            m_motor.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
+            determineMotionMagicValues();
+            m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
         });
     }
 
     public Command to0() {
         return runOnce(() -> {
             m_targetAngle = Rotations.of(0);
-            m_motor.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
+            determineMotionMagicValues();
+            m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
         });
     }
 
@@ -156,21 +186,24 @@ public class Aim extends SubsystemBase {
     public Command increaseAngle() {
         return Commands.runOnce(() -> {
             m_targetAngle = m_targetAngle.plus(Degrees.of(0.5));
-            m_motor.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
+            determineMotionMagicValues();
+            m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
         });
     }
 
     public Command decreaseAngle() {
         return Commands.runOnce(() -> {
             m_targetAngle = m_targetAngle.minus(Degrees.of(0.5));
-            m_motor.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
+            determineMotionMagicValues();
+            m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
         });
     }
 
     public Command amp() {
         return runOnce(() -> {
             m_targetAngle = kAmpAngle;
-            m_motor.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
+            determineMotionMagicValues();
+            m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
         });
     }
 
@@ -182,28 +215,21 @@ public class Aim extends SubsystemBase {
         return runOnce(
             () -> {
                 m_targetAngle = angle;
-                m_motor.setControl(m_request.withPosition(angle.in(Rotations)));
+                determineMotionMagicValues();
+                m_motor.setControl(m_dynamicRequest.withPosition(angle.in(Rotations)));
             });
     }
 
     public Command toAngleUntilAt(Measure<Angle> angle, Measure<Angle> tolerance) {
-        var goThere = startEnd(
-            () -> {
-                m_targetAngle = angle;
-                m_motor.setControl(m_request.withPosition(angle.in(Rotations)));
-            }, () -> {});
-        return goThere.until(() -> {
-            var error = Rotations.of(Math.abs(m_motor.getClosedLoopError().getValueAsDouble()));
-            log_closedLoopError.accept(error.in(Rotations));
-            return error.lte(tolerance);
-        });
+        return toAngleUntilAt(() -> angle, tolerance);
     }
 
     public Command toAngleUntilAt(Supplier<Measure<Angle>> angle, Measure<Angle> tolerance) {
         var goThere = startEnd(
             () -> {
                 m_targetAngle = angle.get();
-                m_motor.setControl(m_request.withPosition(angle.get().in(Rotations)));
+                determineMotionMagicValues();
+                m_motor.setControl(m_dynamicRequest.withPosition(angle.get().in(Rotations)));
             }, () -> {});
         return goThere.until(() -> {
             var error = Rotations.of(Math.abs(m_motor.getClosedLoopError().getValueAsDouble()));
@@ -372,5 +398,13 @@ public class Aim extends SubsystemBase {
         log_simVelo.accept(m_aimSim.getVelocityRadPerSec());
         log_simAngle.accept(angle);
         log_simTarget.accept(m_targetAngle.in(Degrees));
+    }
+
+    public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+        return m_sysId.quasistatic(direction);
+    }
+
+    public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+        return m_sysId.dynamic(direction);
     }
 }

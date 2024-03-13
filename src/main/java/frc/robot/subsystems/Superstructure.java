@@ -268,7 +268,7 @@ public class Superstructure extends SubsystemBase {
                     m_conveyor.stop()));
 
         // added back shoot ok
-        (trg_spunUp.and(trg_atAngle).and(stateTrg_spinUp))
+        (trg_spunUp.and(trg_atAngle).and(stateTrg_noteReady.or(stateTrg_spinUp)))
             .onTrue(
                 Commands.parallel(
                     cmdDriverRumble(1, 0.5), 

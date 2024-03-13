@@ -253,10 +253,11 @@ public class Constants {
 
     public static class AimK {
         public static final class AimConfigs {
-            private static final double kP = 150; // idk
+            private static final double kP = 125;
             private static final double kS = 0.25;
-            private static final double kG = 0;
-            private static final double kV = 0;
+            private static final double kG = 0.058368;
+            private static final double kV = 0.084518;
+            private static final double kA = 0.080123;
 
             public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
             public static final CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
@@ -267,6 +268,7 @@ public class Constants {
                     .withKS(kS)
                     .withKG(kG)
                     .withKV(kV)
+                    .withKA(kA)
                     .withGravityType(GravityTypeValue.Arm_Cosine);
 
                 motorConfig.Feedback = motorConfig.Feedback
@@ -286,11 +288,6 @@ public class Constants {
                     .withStatorCurrentLimitEnable(true)
                     .withSupplyCurrentLimit(16)
                     .withSupplyCurrentLimitEnable(true);
-
-                motorConfig.MotionMagic = motorConfig.MotionMagic
-                    .withMotionMagicCruiseVelocity(2)
-                    .withMotionMagicAcceleration(12)
-                    .withMotionMagicJerk(2);
 
                 motorConfig.HardwareLimitSwitch = motorConfig.HardwareLimitSwitch
                     .withForwardLimitEnable(false)

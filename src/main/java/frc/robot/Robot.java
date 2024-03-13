@@ -31,6 +31,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.AimK;
 import frc.robot.Constants.FieldK.SpeakerK;
 import frc.robot.auton.AutonChooser;
@@ -102,11 +103,11 @@ public class Robot extends TimedRobot {
 	private void mapAutonCommands() {
 		AutonChooser.setDefaultAuton(AutonOption.DO_NOTHING);
 		AutonChooser.assignAutonCommand(AutonOption.DO_NOTHING, Commands.none());
-		AutonChooser.assignAutonCommand(AutonOption.TWO_PC, AutonFactory.twoPc(superstructure, shooter, swerve),
+		AutonChooser.assignAutonCommand(AutonOption.TWO_PC, AutonFactory.twoPc(superstructure, shooter, swerve, aim),
 			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.THREE, AutonFactory.threePc(superstructure, shooter, swerve), 
+		AutonChooser.assignAutonCommand(AutonOption.THREE, AutonFactory.threePc(superstructure, shooter, swerve, aim), 
 			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.THREE_POINT_FIVE, AutonFactory.threePointFive(superstructure, shooter, swerve), 
+		AutonChooser.assignAutonCommand(AutonOption.THREE_POINT_FIVE, AutonFactory.threePointFive(superstructure, shooter, swerve, aim), 
 			Trajectories.ampSide.getInitialPose());
 	}
 
@@ -170,15 +171,14 @@ public class Robot extends TimedRobot {
 		driver.povUp().and(driver.start()).whileTrue(swerve.applyRequest(() -> robotCentric.withVelocityX(0.5)));
 
 		/* manipulator controls */
-
 		// reject note
 		manipulator.rightTrigger().whileTrue(intake.outtake());
 
 		// subwoofer shot prep
-		manipulator.rightBumper().whileTrue(superstructure.subwooferSpinUp());
+		manipulator.rightBumper().whileTrue(shooter.subwoofer());
 
 		// amp shot prep
-		manipulator.leftBumper().whileTrue(superstructure.ampSpinUp(AimK.kAmpAngle));
+		manipulator.leftBumper().whileTrue(shooter.ampShot());
 
 		// manip force shot
 		manipulator.b().and(manipulator.povUp())
@@ -200,6 +200,15 @@ public class Robot extends TimedRobot {
 		manipulator.rightBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kSubwooferAngle, Degrees.of(2)));
 	}
 
+	public void atHomeBindings() {
+		// sysid buttons
+		manipulator.back().and(manipulator.x()).whileTrue(aim.sysIdDynamic(Direction.kForward));
+		manipulator.back().and(manipulator.y()).whileTrue(aim.sysIdDynamic(Direction.kReverse));
+
+		manipulator.start().and(manipulator.x()).whileTrue(aim.sysIdQuasistatic(Direction.kForward));
+		manipulator.start().and(manipulator.y()).whileTrue(aim.sysIdQuasistatic(Direction.kReverse));
+	}
+
 	private Command getAutonomousCommand() {
 		return AutonChooser.getChosenAutonCmd();
 	}
@@ -214,6 +223,7 @@ public class Robot extends TimedRobot {
 		speakerPose = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpening);
 		mapAutonCommands();
 		configureBindings();
+		atHomeBindings();
 		if (kTestMode) {
 			swerve.setTestMode();
 		}
