@@ -106,7 +106,7 @@ public class Aim extends SubsystemBase {
     private final SysIdRoutine m_sysId = new SysIdRoutine(
         new SysIdRoutine.Config(
             Volts.of(1).per(Second),
-            Volts.of(1.25 ),
+            Volts.of(1.25),
             Seconds.of(15),
             (state) -> SignalLogger.writeString("state", state.toString())),
         new SysIdRoutine.Mechanism((Measure<Voltage> volts) -> {
@@ -142,8 +142,8 @@ public class Aim extends SubsystemBase {
             m_dynamicRequest.Jerk = 200;
         } else {
             m_dynamicRequest.Velocity = 160;
-            m_dynamicRequest.Acceleration = 500;
-            m_dynamicRequest.Jerk = 8000;
+            m_dynamicRequest.Acceleration = 320;
+            m_dynamicRequest.Jerk = 4000;
         }
     }
 
