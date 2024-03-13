@@ -9,21 +9,16 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
-import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Voltage;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
@@ -35,24 +30,17 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.util.AllianceFlipUtil;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 
-import static frc.robot.Constants.FieldK.*;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.Constants.kCanbus;
 import static frc.robot.Constants.AimK.*;
 import static frc.robot.Constants.AimK.AimConfigs.*;
-import static frc.robot.Constants.FieldK.SpeakerK.*;
 import static frc.robot.Constants.RobotK.kSimInterval;
-import static frc.robot.Robot.*;
-
 import java.util.function.Supplier;
 
 public class Aim extends SubsystemBase {
-    private final Supplier<Pose3d> m_robotPoseSupplier;
-
     private final TalonFX m_motor = new TalonFX(kAimId, kCanbus);
     private final CANcoder m_cancoder = new CANcoder(15, kCanbus);
 
@@ -75,7 +63,6 @@ public class Aim extends SubsystemBase {
             new Color8Bit(Color.kHotPink)));
 
     private Measure<Angle> m_targetAngle = Rotations.of(0);
-    private Translation3d m_ampPose;
 
     private boolean m_isCoast;
 
@@ -110,9 +97,7 @@ public class Aim extends SubsystemBase {
             m_motor.setControl(m_voltage.withOutput(volts.in(Volts)));
         }, null, this));
 
-    public Aim(Supplier<Pose3d> robotPoseSupplier) {
-        m_robotPoseSupplier = robotPoseSupplier;
-
+    public Aim() {
         m_motor.getConfigurator().apply(motorConfig);
         m_cancoder.getConfigurator().apply(cancoderConfig);
 
@@ -122,8 +107,6 @@ public class Aim extends SubsystemBase {
             // In simulation, make sure the CANcoder starts at the correct position
             m_cancoder.setPosition(Units.radiansToRotations(m_aimSim.getAngleRads()) * 1.69);
         }
-        // m_homeTrigger.onTrue(Commands.runOnce(() -> m_motor.setPosition(kInitAngle.in(Rotations)))
-        //     .ignoringDisable(true));
 
         nte_isCoast = Shuffleboard.getTab(kDbTabName)
             .add("isCoast", false)
@@ -168,27 +151,6 @@ public class Aim extends SubsystemBase {
             return error.lte(kAngleAllowedErrorAmp);
         }
         return error.lte(kAngleAllowedError);
-    }
-
-    public double getDegrees() {
-        return m_motor.getPosition().getValueAsDouble() * 360 + 22.5;
-    }
-
-    // not even close.
-    public Command to90ish() {
-        return runOnce(() -> {
-            m_targetAngle = Rotations.of(0.275879);
-            determineMotionMagicValues();
-            m_motor.setControl(getRequest());
-        });
-    }
-
-    public Command to0() {
-        return runOnce(() -> {
-            m_targetAngle = Rotations.of(0);
-            determineMotionMagicValues();
-            m_motor.setControl(getRequest());
-        });
     }
 
     public Command coastOut() {
@@ -281,89 +243,6 @@ public class Aim extends SubsystemBase {
             );
             System.out.println("new offset: " + -zero);
         });
-    }
-
-    public Command aim() {
-        return setAimTarget().andThen(toTarget()).repeatedly();
-    }
-
-    public Command toTarget() {
-        return toAngle(m_targetAngle);
-    }
-
-    public Command beAt90() {
-        return runOnce(() -> m_motor.setPosition(Units.degreesToRotations(90)));
-    }
-
-    /**
-     * @return a command that changes the target angle of the shooter based on where it is relative to the speaker
-     */
-    public Command setAimTarget() {
-        var translation = AllianceFlipUtil.apply(m_robotPoseSupplier.get().getTranslation());
-        var poseToSpeaker = speakerPose.plus(translation);
-        return runOnce(
-            () -> {
-                m_targetAngle = Radians.of(Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX())));
-                m_targetAngle = Degrees
-                    .of(MathUtil.clamp(m_targetAngle.in(Degrees), kMinAngle.magnitude(), kMaxAngle.magnitude()));
-            });
-    }
-
-    /**
-     * if the robot is to the right of the speaker center, aim at the left corner
-     * of the speaker and vice versa
-     *
-     * @return a command that changes the target speaker pose based on the robot's position
-     */
-    public Command changeSpeakerTarget() {
-        // TODO check math
-        var trans = m_robotPoseSupplier.get().getTranslation();
-        var alliance = DriverStation.getAlliance();
-
-        if (alliance.isPresent() && alliance.get() == Alliance.Red) {
-            if (trans.getY() > (kRedCenterOpening.getY() + kAimOffset.baseUnitMagnitude())) {
-                return runOnce(() -> speakerPose = AllianceFlipUtil.apply(kTopRight));
-            } else if (trans.getY() < (kRedCenterOpening.getY() - kAimOffset.baseUnitMagnitude())) {
-                return runOnce(() -> speakerPose = AllianceFlipUtil.apply(kTopLeft));
-            } else {
-                return runOnce(() -> speakerPose = kRedCenterOpening);
-            }
-        } else if (alliance.isPresent() && alliance.get() == Alliance.Blue) {
-            if (trans.getY() < (kBlueCenterOpening.getY() + kAimOffset.baseUnitMagnitude())) {
-                return runOnce(() -> speakerPose = kTopRight);
-            } else if (trans.getY() > (kBlueCenterOpening.getY() - kAimOffset.baseUnitMagnitude())) {
-                return runOnce(() -> speakerPose = kTopLeft);
-            } else {
-                return runOnce(() -> speakerPose = kBlueCenterOpening);
-            }
-        }
-
-        return Commands.none();
-    }
-
-    public void aimAtAmp() {
-        var translation = m_robotPoseSupplier.get().getTranslation();
-        var poseToAmp = m_ampPose.minus(translation);
-        m_targetAngle = Radians.of(Math.atan((poseToAmp.getZ()) / (poseToAmp.getX())));
-        m_targetAngle = Degrees
-            .of(MathUtil.clamp(m_targetAngle.in(Degrees), kMinAngle.magnitude(), kMaxAngle.magnitude()));
-    }
-
-    /**
-     * @return a command that changes the angle of the shooter near the stage to avoid hitting it
-     */
-    public Command stageMode() {
-        Pose3d pose = m_robotPoseSupplier.get();
-
-        if (pose.getY() > kBlueStageClearanceRight && pose.getY() < kBlueStageClearanceLeft) {
-            if (pose.getX() > kBlueStageClearanceDs && pose.getX() < kBlueStageClearanceCenter) {
-                return toAngle(kStageClearance);
-            } else if (pose.getX() > kRedStageClearanceDs && pose.getX() < kRedStageClearanceCenter) {
-                return toAngle(kStageClearance);
-            }
-        }
-
-        return Commands.none();
     }
 
     @Override

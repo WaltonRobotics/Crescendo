@@ -16,7 +16,6 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -50,8 +49,6 @@ import frc.robot.subsystems.Superstructure;
 import static frc.robot.Constants.RobotK.*;
 import static frc.robot.generated.TunerConstants.*;
 
-import java.util.function.Supplier;
-
 public class Robot extends TimedRobot {
 	/** 5.21 meters per second desired top speed */
 	public static final double kMaxSpeed = kSpeedAt12VoltsMps;
@@ -64,9 +61,8 @@ public class Robot extends TimedRobot {
 
 	public final Swerve swerve = TunerConstants.drivetrain;
 	public final Vision vision = new Vision(swerve::addVisionMeasurement);
-	public final Supplier<Pose3d> robotPoseSupplier = swerve::getPose3d;
 	public final Shooter shooter = new Shooter();
-	public final Aim aim = new Aim(robotPoseSupplier);
+	public final Aim aim = new Aim();
 	public final Intake intake = new Intake();
 	public final Conveyor conveyor = new Conveyor();
 
