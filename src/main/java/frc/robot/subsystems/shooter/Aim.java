@@ -10,6 +10,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -34,7 +35,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.Constants.AimK.AimConfigs;
 import frc.util.AllianceFlipUtil;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
@@ -43,6 +43,7 @@ import static frc.robot.Constants.FieldK.*;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.Constants.kCanbus;
 import static frc.robot.Constants.AimK.*;
+import static frc.robot.Constants.AimK.AimConfigs.*;
 import static frc.robot.Constants.FieldK.SpeakerK.*;
 import static frc.robot.Constants.RobotK.kSimInterval;
 import static frc.robot.Robot.*;
@@ -55,15 +56,14 @@ public class Aim extends SubsystemBase {
     private final TalonFX m_motor = new TalonFX(kAimId, kCanbus);
     private final CANcoder m_cancoder = new CANcoder(15, kCanbus);
 
-    // TODO determine values
     private final DynamicMotionMagicVoltage m_dynamicRequest = new DynamicMotionMagicVoltage(0, 20, 40, 200);
     private final CoastOut m_coastRequest = new CoastOut();
+    private final ArmFeedforward m_feedforward = new ArmFeedforward(0, kG, 0);
 
     private final DCMotor m_aimGearbox = DCMotor.getFalcon500(1);
     private final SingleJointedArmSim m_aimSim = new SingleJointedArmSim(
         m_aimGearbox, kGearRatio, 0.761, Units.inchesToMeters(19.75),
         kMinAngle.in(Radians), kMaxAngle.in(Radians), true, kInitAngle.in(Radians));
-
     private final Mechanism2d m_mech2d = new Mechanism2d(60, 60);
     private final MechanismRoot2d m_aimPivot = m_mech2d.getRoot("aimPivot", 30, 30);
     private final MechanismLigament2d m_aim2d = m_aimPivot.append(
@@ -76,9 +76,6 @@ public class Aim extends SubsystemBase {
 
     private Measure<Angle> m_targetAngle = Rotations.of(0);
     private Translation3d m_ampPose;
-
-    // private final DigitalInput m_home = new DigitalInput(kHomeSwitch);
-    // private final Trigger m_homeTrigger = new Trigger(m_home::get).negate();
 
     private boolean m_isCoast;
 
@@ -116,8 +113,8 @@ public class Aim extends SubsystemBase {
     public Aim(Supplier<Pose3d> robotPoseSupplier) {
         m_robotPoseSupplier = robotPoseSupplier;
 
-        m_motor.getConfigurator().apply(AimConfigs.motorConfig);
-        m_cancoder.getConfigurator().apply(AimConfigs.cancoderConfig);
+        m_motor.getConfigurator().apply(motorConfig);
+        m_cancoder.getConfigurator().apply(cancoderConfig);
 
         SmartDashboard.putData("Mech2d", m_mech2d);
 
@@ -134,8 +131,23 @@ public class Aim extends SubsystemBase {
             .getEntry();
     }
 
+    private DynamicMotionMagicVoltage getRequest() {
+        if (m_targetAngle.lt(Rotations.of(m_motor.getPosition().getValueAsDouble()))) {
+            // doesn't use kG when going down
+            return m_dynamicRequest.withPosition(m_targetAngle.in(Rotations));
+        } else {
+            var ff = m_feedforward.calculate(
+                // angle from horizontal in radians
+                Units.rotationsToRadians(m_motor.getPosition().getValueAsDouble()) + kOffset.in(Radians), 
+                // desired velocity in rad/s
+                Units.rotationsToRadians(m_dynamicRequest.Velocity), 
+                // desired acceleration in rad/s^2
+                Units.rotationsToRadians(m_dynamicRequest.Acceleration));
+            return m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)).withFeedForward(ff);
+        }
+    }
+
     private void determineMotionMagicValues() {
-        // TODO make these not all 0
         if (m_targetAngle.lt(Rotations.of(m_motor.getPosition().getValueAsDouble()))) {
             m_dynamicRequest.Velocity = 20;
             m_dynamicRequest.Acceleration = 40;
@@ -167,7 +179,7 @@ public class Aim extends SubsystemBase {
         return runOnce(() -> {
             m_targetAngle = Rotations.of(0.275879);
             determineMotionMagicValues();
-            m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
+            m_motor.setControl(getRequest());
         });
     }
 
@@ -175,7 +187,7 @@ public class Aim extends SubsystemBase {
         return runOnce(() -> {
             m_targetAngle = Rotations.of(0);
             determineMotionMagicValues();
-            m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
+            m_motor.setControl(getRequest());
         });
     }
 
@@ -187,7 +199,7 @@ public class Aim extends SubsystemBase {
         return Commands.runOnce(() -> {
             m_targetAngle = m_targetAngle.plus(Degrees.of(0.5));
             determineMotionMagicValues();
-            m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
+            m_motor.setControl(getRequest());
         });
     }
 
@@ -195,7 +207,7 @@ public class Aim extends SubsystemBase {
         return Commands.runOnce(() -> {
             m_targetAngle = m_targetAngle.minus(Degrees.of(0.5));
             determineMotionMagicValues();
-            m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
+            m_motor.setControl(getRequest());
         });
     }
 
@@ -203,7 +215,7 @@ public class Aim extends SubsystemBase {
         return runOnce(() -> {
             m_targetAngle = kAmpAngle;
             determineMotionMagicValues();
-            m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
+            m_motor.setControl(getRequest());
         });
     }
 
@@ -260,11 +272,11 @@ public class Aim extends SubsystemBase {
 
     public Command rezero() {
         return Commands.runOnce(() -> {
-            var offset = AimConfigs.cancoderConfig.MagnetSensor.MagnetOffset;
+            var offset = cancoderConfig.MagnetSensor.MagnetOffset;
             var zero = m_cancoder.getAbsolutePosition().getValueAsDouble() - offset;
             m_cancoder.getConfigurator().apply(
-                AimConfigs.cancoderConfig.withMagnetSensor(
-                    AimConfigs.cancoderConfig.MagnetSensor.withMagnetOffset(-zero)
+                cancoderConfig.withMagnetSensor(
+                    cancoderConfig.MagnetSensor.withMagnetOffset(-zero)
                 )
             );
             System.out.println("new offset: " + -zero);
