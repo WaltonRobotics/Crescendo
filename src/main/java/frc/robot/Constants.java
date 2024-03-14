@@ -253,11 +253,11 @@ public class Constants {
 
     public static class AimK {
         public static final class AimConfigs {
-            public static final double kP = 125;
-            public static final double kS = 0.25;
-            public static final double kG = 0.058368;
-            public static final double kV = 0.084518;
-            public static final double kA = 0.080123;
+            private static final double kP = 125;
+            private static final double kS = 0.25;
+            private static final double kG = 0.058368;
+            private static final double kV = 0.084518;
+            private static final double kA = 0.080123;
 
             public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
             public static final CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
@@ -266,7 +266,7 @@ public class Constants {
                 motorConfig.Slot0 = motorConfig.Slot0
                     .withKP(kP)
                     .withKS(kS)
-                    // .withKG(kG)
+                    .withKG(kG)
                     .withKV(kV)
                     .withKA(kA)
                     .withGravityType(GravityTypeValue.Arm_Cosine);
@@ -274,7 +274,7 @@ public class Constants {
                 motorConfig.Feedback = motorConfig.Feedback
                     .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
                     .withFeedbackRemoteSensorID(15)
-                    .withRotorToSensorRatio(kGearRatio / 1.69)
+                    .withRotorToSensorRatio(kGearRatio / 1.69) // ?
                     .withSensorToMechanismRatio(1.69 / 1.0);
 
                 motorConfig.MotorOutput = motorConfig.MotorOutput
@@ -326,8 +326,6 @@ public class Constants {
         public static final Measure<Angle> kPodiumAngle = Degrees.of(8.25);
 
         public static final Measure<Angle> kTolerance = Degrees.of(2);
-
-        public static final Measure<Angle> kOffset = Degrees.of(22.5);
     }
 
     // public class ClimberK {
