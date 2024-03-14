@@ -50,6 +50,7 @@ import frc.util.logging.WaltLogger.DoubleLogger;
 
 import static frc.robot.Constants.FieldK.*;
 import static frc.robot.generated.TunerConstants.kDriveRadius;
+import static frc.robot.generated.TunerConstants.kDriveRotationsPerMeter;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.AutoK.*;
 
@@ -141,7 +142,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		if (Utils.isSimulation()) {
 			startSimThread();
 		}
-		m_gyroYawRadsSupplier = () -> getPigeon2().getAngle();
+		m_gyroYawRadsSupplier = () -> Units.degreesToRadians(getPigeon2().getAngle());
 		m_thetaController.enableContinuousInput(0, 2 * Math.PI);
 		m_desiredRot = new Rotation2d();
 		m_poseError = new double[3];
@@ -154,7 +155,8 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			accumGyroYawRads = 0;
 			currentEffectiveWheelRadius = 0;
 			for (int i = 0; i < Modules.length; i++) {
-				startWheelPositions[i] = Modules[i].getPosition(true).angle.getRadians();
+				var pos = Modules[i].getPosition(true);
+				startWheelPositions[i] = pos.distanceMeters * kDriveRotationsPerMeter;
 			}
 			m_omegaLimiter.reset(0);
 		});
@@ -168,7 +170,8 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 				double averageWheelPosition = 0;
 				double[] wheelPositions = new double[4];
 				for (int i = 0; i < Modules.length; i++) {
-					wheelPositions[i] = Modules[i].getPosition(true).angle.getRadians();
+					var pos = Modules[i].getPosition(true);
+					wheelPositions[i] = pos.distanceMeters * kDriveRotationsPerMeter;
 					averageWheelPosition += Math.abs(wheelPositions[i] - startWheelPositions[i]);
 				}
 				averageWheelPosition /= 4.0;

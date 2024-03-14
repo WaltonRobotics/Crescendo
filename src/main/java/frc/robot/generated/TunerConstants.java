@@ -49,7 +49,7 @@ public class TunerConstants {
 
 	private static final double kDriveGearRatio = 6.122448979591837;
 	private static final double kSteerGearRatio = 21.428571428571427;
-	private static final double kWheelRadiusInches = 1.924;
+	private static final double kWheelRadiusInches = 1.9625967885965534;
 
 	private static final boolean kSteerMotorReversed = true;
 	private static final boolean kInvertLeftSide = false;
@@ -87,14 +87,17 @@ public class TunerConstants {
 		.withCouplingGearRatio(kCoupleRatio)
 		.withSteerMotorInverted(kSteerMotorReversed);
 
+	private static final double kWheelBase = 18.75;
+	private static final double kTrackWidth = 22.75;
+
 	// Front Left
 	private static final int kFrontLeftDriveMotorId = 5;
 	private static final int kFrontLeftSteerMotorId = 6;
 	private static final int kFrontLeftEncoderId = 6;
 	private static final double kFrontLeftEncoderOffset = 0.3427734375;
 
-	private static final double kFrontLeftXPosInches = 12;
-	private static final double kFrontLeftYPosInches = 14;
+	private static final double kFrontLeftXPosInches = kWheelBase / 2.0;
+	private static final double kFrontLeftYPosInches = kTrackWidth / 2.0;
 
 	// Front Right
 	private static final int kFrontRightDriveMotorId = 3;
@@ -102,8 +105,8 @@ public class TunerConstants {
 	private static final int kFrontRightEncoderId = 4;
 	private static final double kFrontRightEncoderOffset = -0.235595703125;
 
-	private static final double kFrontRightXPosInches = 12;
-	private static final double kFrontRightYPosInches = -14;
+	private static final double kFrontRightXPosInches = kWheelBase / 2.0;
+	private static final double kFrontRightYPosInches = -kTrackWidth / 2.0;
 
 	// Back Left
 	private static final int kBackLeftDriveMotorId = 7;
@@ -111,8 +114,8 @@ public class TunerConstants {
 	private static final int kBackLeftEncoderId = 8;
 	private static final double kBackLeftEncoderOffset = -0.021728515625;
 
-	private static final double kBackLeftXPosInches = -12;
-	private static final double kBackLeftYPosInches = 14;
+	private static final double kBackLeftXPosInches = -kWheelBase / 2.0;
+	private static final double kBackLeftYPosInches = kTrackWidth / 2.0;
 
 	// Back Right
 	private static final int kBackRightDriveMotorId = 1;
@@ -120,12 +123,13 @@ public class TunerConstants {
 	private static final int kBackRightEncoderId = 2;
 	private static final double kBackRightEncoderOffset = -0.266357421875;
 
-	private static final double kBackRightXPosInches = -12;
-	private static final double kBackRightYPosInches = -14;
+	private static final double kBackRightXPosInches = -kWheelBase / 2.0;
+	private static final double kBackRightYPosInches = -kTrackWidth / 2.0;
 
 	private static final double rotationsPerWheelRotation = kDriveGearRatio;
 	private static final double wheelRadiusMeters = kWheelRadiusInches * Constants.kMetersPerInch;
 	private static final double metersPerWheelRotation = 2 * Math.PI * wheelRadiusMeters;
+
 	public static final double kDriveRotationsPerMeter = rotationsPerWheelRotation / metersPerWheelRotation;
 	public static final double kDriveRadius = Math.hypot(kFrontLeftXPosInches, kFrontLeftYPosInches);
 

@@ -197,6 +197,10 @@ public class Robot extends TimedRobot {
 	}
 
 	public void atHomeBindings() {
+		// spinny buttons
+		driver.back().and(driver.x()).whileTrue(swerve.wheelRadiusCharacterisation(1));
+		driver.back().and(driver.y()).whileTrue(swerve.wheelRadiusCharacterisation(-1));
+		
 		// sysid buttons
 		manipulator.back().and(manipulator.x()).whileTrue(aim.sysIdDynamic(Direction.kForward));
 		manipulator.back().and(manipulator.y()).whileTrue(aim.sysIdDynamic(Direction.kReverse));
@@ -223,6 +227,7 @@ public class Robot extends TimedRobot {
 		if (kTestMode) {
 			swerve.setTestMode();
 		}
+		System.out.println(TunerConstants.kDriveRadius);
 	}
 
 	@Override

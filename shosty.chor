@@ -6,11 +6,11 @@
         "motorMaxTorque": 2.327950310559006,
         "motorMaxVelocity": 5200,
         "gearing": 6.25,
-        "wheelbase": 0.6095996708161777,
-        "trackWidth": 0.7111996159522074,
+        "wheelbase": 0.4762497428251389,
+        "trackWidth": 0.5778496879611685,
         "bumperLength": 0.8635995336562519,
         "bumperWidth": 0.8635995336562519,
-        "wheelRadius": 0.04886957361043025
+        "wheelRadius": 0.04984993151138944
     },
     "paths": {
         "amp_side": {
@@ -4683,7 +4683,7 @@
                 }
             ],
             "eventMarkers": [],
-            "isTrajectoryStale": false
+            "isTrajectoryStale": true
         },
         "clear_center": {
             "waypoints": [
