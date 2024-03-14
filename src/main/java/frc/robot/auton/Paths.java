@@ -8,6 +8,9 @@ public class Paths {
     public static final PathPlannerPath ampSide3 = PathPlannerPath.fromChoreoTrajectory("amp_side.3");
     public static final PathPlannerPath ampSide4 = PathPlannerPath.fromChoreoTrajectory("amp_side.4");
     public static final PathPlannerPath ampSideToAmp = PathPlannerPath.fromChoreoTrajectory("amp_3pc_amp");
+    public static final PathPlannerPath altAmpSide1 = PathPlannerPath.fromChoreoTrajectory("amp_side_alt.1");
+    public static final PathPlannerPath altAmpSide2 = PathPlannerPath.fromChoreoTrajectory("amp_side_alt.2");
+    public static final PathPlannerPath altAmpSide3 = PathPlannerPath.fromChoreoTrajectory("amp_side_alt.3");
 
     public static final PathPlannerPath ampStart1 = PathPlannerPath.fromChoreoTrajectory("amp_start.1");
     public static final PathPlannerPath ampStart2 = PathPlannerPath.fromChoreoTrajectory("amp_start.2");
