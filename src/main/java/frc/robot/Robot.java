@@ -47,11 +47,10 @@ import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
 
 import static frc.robot.Constants.RobotK.*;
-import static frc.robot.generated.TunerConstants.*;
 
 public class Robot extends TimedRobot {
 	/** 5.21 meters per second desired top speed */
-	public static final double kMaxSpeed = kSpeedAt12VoltsMps;
+	public static final double kMaxSpeed = 5;
 	/** 1.5 of a rotation per second max angular velocity */
 	public static final double kMaxAngularRate = 1.5 * (Math.PI * 2);
 
@@ -77,7 +76,7 @@ public class Robot extends TimedRobot {
 
 	private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
 		.withDeadband(kMaxSpeed * 0.1).withRotationalDeadband(kMaxAngularRate * 0.1) // Add a 5% deadband
-		.withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+		.withDriveRequestType(DriveRequestType.Velocity);
 	private final SwerveRequest.RobotCentric robotCentric = new SwerveRequest.RobotCentric()
 		.withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 	private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();

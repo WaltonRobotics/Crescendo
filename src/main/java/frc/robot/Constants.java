@@ -109,12 +109,11 @@ public class Constants {
     }
 
     public class AutoK {
-        public static final double kPX = 10;
-        public static final double kPY = 10;
+        public static final double kPTranslation = 5;
         public static final double kPTheta = 6.5; // 1
 
         public static final HolonomicPathFollowerConfig kPathFollowerConfig = new HolonomicPathFollowerConfig(
-            new PIDConstants(kPX),
+            new PIDConstants(kPTranslation),
             new PIDConstants(kPTheta),
             kMaxSpeed,
             TunerConstants.kDriveRadius,

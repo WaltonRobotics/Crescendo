@@ -69,8 +69,8 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		.withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
 	private final SwerveDriveBrake m_brake = new SwerveDriveBrake();
-	private final PIDController m_xController = new PIDController(kPX, 0.0, 0.0);
-	private final PIDController m_yController = new PIDController(kPY, 0.0, 0.0);
+	private final PIDController m_xController = new PIDController(kPTranslation, 0.0, 0.0);
+	private final PIDController m_yController = new PIDController(kPTranslation, 0.0, 0.0);
 	private final PIDController m_thetaController = new PIDController(kPTheta, 0.0, 0.0);
 
 	private Rotation2d m_desiredRot = new Rotation2d();
