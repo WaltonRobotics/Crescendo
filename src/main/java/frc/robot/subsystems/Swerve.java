@@ -63,7 +63,8 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private Notifier m_simNotifier = null;
 	private double m_lastSimTime;
 
-	private final ApplyChassisSpeeds m_autoRequest = new ApplyChassisSpeeds();
+	private final ApplyChassisSpeeds m_autoRequest = new ApplyChassisSpeeds()
+		.withDriveRequestType(DriveRequestType.Velocity);
 	private final SwerveRequest.RobotCentric m_characterisationReq = new SwerveRequest.RobotCentric()
 		.withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
@@ -72,7 +73,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final PIDController m_yController = new PIDController(kPY, 0.0, 0.0);
 	private final PIDController m_thetaController = new PIDController(kPTheta, 0.0, 0.0);
 
-	private Rotation2d m_desiredRot;
+	private Rotation2d m_desiredRot = new Rotation2d();
 
 	private final double m_characterisationSpeed = 1;
 	public final DoubleSupplier m_gyroYawRadsSupplier;
@@ -110,9 +111,15 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final DoubleLogger log_desiredRot = WaltLogger.logDouble("Swerve", "desiredRot");
 	private final DoubleLogger log_rot = WaltLogger.logDouble("Swerve", "rotation");
 	private final DoubleArrayLogger log_poseError = WaltLogger.logDoubleArray("Swerve", "poseError");
-	private double[] m_poseError;
+	private double[] m_poseError = new double[3];
 	private final DoubleArrayLogger log_desiredPose = WaltLogger.logDoubleArray("Swerve", "desiredPose");
-	private double[] m_desiredPose;
+	private double[] m_desiredPose = new double[3];
+	private final DoubleArrayLogger log_wheelVeloErrors = WaltLogger.logDoubleArray("Swerve", "wheelVeloErrors");
+	private double[] m_wheelVeloErrs = new double[4];
+	private final DoubleArrayLogger log_wheelVelos = WaltLogger.logDoubleArray("Swerve", "wheelVelos");
+	private double[] m_wheelVelos = new double[4];
+	private final DoubleArrayLogger log_wheelVeloTargets = WaltLogger.logDoubleArray("Swerve", "wheelVeloTargets");
+	private double[] m_wheelVeloTargets = new double[4];
 
 	public void addVisionMeasurement(VisionMeasurement measurement) {
 		m_odometry.addVisionMeasurement(
@@ -144,9 +151,6 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		}
 		m_gyroYawRadsSupplier = () -> Units.degreesToRadians(getPigeon2().getAngle());
 		m_thetaController.enableContinuousInput(0, 2 * Math.PI);
-		m_desiredRot = new Rotation2d();
-		m_poseError = new double[3];
-		m_desiredPose = new double[3];
 	}
 
 	public Command wheelRadiusCharacterisation(double omegaDirection) {
@@ -338,9 +342,10 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	}
 
 	public void periodic() {
-		log_rotationSpeed.accept(Units.radiansToRotations(getState().speeds.omegaRadiansPerSecond));
+		var swerveState = getState();
+		log_rotationSpeed.accept(Units.radiansToRotations(swerveState.speeds.omegaRadiansPerSecond));
 		log_desiredRot.accept(m_desiredRot.getDegrees());
-		log_rot.accept(getState().Pose.getRotation().getDegrees());
+		log_rot.accept(swerveState.Pose.getRotation().getDegrees());
 		m_poseError[0] = m_xController.getPositionError();
 		m_poseError[1] = m_yController.getPositionError();
 		m_poseError[2] = Units.radiansToDegrees(m_thetaController.getPositionError());
@@ -349,5 +354,14 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		m_desiredPose[1] = m_yController.getSetpoint();
 		m_desiredPose[2] = Units.radiansToDegrees(m_thetaController.getSetpoint());
 		log_desiredPose.accept(m_desiredPose);
+
+		for (int i = 0; i < Modules.length; i++) {
+			m_wheelVelos[i] = Math.abs(swerveState.ModuleStates[i].speedMetersPerSecond);
+			m_wheelVeloTargets[i] = Math.abs(swerveState.ModuleTargets[i].speedMetersPerSecond);
+			m_wheelVeloErrs[i] = Math.abs(m_wheelVeloTargets[i] - m_wheelVelos[i]);
+		}
+		log_wheelVelos.accept(m_wheelVelos);
+		log_wheelVeloTargets.accept(m_wheelVeloTargets);
+		log_wheelVeloErrors.accept(m_wheelVeloErrs);
 	}
 }

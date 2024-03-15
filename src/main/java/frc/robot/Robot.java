@@ -200,13 +200,16 @@ public class Robot extends TimedRobot {
 		// spinny buttons
 		driver.back().and(driver.x()).whileTrue(swerve.wheelRadiusCharacterisation(1));
 		driver.back().and(driver.y()).whileTrue(swerve.wheelRadiusCharacterisation(-1));
-		
+
 		// sysid buttons
 		manipulator.back().and(manipulator.x()).whileTrue(aim.sysIdDynamic(Direction.kForward));
 		manipulator.back().and(manipulator.y()).whileTrue(aim.sysIdDynamic(Direction.kReverse));
 
 		manipulator.start().and(manipulator.x()).whileTrue(aim.sysIdQuasistatic(Direction.kForward));
 		manipulator.start().and(manipulator.y()).whileTrue(aim.sysIdQuasistatic(Direction.kReverse));
+
+		// path followy
+		driver.start().and(driver.povDown()).whileTrue(AutonFactory.followThreePointFive(swerve));
 	}
 
 	private Command getAutonomousCommand() {

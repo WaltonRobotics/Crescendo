@@ -115,6 +115,20 @@ public final class AutonFactory {
 		);
 	}
 
+	public static Command followThreePointFive(Swerve swerve) {
+		var resetPose = swerve.resetPose(Paths.ampSide1).asProxy();
+		var pathFollow1 = AutoBuilder.followPath(Paths.ampSide1).asProxy();
+		var pathFollow2 = AutoBuilder.followPath(Paths.ampSide2).asProxy();
+		var pathFollow3 = AutoBuilder.followPath(Paths.ampSide3).asProxy();
+
+		return sequence(
+			resetPose,
+			pathFollow1,
+			pathFollow2,
+			pathFollow3
+		);
+	}
+
 	public static Command preloadShot(Superstructure superstructure, Shooter shooter) {
 		var aimAndSpinUp = superstructure.aimAndSpinUp(kSubwooferAngle, false).until(superstructure.stateTrg_idle);
 		var noteReady = superstructure.forceStateToNoteReady().asProxy();
