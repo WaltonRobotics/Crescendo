@@ -1,5 +1,6 @@
 package frc.util.logging;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import edu.wpi.first.networktables.*;
 import edu.wpi.first.util.datalog.*;
@@ -16,6 +17,29 @@ public class WaltLogger {
 
     private static boolean shouldPublishNt() {
         return Constants.kDebugLoggingEnabled && !FMSCacher.getCachedFMSAttached();
+    }
+
+    public static IntLogger logInt(String table, String name, PubSubOption... options) {
+        return new IntLogger(table, name, options);
+    }
+
+    public static final class IntLogger implements Consumer<Integer> {
+        public final IntegerPublisher ntPub;
+        public final IntegerLogEntry logEntry;
+
+        public IntLogger(String subTable, String name, PubSubOption... options) {
+            ntPub = NTPublisherFactory.makeIntPub(logTable.getSubTable(subTable), name, options);
+            logEntry = new IntegerLogEntry(DataLogManager.getLog(), "Robot/" + subTable + "/" + name);
+        }
+
+        @Override
+        public void accept(Integer value) {
+            if (shouldPublishNt()) {
+                ntPub.set(value);
+            } else {
+                logEntry.append(value);
+            }
+        }
     }
 
     public static final class DoubleLogger implements Consumer<Double> {
@@ -57,6 +81,10 @@ public class WaltLogger {
             } else {
                 logEntry.append(value);
             }
+        }
+
+        public void accept(BooleanSupplier valueSup) {
+            accept(valueSup.getAsBoolean());
         }
     }
 
