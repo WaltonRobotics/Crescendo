@@ -1,14 +1,11 @@
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.Degrees;
 import static frc.robot.Constants.IntakeK.kVisiSightId;
 import static frc.robot.Constants.RobotK.kDbTabName;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleConsumer;
 import edu.wpi.first.networktables.PubSubOption;
-import edu.wpi.first.units.Angle;
-import edu.wpi.first.units.Measure;
 import edu.wpi.first.wpilibj.AsynchronousInterrupt;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.SynchronousInterrupt;
@@ -16,6 +13,7 @@ import edu.wpi.first.wpilibj.event.EventLoop;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
@@ -98,7 +96,6 @@ public class Superstructure extends SubsystemBase {
         () -> m_state == NoteState.INTAKE);
     private final Trigger stateTrg_noteRetracting = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.ROLLER_BEAM_RETRACT);
-    private final Trigger stateTrg_spinUp = new Trigger(sensorEventLoop, () -> m_state == NoteState.SHOT_SPINUP);
     private final Trigger stateTrg_shootOk = new Trigger(sensorEventLoop, () -> m_state == NoteState.SHOOT_OK);
     private final Trigger stateTrg_shooting = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.SHOOTING);
@@ -109,6 +106,8 @@ public class Superstructure extends SubsystemBase {
     private final Trigger extStateTrg_shooting = stateTrg_shooting.or(stateTrg_leavingBeamBreak).or(stateTrg_leftBeamBreak);
     public final Trigger stateTrg_noteReady = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.NOTE_READY);
+
+    private final Trigger trg_auton = RobotModeTriggers.autonomous();
 
     /** To be set on any edge from the AsyncIrq callback  */
     private boolean frontVisiSightSeenNote = false;
@@ -182,13 +181,6 @@ public class Superstructure extends SubsystemBase {
         configureStateTriggers();
     }
 
-    public Command ampShot() {
-        var shootCmd = m_shooter.ampShot();
-        var conveyorCmd = m_conveyor.runFast();
-
-        return Commands.parallel(shootCmd, conveyorCmd);
-    }
-
    private Command cmdDriverRumble(double intensity, double seconds) {
         return Commands.startEnd(
             () -> {
@@ -245,8 +237,8 @@ public class Superstructure extends SubsystemBase {
                 )
             );
 
-        // note in shooter and not shooting or spinupping
-        (irqTrg_conveyorBeamBreak.and((extStateTrg_shooting.or(stateTrg_spinUp)).negate()))
+        // note in shooter and not shooting
+        (irqTrg_conveyorBeamBreak.and((extStateTrg_shooting).negate()))
             .onTrue(
                 Commands.parallel(
                     changeStateCmd(NoteState.ROLLER_BEAM_RETRACT),
@@ -268,7 +260,7 @@ public class Superstructure extends SubsystemBase {
                     m_conveyor.stop()));
 
         // added back shoot ok
-        (trg_spunUp.and(trg_atAngle).and(stateTrg_noteReady.or(stateTrg_spinUp)))
+        (trg_spunUp.and(trg_atAngle).and(stateTrg_noteReady))
             .onTrue(
                 Commands.parallel(
                     cmdDriverRumble(1, 0.5), 
@@ -307,7 +299,7 @@ public class Superstructure extends SubsystemBase {
         (stateTrg_leftBeamBreak.debounce(0.1))
             .onTrue(changeStateCmd(NoteState.IDLE));
 
-        stateTrg_idle
+        (stateTrg_idle.and(trg_auton.negate()))
             .onTrue(Commands.parallel(
                 Commands.runOnce(
                     () -> {
@@ -321,6 +313,21 @@ public class Superstructure extends SubsystemBase {
                         manipulatorRumbled = false;
                     }),
                 stopEverything(), m_aim.intakeAngleNearCmd()));
+
+        (stateTrg_idle.and(trg_auton))
+            .onTrue(Commands.parallel(
+                Commands.runOnce(
+                    () -> {
+                        timothyEntered = false;
+                        timothyIn = false;
+                        timothyFieldTrip = false;
+                        frontVisiSightSeenNote = false;
+                        autonIntake = false;
+                        autonShoot = false;
+                        driverRumbled = false;
+                        manipulatorRumbled = false;
+                    }),
+                autonStop(), m_aim.intakeAngleNearCmd()));
     }
 
     public Command stopEverything() {
@@ -331,61 +338,11 @@ public class Superstructure extends SubsystemBase {
         return Commands.parallel(shootCmd, conveyorCmd, intakeCmd);
     }
 
-    public Command aimAndSpinUp(Measure<Angle> target, boolean podium) {
-        var aimCmd = m_aim.toAngleUntilAt(target, Degrees.of(1)); // TODO make this unmagical :(
+    public Command autonStop() {
+        var conveyorCmd = m_conveyor.stop();
+        var intakeCmd = m_intake.stop();
 
-        var waitForNoteReady = Commands.waitUntil(() -> m_state.idx > NoteState.ROLLER_BEAM_RETRACT.idx)
-            .andThen(Commands.print("====NOTE READY===="));
-
-        var shootCmd = podium ? m_shooter.podium(stateTrg_idle) : m_shooter.subwoofer(stateTrg_idle); 
-
-
-        return Commands.sequence(
-            Commands.parallel(
-                aimCmd.asProxy().andThen(Commands.print("AimAndSpinUp_AIM_DONE")),
-                Commands.sequence(
-                    waitForNoteReady.andThen(Commands.print("AimAndSpinUp_NOTERD_DONE")),
-                    changeStateCmd(NoteState.SHOT_SPINUP),
-                    Commands.parallel(
-                        shootCmd.asProxy().andThen(Commands.print("shooty shoot done (no yelling)"))
-                    )
-                )
-            )
-        );
-    }
-
-    public Command ampSpinUp(Measure<Angle> target) {
-        var waitForNoteReady = Commands.waitUntil(() -> m_state.idx > NoteState.ROLLER_BEAM_RETRACT.idx)
-            .andThen(Commands.print("====NOTE READY===="));
-
-        Command shootCmd = m_shooter.ampShot();
-
-        var aimCmd2 = m_aim.toAngleUntilAt(() -> target.plus(Degrees.of(20)), Degrees.of(0));
-
-        return Commands.sequence(
-            waitForNoteReady.andThen(Commands.print("AimAndSpinUp_NOTERD_DONE")),
-            changeStateCmd(NoteState.SHOT_SPINUP),
-            Commands.parallel(
-                shootCmd.asProxy().andThen(Commands.print("shooty shoot done (no yelling)")),
-                Commands.sequence(
-                    Commands.waitUntil(irqTrg_conveyorBeamBreak),
-                    aimCmd2.asProxy().andThen(Commands.print("aim"))
-                )
-            )  
-        );
-    }
-
-    public Command subwooferSpinUp() {
-        var waitForNoteReady = Commands.waitUntil(() -> m_state.idx > NoteState.ROLLER_BEAM_RETRACT.idx)
-            .andThen(Commands.print("====NOTE READY===="));
-
-        Command shootCmd = m_shooter.subwoofer();
-
-        return Commands.sequence(
-            waitForNoteReady.andThen(Commands.print("AimAndSpinUp_NOTERD_DONE")),
-            changeStateCmd(NoteState.SHOT_SPINUP),
-            shootCmd.asProxy().andThen(Commands.print("shooty shoot done (no yelling)"))
-        );
+        return Commands.parallel(conveyorCmd, intakeCmd);
     }
 
     public Command backwardsRun() {
@@ -511,11 +468,10 @@ public class Superstructure extends SubsystemBase {
         INTAKE(1),
         ROLLER_BEAM_RETRACT(2), // Note hit top beam
         NOTE_READY(3),
-        SHOT_SPINUP(4),
-        SHOOT_OK(5),
-        SHOOTING(6),
-        LEAVING_BEAM_BREAK(7),
-        LEFT_BEAM_BREAK(8);
+        SHOOT_OK(4),
+        SHOOTING(5),
+        LEAVING_BEAM_BREAK(6),
+        LEFT_BEAM_BREAK(7);
 
         public final int idx;
 

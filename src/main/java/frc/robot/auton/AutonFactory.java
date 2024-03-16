@@ -25,7 +25,7 @@ public final class AutonFactory {
 		var spinUp = shooter.subwoofer().asProxy();
 		var resetPose = swerve.resetPose(Paths.ampSide1).asProxy();
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide1).asProxy();
-		var preloadShot = preloadShot(superstructure, shooter);
+		var preloadShot = preloadShot(superstructure, aim, shooter);
 		var intake = superstructure.autonIntakeCmd().asProxy();
 		var swerveAim = swerve.aim(0).asProxy();
 		// TODO make this just aim
@@ -129,8 +129,8 @@ public final class AutonFactory {
 		);
 	}
 
-	public static Command preloadShot(Superstructure superstructure, Shooter shooter) {
-		var aimAndSpinUp = superstructure.aimAndSpinUp(kSubwooferAngle, false).until(superstructure.stateTrg_idle);
+	public static Command preloadShot(Superstructure superstructure, Aim aim, Shooter shooter) {
+		var aimCmd = aim.toAngleUntilAt(kSubwooferAngle, Degrees.of(1));
 		var noteReady = superstructure.forceStateToNoteReady().asProxy();
 		var shoot = Commands.runOnce(() -> superstructure.preloadShootReq()).asProxy();
 
@@ -138,7 +138,7 @@ public final class AutonFactory {
 			noteReady,
 			Commands.parallel(
 				Commands.print("aim and spin up"),
-				aimAndSpinUp.andThen(Commands.print("aimAndSpinUp_DONE")),
+				aimCmd.andThen(Commands.print("aim done")),
 				shoot.andThen(Commands.print("shoot_DONE"))
 			)
 		);

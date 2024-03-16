@@ -46,6 +46,7 @@ import frc.util.AllianceFlipUtil;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
 
+import static frc.robot.Constants.AimK.kPodiumAngle;
 import static frc.robot.Constants.RobotK.*;
 
 public class Robot extends TimedRobot {
@@ -160,7 +161,7 @@ public class Robot extends TimedRobot {
 		// driver.rightBumper().onTrue(swerve.resetPoseToSpeaker());
 
 		// podium shot
-		driver.leftTrigger().whileTrue(superstructure.aimAndSpinUp(AimK.kPodiumAngle, true));
+		driver.leftTrigger().whileTrue(aim.toAngleUntilAt(kPodiumAngle, Degrees.of(1)));
 
 		// wheel pointy straight for pit
 		driver.povUp().and(driver.start()).whileTrue(swerve.applyRequest(() -> robotCentric.withVelocityX(0.5)));
