@@ -24,23 +24,20 @@ stateDiagram-v2
   state "Intaking" as s2
   state "Indexing" as s3
   state "Note Ready" as s4
-  state "Prepare Shot" as s5
-  state "Shot Ready" as s6
-  state "Shooting" as s7
-  state "Note Leaving" as s8
-  state "Note Left" as s9
+  state "Shot Ready" as s5
+  state "Shooting" as s6
+  state "Note Leaving" as s7
+  state "Note Left" as s8
 
   s1 --> s2: IntkReq -> TRUE
   s2 --> s1: IntkReq -> FALSE
   s2 --> s3: IntkSens <-> HIT
   s3 --> s4: ConvSens -> TRUE
-  s4 --> s5: ConvSens -> FALSE
-  s5 --> s6: PrepReq -> TRUE
-  s6 --> s5: PrepReq -> FALSE
-  s6 --> s7: ShotReq -> TRUE
-  s7 --> s8: ConvSens -> TRUE
-  s8 --> s9: ExitSens -> TRUE
-  s9 --> s1: After 250ms
+  s4 --> s5: ConvSens -> FALSE, Spun, Aimed
+  s5 --> s6: ShotReq -> TRUE
+  s6 --> s7: ConvSens -> TRUE
+  s7 --> s8: ExitSens -> TRUE
+  s8 --> s1: After 250ms
 
 ```
 
@@ -52,7 +49,6 @@ stateDiagram-v2
 |   **Intaking**   | Hardstops |   Running  |    Running   |   Stopped   |
 |   **Indexing**   | Hardstops |   Stopped  |    Running   |   Stopped   |
 |  **Note Ready**  | Hardstops |   Stopped  |    Stopped   |   Stopped   |
-| **Prepare Shot** |   Aiming  |   Stopped  |    Stopped   |   Spinning  |
 |  **Shot Ready**  |   Aimed   |   Stopped  |    Stopped   |     Spun    |
 |   **Shooting**   |   Aimed   |   Stopped  |    Running   |     Spun    |
 | **Note Leaving** |   Aimed   |   Stopped  |  Running (?) |     Spun    |
