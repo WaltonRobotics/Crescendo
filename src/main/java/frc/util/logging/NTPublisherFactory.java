@@ -7,6 +7,15 @@ public final class NTPublisherFactory {
     private static final NetworkTableInstance inst = NetworkTableInstance.getDefault();
     private static final NetworkTable traceTable = inst.getTable("Trace");
 
+    public static IntegerPublisher makeIntPub(NetworkTable table, String name, PubSubOption... options) {
+        IntegerTopic topic = table.getIntegerTopic(name);
+        return topic.publish(options);
+    }
+
+    public static IntegerPublisher makeIntPub(String table, String name, PubSubOption... options) {
+        return makeIntPub(inst.getTable(table), name, options);
+    }
+
     public static DoublePublisher makeDoublePub(NetworkTable table, String name, PubSubOption... options) {
         DoubleTopic topic = table.getDoubleTopic(name);
         return topic.publish(options);

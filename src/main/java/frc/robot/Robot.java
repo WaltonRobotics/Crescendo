@@ -146,7 +146,7 @@ public class Robot extends TimedRobot {
 					-driver.getLeftX()))));
 
 		// force shot
-		driver.b().and(driver.rightTrigger()).onTrue(Commands.runOnce(() -> superstructure.forceStateToShooting()));
+		driver.b().and(driver.rightTrigger()).onTrue(superstructure.forceStateToShooting());
 		
 		// Drive to auton start pose
 		// driver.x().whileTrue(swerve.goToAutonPose());
@@ -178,10 +178,10 @@ public class Robot extends TimedRobot {
 
 		// manip force shot
 		manipulator.b().and(manipulator.povUp())
-			.onTrue(Commands.runOnce(() -> superstructure.forceStateToShooting()));
+			.onTrue(superstructure.forceStateToShooting());
 
 		// manip force FSM reset
-		manipulator.b().and(manipulator.leftTrigger()).whileTrue(Commands.runOnce(() -> superstructure.forceStateToIdle()));
+		manipulator.b().and(manipulator.leftTrigger()).whileTrue(superstructure.forceStateToIdle());
 
 		// aim safe angle
 		manipulator.x().whileTrue(aim.intakeAngleNearCmd());
@@ -220,7 +220,6 @@ public class Robot extends TimedRobot {
 	public void robotInit() {
 		addPeriodic(() -> {
 			superstructure.fastPeriodic();
-			superstructure.sensorEventLoop.poll();
 		}, 0.00125);
 		SmartDashboard.putData(field2d);
 		speakerPose = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpening);
