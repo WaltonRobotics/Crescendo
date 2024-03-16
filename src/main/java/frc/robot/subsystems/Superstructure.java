@@ -21,7 +21,7 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.*;
 
-public class Superstructure extends SubsystemBase {
+public class Superstructure {
     public final Aim m_aim;
     public final Intake m_intake;
     public final Conveyor m_conveyor;
@@ -128,6 +128,7 @@ public class Superstructure extends SubsystemBase {
     private final IntLogger log_state = WaltLogger.logInt(kDbTabName, "state",
         PubSubOption.sendAll(true));
     private final BooleanLogger log_driverIntakeReq = WaltLogger.logBoolean(kDbTabName, "intakeButton");
+    private final BooleanLogger log_driverShootReq = WaltLogger.logBoolean(kDbTabName, "shootButton");
     private final BooleanLogger log_aimReady = WaltLogger.logBoolean(kDbTabName, "aimReady");
 
     public Superstructure(
@@ -297,9 +298,6 @@ public class Superstructure extends SubsystemBase {
             .onTrue(Commands.parallel(
                 Commands.runOnce(
                     () -> {
-                        timothyEntered = false;
-                        timothyIn = false;
-                        timothyFieldTrip = false;
                         frontVisiSightSeenNote = false;
                         autonIntake = false;
                         autonShoot = false;
@@ -382,7 +380,6 @@ public class Superstructure extends SubsystemBase {
         evaluateConveyorIrq();
         evaluateShooterIrq();
 
-        log_state.accept(m_state.idx);
         log_frontVisiSight.accept(bs_frontVisiSight);
         log_conveyorBeamBreak.accept(bs_conveyorBeamBreak);
         log_shooterBeamBreak.accept(bs_shooterBeamBreak);
@@ -390,48 +387,54 @@ public class Superstructure extends SubsystemBase {
         log_conveyorBeamBreakIrq.accept(conveyorBeamBreakIrq);
         log_shooterBeamBreakIrq.accept(shooterBeamBreakIrq);
         log_driverIntakeReq.accept(trg_driverIntakeReq);
+        log_driverShootReq.accept(trg_driverShootReq);
         log_autonIntakeReq.accept(autonIntake);
         log_autonShootReq.accept(autonShoot);
         log_aimReady.accept(trg_atAngle);
+
+        sensorEventLoop.poll();
+
+        // log state after, so it represents the event loop changes
+        log_state.accept(m_state.idx);
     }
 
     public Command forceStateToNoteReady() {
-        return runOnce(() -> {
+        return Commands.runOnce(() -> {
             autonShoot = false;
             autonIntake = false;
             m_state = NoteState.NOTE_READY;
         });
     }
 
-    public void preloadShootReq() {
-        autonIntake = false;
-        autonShoot = true;
+    public Command preloadShootReq() {
+        return Commands.runOnce(() -> {
+            autonIntake = false;
+            autonShoot = true;
+        });
     }
 
-    public void forceStateToShooting() {
-        autonIntake = false;
-        autonShoot = true;
-        m_state = NoteState.SHOOTING;
+    public Command forceStateToShooting() {
+        return Commands.runOnce(() -> {
+            autonIntake = false;
+            autonShoot = true;
+            m_state = NoteState.SHOOTING;
+        });
     }
 
-    public void forceStateToIdle() {
-        m_state = NoteState.IDLE;
+    public Command forceStateToIdle() {
+        return Commands.runOnce(() -> m_state = NoteState.IDLE);
     }
 
     public Command autonShootReq() {
-        return runOnce(() -> autonShoot = true);
+        return Commands.runOnce(() -> autonShoot = true);
     }
 
     public Command autonIntakeCmd() {
-        return runOnce(() -> {
+        return Commands.runOnce(() -> {
             autonIntake = true;
             autonShoot = false;
             m_state = NoteState.INTAKE;
         });
-    }
-
-    public boolean isIdle() {
-        return m_state == NoteState.IDLE;
     }
 
     public enum NoteState {

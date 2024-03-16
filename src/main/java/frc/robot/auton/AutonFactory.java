@@ -27,10 +27,12 @@ public final class AutonFactory {
 		var resetPose = swerve.resetPose(Paths.ampSide1).asProxy();
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide1).asProxy();
 		var preloadShot = preloadShot(superstructure, aim);
-		var intake = superstructure.autonIntakeCmd().asProxy();
+		var intake = superstructure.autonIntakeCmd();
 		var swerveAim = swerve.aim(0).asProxy();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(3.2));
-		var secondShot = superstructure.autonShootReq().asProxy();
+		// TODO make this just aim
+		// var aimAndSpinUp = superstructure.aimAndSpinUp(Degrees.of(3.2), true).until(superstructure.stateTrg_idle);
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(3.2), Degrees.of(1));
+		var secondShot = superstructure.autonShootReq();
 
 		return sequence(
 				parallel(
@@ -57,10 +59,11 @@ public final class AutonFactory {
 		var twoPc = twoPc(superstructure, shooter, swerve, aim);
 		/* everything from 3 piece */
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide2).asProxy();
-		var intake = superstructure.autonIntakeCmd().asProxy();
+		var intake = superstructure.autonIntakeCmd();
 		var swerveAim = swerve.aim(0.4).asProxy();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(1));
-		var thirdShot = superstructure.autonShootReq().asProxy();
+		// var aimAndSpinUp = superstructure.aimAndSpinUp(Degrees.of(1), true);
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(1), Degrees.of(1));
+		var thirdShot = superstructure.autonShootReq();
 		
 		return sequence(
 			/* 2 piece */
@@ -84,7 +87,7 @@ public final class AutonFactory {
 	public static Command threePointFive(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var threePc = threePc(superstructure, shooter, swerve, aim);
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide3).asProxy();
-		var intake = superstructure.autonIntakeCmd().asProxy();
+		var intake = superstructure.autonIntakeCmd();
 
 		return sequence( // 3pc then (path and (wait then intake))
 			threePc,
@@ -115,8 +118,8 @@ public final class AutonFactory {
 
 	public static Command preloadShot(Superstructure superstructure, Aim aim) {
 		var aimCmd = aim.toAngleUntilAt(kSubwooferAngle);
-		var noteReady = superstructure.forceStateToNoteReady().asProxy();
-		var shoot = Commands.runOnce(() -> superstructure.preloadShootReq()).asProxy();
+		var noteReady = superstructure.forceStateToNoteReady();
+		var shoot = superstructure.preloadShootReq();
 
 		return Commands.sequence(
 			noteReady,
