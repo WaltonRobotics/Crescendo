@@ -59,7 +59,6 @@ public class Superstructure extends SubsystemBase {
     private NoteState m_state;
 
     /* note trackers. the note is named timothy. */
-    private boolean timothyEntered = false;
     private boolean timothyIn = false;
     private boolean autonIntake = false;
     private boolean autonShoot = false;
@@ -129,8 +128,6 @@ public class Superstructure extends SubsystemBase {
     private final Trigger irqTrg_shooterBeamBreak;
 
     private final DoubleLogger log_state = WaltLogger.logDouble(kDbTabName, "state",
-        PubSubOption.sendAll(true));
-    private final BooleanLogger log_timothyEntered = WaltLogger.logBoolean(kDbTabName, "timothyEntered",
         PubSubOption.sendAll(true));
     private final BooleanLogger log_timothyIn = WaltLogger.logBoolean(kDbTabName, "timothyIn",
         PubSubOption.sendAll(true));
@@ -292,7 +289,6 @@ public class Superstructure extends SubsystemBase {
             .onTrue(Commands.parallel(
                 Commands.runOnce(
                     () -> {
-                        timothyEntered = false;
                         timothyIn = false;
                         frontVisiSightSeenNote = false;
                         autonIntake = false;
@@ -391,7 +387,6 @@ public class Superstructure extends SubsystemBase {
         evaluateShooterIrq();
 
         log_state.accept((double) m_state.idx);
-        log_timothyEntered.accept(timothyEntered);
         log_timothyIn.accept(timothyIn);
         log_frontVisiSight.accept(bs_frontVisiSight.getAsBoolean());
         log_conveyorBeamBreak.accept(bs_conveyorBeamBreak.getAsBoolean());
@@ -407,7 +402,6 @@ public class Superstructure extends SubsystemBase {
 
     public Command forceStateToNoteReady() {
         return runOnce(() -> {
-            timothyEntered = true;
             timothyIn = true;
             autonShoot = false;
             autonIntake = false;
@@ -416,14 +410,12 @@ public class Superstructure extends SubsystemBase {
     }
 
     public void preloadShootReq() {
-        timothyEntered = true;
         timothyIn = true;
         autonIntake = false;
         autonShoot = true;
     }
 
     public void forceStateToShooting() {
-        timothyEntered = true;
         timothyIn = true;
         autonIntake = false;
         autonShoot = true;
