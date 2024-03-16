@@ -185,6 +185,10 @@ public class Aim extends SubsystemBase {
         return toAngleUntilAt(() -> angle, tolerance);
     }
 
+    public Command toAngleUntilAt(Measure<Angle> angle) {
+        return toAngleUntilAt(() -> angle, Degrees.of(1)); // TODO unmagify i'm lazy rn
+    }
+
     public Command toAngleUntilAt(Supplier<Measure<Angle>> angle, Measure<Angle> tolerance) {
         var goThere = startEnd(
             () -> {

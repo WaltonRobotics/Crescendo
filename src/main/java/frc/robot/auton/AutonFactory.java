@@ -2,6 +2,7 @@ package frc.robot.auton;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Shooter;
@@ -22,65 +23,49 @@ public final class AutonFactory {
 	}
 
 	public static Command twoPc(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
-		var spinUp = shooter.subwoofer().asProxy();
+		var spinUp = shooter.subwoofer(RobotModeTriggers.autonomous().negate()).asProxy();
 		var resetPose = swerve.resetPose(Paths.ampSide1).asProxy();
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide1).asProxy();
-		var preloadShot = preloadShot(superstructure, aim, shooter);
+		var preloadShot = preloadShot(superstructure, aim);
 		var intake = superstructure.autonIntakeCmd().asProxy();
 		var swerveAim = swerve.aim(0).asProxy();
-		// TODO make this just aim
-		// var aimAndSpinUp = superstructure.aimAndSpinUp(Degrees.of(3.2), true).until(superstructure.stateTrg_idle);
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(3.2), Degrees.of(1));
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(3.2));
 		var secondShot = superstructure.autonShootReq().asProxy();
 
-		return Commands.race(
-			spinUp,
-			sequence(
+		return sequence(
 				parallel(
-					resetPose, 
+					resetPose,
+					spinUp,
 					preloadShot
 				),
 				parallel(
-					Commands.print("going to intake now"),
 					intake,
 					pathFollow
 				),
 				parallel(
-					sequence(
-						Commands.waitUntil(superstructure.stateTrg_noteReady),
-						Commands.print("note ready")
-					),
-					sequence(
-						swerveAim.withTimeout(0.2),
-						Commands.print("aimed")
-					)
+					Commands.waitUntil(superstructure.stateTrg_noteReady),
+					swerveAim.withTimeout(0.2)
 				),
-				Commands.print("note ready & aimed"),
 				parallel(
 					aimCmd,
 					secondShot
 				)
-			)
-		);
+			);
 	}
 
 	public static Command threePc(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var twoPc = twoPc(superstructure, shooter, swerve, aim);
 		/* everything from 3 piece */
-		var spinUp = shooter.subwoofer().asProxy();
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide2).asProxy();
 		var intake = superstructure.autonIntakeCmd().asProxy();
 		var swerveAim = swerve.aim(0.4).asProxy();
-		// var aimAndSpinUp = superstructure.aimAndSpinUp(Degrees.of(1), true);
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(1), Degrees.of(1));
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(1));
 		var thirdShot = superstructure.autonShootReq().asProxy();
 		
 		return sequence(
 			/* 2 piece */
 			twoPc,
 			/* 3 piece */
-			Commands.race(
-				spinUp,
 				parallel(
 					sequence(
 						Commands.waitSeconds(0.1),
@@ -93,8 +78,7 @@ public final class AutonFactory {
 					aimCmd,
 					thirdShot
 				)
-			)
-		);
+			);
 	}
 
 	public static Command threePointFive(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
@@ -129,8 +113,8 @@ public final class AutonFactory {
 		);
 	}
 
-	public static Command preloadShot(Superstructure superstructure, Aim aim, Shooter shooter) {
-		var aimCmd = aim.toAngleUntilAt(kSubwooferAngle, Degrees.of(1));
+	public static Command preloadShot(Superstructure superstructure, Aim aim) {
+		var aimCmd = aim.toAngleUntilAt(kSubwooferAngle);
 		var noteReady = superstructure.forceStateToNoteReady().asProxy();
 		var shoot = Commands.runOnce(() -> superstructure.preloadShootReq()).asProxy();
 

@@ -107,8 +107,6 @@ public class Superstructure extends SubsystemBase {
     public final Trigger stateTrg_noteReady = new Trigger(sensorEventLoop,
         () -> m_state == NoteState.NOTE_READY);
 
-    private final Trigger trg_auton = RobotModeTriggers.autonomous();
-
     /** To be set on any edge from the AsyncIrq callback  */
     private boolean frontVisiSightSeenNote = false;
     private final AsynchronousInterrupt ai_frontVisiSight = new AsynchronousInterrupt(frontVisiSight,
@@ -299,7 +297,7 @@ public class Superstructure extends SubsystemBase {
         (stateTrg_leftBeamBreak.debounce(0.1))
             .onTrue(changeStateCmd(NoteState.IDLE));
 
-        (stateTrg_idle.and(trg_auton.negate()))
+        (stateTrg_idle.and(RobotModeTriggers.autonomous().negate()))
             .onTrue(Commands.parallel(
                 Commands.runOnce(
                     () -> {
@@ -314,7 +312,7 @@ public class Superstructure extends SubsystemBase {
                     }),
                 stopEverything(), m_aim.intakeAngleNearCmd()));
 
-        (stateTrg_idle.and(trg_auton))
+        (stateTrg_idle.and(RobotModeTriggers.autonomous()))
             .onTrue(Commands.parallel(
                 Commands.runOnce(
                     () -> {
