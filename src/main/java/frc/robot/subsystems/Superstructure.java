@@ -61,7 +61,6 @@ public class Superstructure extends SubsystemBase {
     private NoteState m_state;
 
     /* note trackers. the note is named timothy. */
-    private boolean timothyIn = false;
     private boolean autonIntake = false;
     private boolean autonShoot = false;
     private boolean driverRumbled = false;
@@ -131,8 +130,6 @@ public class Superstructure extends SubsystemBase {
     private final Trigger irqTrg_shooterBeamBreak;
 
     private final DoubleLogger log_state = WaltLogger.logDouble(kDbTabName, "state",
-        PubSubOption.sendAll(true));
-    private final BooleanLogger log_timothyIn = WaltLogger.logBoolean(kDbTabName, "timothyIn",
         PubSubOption.sendAll(true));
     private final BooleanLogger log_driverIntakeReq = WaltLogger.logBoolean(kDbTabName, "intakeButton");
     private final BooleanLogger log_aimReady = WaltLogger.logBoolean(kDbTabName, "aimReady");
@@ -299,7 +296,6 @@ public class Superstructure extends SubsystemBase {
             .onTrue(Commands.parallel(
                 Commands.runOnce(
                     () -> {
-                        timothyIn = false;
                         frontVisiSightSeenNote = false;
                         autonIntake = false;
                         autonShoot = false;
@@ -432,7 +428,6 @@ public class Superstructure extends SubsystemBase {
         evaluateShooterIrq();
 
         log_state.accept((double) m_state.idx);
-        log_timothyIn.accept(timothyIn);
         log_frontVisiSight.accept(bs_frontVisiSight.getAsBoolean());
         log_conveyorBeamBreak.accept(bs_conveyorBeamBreak.getAsBoolean());
         log_shooterBeamBreak.accept(bs_shooterBeamBreak.getAsBoolean());
@@ -447,7 +442,6 @@ public class Superstructure extends SubsystemBase {
 
     public Command forceStateToNoteReady() {
         return runOnce(() -> {
-            timothyIn = true;
             autonShoot = false;
             autonIntake = false;
             m_state = NoteState.NOTE_READY;
@@ -455,13 +449,11 @@ public class Superstructure extends SubsystemBase {
     }
 
     public void preloadShootReq() {
-        timothyIn = true;
         autonIntake = false;
         autonShoot = true;
     }
 
     public void forceStateToShooting() {
-        timothyIn = true;
         autonIntake = false;
         autonShoot = true;
         m_state = NoteState.SHOOTING;
