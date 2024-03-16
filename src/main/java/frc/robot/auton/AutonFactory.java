@@ -23,12 +23,12 @@ public final class AutonFactory {
 	}
 
 	public static Command twoPc(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
-		var spinUp = shooter.subwoofer(RobotModeTriggers.autonomous().negate()).asProxy();
-		var resetPose = swerve.resetPose(Paths.ampSide1).asProxy();
-		var pathFollow = AutoBuilder.followPath(Paths.ampSide1).asProxy();
+		var spinUp = shooter.subwoofer(RobotModeTriggers.autonomous().negate());
+		var resetPose = swerve.resetPose(Paths.ampSide1);
+		var pathFollow = AutoBuilder.followPath(Paths.ampSide1);
 		var preloadShot = preloadShot(superstructure, aim);
-		var intake = superstructure.autonIntakeCmd().asProxy();
-		var swerveAim = swerve.aim(0).asProxy();
+		var intake = superstructure.autonIntakeCmd();
+		var swerveAim = swerve.aim(0);
 		// TODO make this just aim
 		// var aimAndSpinUp = superstructure.aimAndSpinUp(Degrees.of(3.2), true).until(superstructure.stateTrg_idle);
 		var aimCmd = aim.toAngleUntilAt(Degrees.of(3.2));
@@ -58,9 +58,9 @@ public final class AutonFactory {
 	public static Command threePc(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var twoPc = twoPc(superstructure, shooter, swerve, aim);
 		/* everything from 3 piece */
-		var pathFollow = AutoBuilder.followPath(Paths.ampSide2).asProxy();
+		var pathFollow = AutoBuilder.followPath(Paths.ampSide2);
 		var intake = superstructure.autonIntakeCmd();
-		var swerveAim = swerve.aim(0.4).asProxy();
+		var swerveAim = swerve.aim(0.4);
 		var aimCmd = aim.toAngleUntilAt(Degrees.of(1));
 		var thirdShot = superstructure.autonShootReq();
 		
@@ -85,7 +85,7 @@ public final class AutonFactory {
 
 	public static Command threePointFive(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var threePc = threePc(superstructure, shooter, swerve, aim);
-		var pathFollow = AutoBuilder.followPath(Paths.ampSide3).asProxy();
+		var pathFollow = AutoBuilder.followPath(Paths.ampSide3);
 		var intake = superstructure.autonIntakeCmd();
 
 		return sequence( // 3pc then (path and (wait then intake))
@@ -102,10 +102,10 @@ public final class AutonFactory {
 	}
 
 	public static Command followThreePointFive(Swerve swerve) {
-		var resetPose = swerve.resetPose(Paths.ampSide1).asProxy();
-		var pathFollow1 = AutoBuilder.followPath(Paths.ampSide1).asProxy();
-		var pathFollow2 = AutoBuilder.followPath(Paths.ampSide2).asProxy();
-		var pathFollow3 = AutoBuilder.followPath(Paths.ampSide3).asProxy();
+		var resetPose = swerve.resetPose(Paths.ampSide1);
+		var pathFollow1 = AutoBuilder.followPath(Paths.ampSide1);
+		var pathFollow2 = AutoBuilder.followPath(Paths.ampSide2);
+		var pathFollow3 = AutoBuilder.followPath(Paths.ampSide3);
 
 		return sequence(
 			resetPose,
@@ -118,7 +118,7 @@ public final class AutonFactory {
 	public static Command preloadShot(Superstructure superstructure, Aim aim) {
 		var aimCmd = aim.toAngleUntilAt(kSubwooferAngle);
 		var noteReady = superstructure.forceStateToNoteReady();
-		var shoot = superstructure.preloadShootReq();
+		var shoot = superstructure.autonShootReq();
 
 		return Commands.sequence(
 			noteReady,

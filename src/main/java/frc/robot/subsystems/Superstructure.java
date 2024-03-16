@@ -394,7 +394,7 @@ public class Superstructure {
         });
     }
 
-    public Command preloadShootReq() {
+    public Command autonShootReq() {
         return Commands.runOnce(() -> {
             autonIntake = false;
             autonShoot = true;
@@ -402,26 +402,17 @@ public class Superstructure {
     }
 
     public Command forceStateToShooting() {
-        return Commands.runOnce(() -> {
-            autonIntake = false;
-            autonShoot = true;
-            m_state = NoteState.SHOOTING;
-        });
+        return Commands.runOnce(() -> m_state = NoteState.SHOOTING);
     }
 
     public Command forceStateToIdle() {
         return Commands.runOnce(() -> m_state = NoteState.IDLE);
     }
 
-    public Command autonShootReq() {
-        return Commands.runOnce(() -> autonShoot = true);
-    }
-
     public Command autonIntakeCmd() {
         return Commands.runOnce(() -> {
             autonIntake = true;
             autonShoot = false;
-            m_state = NoteState.INTAKE;
         });
     }
 

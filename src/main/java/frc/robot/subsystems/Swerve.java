@@ -295,7 +295,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	}
 
 	public Command resetPose(PathPlannerPath path) {
-		return runOnce(() -> {
+		return Commands.runOnce(() -> {
 			var alliance = DriverStation.getAlliance();
 			var correctedPath = path;
 			if (alliance.isPresent() && alliance.get() == Alliance.Red) {
