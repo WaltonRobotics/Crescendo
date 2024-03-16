@@ -19,8 +19,7 @@ import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.util.logging.WaltLogger;
-import frc.util.logging.WaltLogger.BooleanLogger;
-import frc.util.logging.WaltLogger.DoubleLogger;
+import frc.util.logging.WaltLogger.*;
 
 public class Superstructure extends SubsystemBase {
     public final Aim m_aim;
@@ -126,7 +125,7 @@ public class Superstructure extends SubsystemBase {
     private final Trigger irqTrg_conveyorBeamBreak;
     private final Trigger irqTrg_shooterBeamBreak;
 
-    private final DoubleLogger log_state = WaltLogger.logDouble(kDbTabName, "state",
+    private final IntLogger log_state = WaltLogger.logInt(kDbTabName, "state",
         PubSubOption.sendAll(true));
     private final BooleanLogger log_driverIntakeReq = WaltLogger.logBoolean(kDbTabName, "intakeButton");
     private final BooleanLogger log_aimReady = WaltLogger.logBoolean(kDbTabName, "aimReady");
@@ -379,20 +378,21 @@ public class Superstructure extends SubsystemBase {
     }
 
     public void fastPeriodic() {
+        // TODO: intake sensor sync eval
         evaluateConveyorIrq();
         evaluateShooterIrq();
 
-        log_state.accept((double) m_state.idx);
-        log_frontVisiSight.accept(bs_frontVisiSight.getAsBoolean());
-        log_conveyorBeamBreak.accept(bs_conveyorBeamBreak.getAsBoolean());
-        log_shooterBeamBreak.accept(bs_shooterBeamBreak.getAsBoolean());
+        log_state.accept(m_state.idx);
+        log_frontVisiSight.accept(bs_frontVisiSight);
+        log_conveyorBeamBreak.accept(bs_conveyorBeamBreak);
+        log_shooterBeamBreak.accept(bs_shooterBeamBreak);
         log_frontVisiSightIrq.accept(frontVisiSightSeenNote);
         log_conveyorBeamBreakIrq.accept(conveyorBeamBreakIrq);
         log_shooterBeamBreakIrq.accept(shooterBeamBreakIrq);
-        log_driverIntakeReq.accept(trg_driverIntakeReq.getAsBoolean());
+        log_driverIntakeReq.accept(trg_driverIntakeReq);
         log_autonIntakeReq.accept(autonIntake);
         log_autonShootReq.accept(autonShoot);
-        log_aimReady.accept(trg_atAngle.getAsBoolean());
+        log_aimReady.accept(trg_atAngle);
     }
 
     public Command forceStateToNoteReady() {
