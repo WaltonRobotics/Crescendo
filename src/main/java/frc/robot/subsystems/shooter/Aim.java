@@ -15,6 +15,7 @@ import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Voltage;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
@@ -28,6 +29,8 @@ import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
@@ -42,6 +45,9 @@ import java.util.function.Supplier;
 public class Aim extends SubsystemBase {
     private final TalonFX m_motor = new TalonFX(kAimId, kCanbus);
     private final CANcoder m_cancoder = new CANcoder(15, kCanbus);
+    private final DigitalInput m_coastSwitch = new DigitalInput(kCoastSwitchId);
+
+    private final Trigger trg_coastSwitch = new Trigger(() -> m_coastSwitch.get());
 
     private final DynamicMotionMagicVoltage m_dynamicRequest = new DynamicMotionMagicVoltage(0, 20, 40, 200);
     private final CoastOut m_coastRequest = new CoastOut();
@@ -116,6 +122,8 @@ public class Aim extends SubsystemBase {
             .add("isCoast", false)
             .withWidget(BuiltInWidgets.kToggleSwitch)
             .getEntry();
+
+        configureCoastTrigger();
     }
 
     private void determineMotionMagicValues() {
@@ -237,6 +245,17 @@ public class Aim extends SubsystemBase {
         });
     }
 
+    public void configureCoastTrigger() {
+        trg_coastSwitch.and(RobotModeTriggers.disabled())
+            .onTrue(
+                Commands.runOnce(() -> setCoast(true))
+            );
+        (trg_coastSwitch.negate()).and(RobotModeTriggers.disabled())
+            .onTrue(
+                Commands.runOnce(() -> setCoast(false))
+            );
+    }
+
     @Override
     public void periodic() {
         log_motorSpeed.accept(m_motor.get());
@@ -254,7 +273,7 @@ public class Aim extends SubsystemBase {
         log_tqCurrent.accept(m_motor.getTorqueCurrent().getValueAsDouble());
 
         boolean dashCoast = nte_isCoast.getBoolean(false);
-        if (dashCoast != m_isCoast) {
+        if (dashCoast != m_isCoast && !trg_coastSwitch.getAsBoolean()) {
             m_isCoast = dashCoast;
             setCoast(m_isCoast);
         }

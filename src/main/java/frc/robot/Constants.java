@@ -303,6 +303,8 @@ public class Constants {
                     .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
                     .withAbsoluteSensorRange(AbsoluteSensorRangeValue.Signed_PlusMinusHalf);
             }
+
+            public static final int kCoastSwitchId = 3;
         }
 
         public static final String kDbTabName = "Aim";
