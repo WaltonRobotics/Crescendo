@@ -15,7 +15,6 @@ import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Voltage;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
@@ -29,8 +28,6 @@ import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
@@ -45,9 +42,6 @@ import java.util.function.Supplier;
 public class Aim extends SubsystemBase {
     private final TalonFX m_motor = new TalonFX(kAimId, kCanbus);
     private final CANcoder m_cancoder = new CANcoder(15, kCanbus);
-    private final DigitalInput m_coastSwitch = new DigitalInput(kCoastSwitchId);
-
-    private final Trigger trg_coast = new Trigger(() -> m_coastSwitch.get());
 
     // TODO determine values
     private final DynamicMotionMagicVoltage m_dynamicRequest = new DynamicMotionMagicVoltage(0, 20, 40, 200);
@@ -121,8 +115,6 @@ public class Aim extends SubsystemBase {
             .add("isCoast", false)
             .withWidget(BuiltInWidgets.kToggleSwitch)
             .getEntry();
-
-        disabledAim();
     }
 
     private void determineMotionMagicValues() {
@@ -242,16 +234,6 @@ public class Aim extends SubsystemBase {
             );
             System.out.println("new offset: " + -zero);
         });
-    }
-
-    public void disabledAim() {
-        trg_coast.and(RobotModeTriggers.disabled())
-            .onTrue(
-                Commands.runOnce(() -> m_isCoast = true)
-            )
-            .onFalse(
-                Commands.runOnce(() -> m_isCoast = false)
-            );
     }
 
     @Override
