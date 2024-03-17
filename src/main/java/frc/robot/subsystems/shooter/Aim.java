@@ -17,6 +17,7 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
@@ -28,6 +29,7 @@ import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -40,6 +42,8 @@ import static frc.robot.Constants.kCanbus;
 import static frc.robot.Constants.AimK.*;
 import static frc.robot.Constants.AimK.AimConfigs.*;
 import static frc.robot.Constants.RobotK.kSimInterval;
+
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 public class Aim extends SubsystemBase {
@@ -92,8 +96,8 @@ public class Aim extends SubsystemBase {
 
     private final GenericEntry nte_isCoast;
 
-    private final Measure<Angle> kAngleAllowedError = Degrees.of(0.25);
-    private final Measure<Angle> kAngleAllowedErrorAmp = Degrees.of(2);
+    private final Measure<Angle> kAngleAllowedError = Degrees.of(0.5);
+    private final Timer m_targetTimer = new Timer();
 
     private final VoltageOut m_voltage = new VoltageOut(0);
 
@@ -123,29 +127,29 @@ public class Aim extends SubsystemBase {
             .withWidget(BuiltInWidgets.kToggleSwitch)
             .getEntry();
 
-        configureCoastTrigger();
+        // configureCoastTrigger();
     }
 
     private void determineMotionMagicValues() {
         if (m_targetAngle.lt(Rotations.of(m_motor.getPosition().getValueAsDouble()))) {
-            m_dynamicRequest.Velocity = 20;
-            m_dynamicRequest.Acceleration = 40;
-            m_dynamicRequest.Jerk = 200;
+            m_dynamicRequest.Velocity = 0.2;
+            m_dynamicRequest.Acceleration = 0.3;
+            m_dynamicRequest.Jerk = 0;
+            m_dynamicRequest.Slot = 0;
         } else {
-            m_dynamicRequest.Velocity = 160;
-            m_dynamicRequest.Acceleration = 320;
-            m_dynamicRequest.Jerk = 4000;
+            m_dynamicRequest.Velocity = 0.3;
+            m_dynamicRequest.Acceleration = 1;
+            m_dynamicRequest.Jerk = 0;
+            m_dynamicRequest.Slot = 0;
         }
     }
 
+    private double getDegrees() {
+        return Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()) + 28;
+    }
+
     public boolean aimFinished() {
-        if (m_targetAngle.baseUnitMagnitude() == 0) {
-            return false;
-        }
-        var error = Rotations.of(m_motor.getClosedLoopError().getValueAsDouble());
-        if (m_motor.getClosedLoopReference().getValueAsDouble() >= 0.195) {
-            return error.lte(kAngleAllowedErrorAmp);
-        }
+        var error = Rotations.of(Math.abs(m_targetAngle.in(Rotations) - m_motor.getPosition().getValueAsDouble()));
         return error.lte(kAngleAllowedError);
     }
 
@@ -181,15 +185,6 @@ public class Aim extends SubsystemBase {
         return m_targetAngle.in(Degrees);
     }
 
-    private Command toAngle(Measure<Angle> angle) {
-        return runOnce(
-            () -> {
-                m_targetAngle = angle;
-                determineMotionMagicValues();
-                m_motor.setControl(m_dynamicRequest.withPosition(angle.in(Rotations)));
-            });
-    }
-
     public Command toAngleUntilAt(Measure<Angle> angle, Measure<Angle> tolerance) {
         return toAngleUntilAt(() -> angle, tolerance);
     }
@@ -199,25 +194,34 @@ public class Aim extends SubsystemBase {
     }
 
     public Command toAngleUntilAt(Supplier<Measure<Angle>> angle, Measure<Angle> tolerance) {
-        var goThere = startEnd(
-            () -> {
-                m_targetAngle = angle.get();
-                determineMotionMagicValues();
-                m_motor.setControl(m_dynamicRequest.withPosition(angle.get().in(Rotations)));
-            }, () -> {});
-        return goThere.until(() -> {
-            var error = Rotations.of(Math.abs(m_motor.getClosedLoopError().getValueAsDouble()));
+        Runnable goThere = () -> {
+            m_targetAngle = angle.get();
+            determineMotionMagicValues();
+            var ff = Math.cos(Units.degreesToRadians(getDegrees())) * kG;
+            var request = m_dynamicRequest
+                .withPosition(angle.get().in(Rotations))
+                .withFeedForward(ff);
+            m_motor.setControl(request);
+        };
+        BooleanSupplier isFinished = () -> {
+            var error = Rotations.of(Math.abs(m_targetAngle.in(Rotations) - m_motor.getPosition().getValueAsDouble()));
             log_error.accept(error.in(Degrees));
-            return error.lte(tolerance);
-        });
-    }
 
-    public Command hardStop() {
-        return toAngle(Degrees.of(0));
+            boolean imThere = error.lte(tolerance);
+            if (imThere) {
+                m_targetTimer.stop();
+                System.out.println("[AIM] Reached target in " + m_targetTimer.get() + " seconds");
+                m_targetTimer.reset();
+            }
+            return imThere;
+        };
+
+        return new FunctionalCommand(() -> m_targetTimer.start(), goThere, (intr) -> {}, isFinished, this)
+            .withName("AimToAngleUntilAt_+-" + tolerance.in(Degrees));
     }
 
     public Command intakeAngleNearCmd() {
-        return toAngleUntilAt(Degrees.of(0), Degrees.of(10)).withName("AimToIntakeAngleNear");
+        return toAngleUntilAt(Degrees.of(2), Degrees.of(10)).withName("AimToIntakeAngleNear");
     }
 
     public void setCoast(boolean coast) {
@@ -248,11 +252,10 @@ public class Aim extends SubsystemBase {
     public void configureCoastTrigger() {
         trg_coastSwitch.and(RobotModeTriggers.disabled())
             .onTrue(
-                Commands.runOnce(() -> setCoast(true))
-            );
-        (trg_coastSwitch.negate()).and(RobotModeTriggers.disabled())
-            .onTrue(
-                Commands.runOnce(() -> setCoast(false))
+                runOnce(() -> setCoast(true)).ignoringDisable(true)
+            )
+            .onFalse(
+                runOnce(() -> setCoast(false)).ignoringDisable(true)
             );
     }
 

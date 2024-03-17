@@ -47,6 +47,7 @@ import frc.util.CommandLogger;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
 
+import static frc.robot.Constants.AimK.kAmpAngle;
 import static frc.robot.Constants.AimK.kPodiumAngle;
 import static frc.robot.Constants.RobotK.*;
 
@@ -183,7 +184,7 @@ public class Robot extends TimedRobot {
 		manipulator.rightBumper().whileTrue(shooter.subwoofer());
 
 		// amp shot prep
-		manipulator.leftBumper().whileTrue(shooter.ampShot());
+		manipulator.leftBumper().whileTrue(superstructure.ampShot(kAmpAngle));
 
 		// manip force shot
 		manipulator.b().and(manipulator.povUp())
@@ -217,8 +218,8 @@ public class Robot extends TimedRobot {
 		manipulator.start().and(manipulator.x()).whileTrue(aim.sysIdQuasistatic(Direction.kForward));
 		manipulator.start().and(manipulator.y()).whileTrue(aim.sysIdQuasistatic(Direction.kReverse));
 
-		manipulator.a().whileTrue(shooter.farShot());
-		manipulator.back().whileTrue(shooter.farShotNoSpin());
+		// manipulator.a().whileTrue(shooter.farShot());
+		// manipulator.back().whileTrue(shooter.farShotNoSpin());
 
 		driver.povUp().onTrue(shooter.moreSpin());
 		driver.povDown().onTrue(shooter.lessSpin());
@@ -296,6 +297,7 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void teleopPeriodic() {
+		// trg_aimRequest.accept(manipulator.y());
 	}
 
 	@Override

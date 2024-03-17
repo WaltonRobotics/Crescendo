@@ -82,7 +82,7 @@ public final class AutonFactory {
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide1).withName("PathFollow");
 		var preloadShot = preloadShot(superstructure, aim);
 		var intake = superstructure.autonIntakeCmd();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(4.5)).asProxy(); // superstructure requires Aim so this brokey stuff
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(2.5)).asProxy(); // superstructure requires Aim so this brokey stuff
 		var secondShotReq = superstructure.autonShootReq();
 
 		return sequence(
@@ -119,7 +119,7 @@ public final class AutonFactory {
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide2);
 		var intake = superstructure.autonIntakeCmd();
 		// var swerveAim = swerve.aim(0.4);
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(1.52)).asProxy();
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(0)).asProxy();
 		var thirdShotReq = superstructure.autonShootReq();
 		
 		return sequence(
@@ -148,7 +148,7 @@ public final class AutonFactory {
 		var threePc = threeInternal(superstructure, shooter, swerve, aim);
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide3);
 		var intake = superstructure.autonIntakeCmd();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(2.5)).asProxy();
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
 		var fourthShotReq = superstructure.autonShootReq();
 
 		return sequence( // 3pc then (path and (wait then intake))
@@ -176,7 +176,7 @@ public final class AutonFactory {
 		var fourPc = fourInternal(superstructure, shooter, swerve, aim);
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide4);
 		var intake = superstructure.autonIntakeCmd();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(2.5)).asProxy();
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
 		var fifthShotReq = superstructure.autonShootReq();
 
 		var auton = sequence( // 3pc then (path and (wait then intake))
@@ -221,9 +221,9 @@ public final class AutonFactory {
 					waitSeconds(0.8),
 					intake
 				),
-				pathFollow
+				pathFollow,
+				aimCmd
 			),
-			aimCmd,
 			logSeqIncr(),
 			secondShotReq,
 			logSeqIncr(),
@@ -253,9 +253,9 @@ public final class AutonFactory {
 					waitSeconds(0.8),
 					intake
 				),
-				pathFollow
+				pathFollow,
+				aimCmd
 			),
-			aimCmd,
 			thirdShotReq,
 			waitUntil(superstructure.stateTrg_idle)
 		).withName("ThreePcSequence");

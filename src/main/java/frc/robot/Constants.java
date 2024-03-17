@@ -16,7 +16,6 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
-import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
@@ -237,7 +236,7 @@ public class Constants {
 
         public static final double kSubwooferRpm = 7300;
         public static final double kPodiumRpm = 7600;
-        public static final double kAmpRpm = 800;
+        public static final double kAmpRpm = 700;
 
         public static final double kGearRatio = 18.0 / 36.0;
 
@@ -252,26 +251,28 @@ public class Constants {
 
     public static class AimK {
         public static final class AimConfigs {
-            private static final double kP = 125;
-            private static final double kS = 0.4;
-            private static final double kG = 0.058368;
-            private static final double kV = 0.084518;
-            private static final double kA = 0.080123;
+            private static final double kPUp = 200;
+            private static final double kIUp = 0;
+            private static final double kS = 0.9;
+            public static final double kG = 0.16;
+            private static final double kV = 37.44;
+            private static final double kA = 2;
 
             public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
             public static final CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
 
             static {
                 motorConfig.Slot0 = motorConfig.Slot0
-                    .withKP(kP)
+                    .withKP(kPUp)
+                    .withKI(kIUp)
                     .withKS(kS)
-                    .withKG(kG)
+                    // .withKG(kG)
                     .withKV(kV)
-                    .withKA(kA)
-                    .withGravityType(GravityTypeValue.Arm_Cosine);
+                    .withKA(kA);
+                    // .withGravityType(GravityTypeValue.Arm_Cosine);
 
                 motorConfig.Feedback = motorConfig.Feedback
-                    .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
+                    .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
                     .withFeedbackRemoteSensorID(15)
                     .withRotorToSensorRatio(kGearRatio / 1.69) // ?
                     .withSensorToMechanismRatio(1.69 / 1.0);
@@ -299,7 +300,7 @@ public class Constants {
                     .withReverseSoftLimitEnable(true);
 
                 cancoderConfig.MagnetSensor = cancoderConfig.MagnetSensor
-                    .withMagnetOffset(-0.150634765625)
+                    .withMagnetOffset(-0.188720703125)
                     .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
                     .withAbsoluteSensorRange(AbsoluteSensorRangeValue.Signed_PlusMinusHalf);
             }

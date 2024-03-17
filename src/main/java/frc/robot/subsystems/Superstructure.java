@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static frc.robot.Constants.IntakeK.kVisiSightId;
 import static frc.robot.Constants.RobotK.kDbTabName;
 
@@ -7,6 +8,8 @@ import java.util.function.BooleanSupplier;
 import java.util.function.DoubleConsumer;
 
 import edu.wpi.first.networktables.PubSubOption;
+import edu.wpi.first.units.Angle;
+import edu.wpi.first.units.Measure;
 import edu.wpi.first.wpilibj.AsynchronousInterrupt;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.SynchronousInterrupt;
@@ -227,13 +230,23 @@ public class Superstructure {
             );
 
         // note in shooter and not shooting
-        (irqTrg_conveyorBeamBreak.and((extStateTrg_noteIn).negate()))
+        (irqTrg_conveyorBeamBreak.and((extStateTrg_noteIn).negate())).and(RobotModeTriggers.autonomous().negate())
             .onTrue(
                 Commands.parallel(
                     changeStateCmd(NoteState.ROLLER_BEAM_RETRACT),
                     Commands.runOnce(() -> driverRumbled = false)
                 )
             );
+
+        (irqTrg_conveyorBeamBreak.and((extStateTrg_noteIn).negate())).and(RobotModeTriggers.autonomous())
+            .onTrue(
+                Commands.parallel(
+                    m_intake.stop(),
+                    m_conveyor.stop(),
+                    changeStateCmd(NoteState.NOTE_READY)
+                )
+            );
+
 
         stateTrg_noteRetracting.onTrue(
             Commands.parallel(
@@ -242,7 +255,7 @@ public class Superstructure {
 
         // !beamBreak && noteRetracting
         // Post-retract stop
-        ((irqTrg_conveyorBeamBreak.negate()).and(stateTrg_noteRetracting))
+        ((irqTrg_conveyorBeamBreak.negate().debounce(0.125)).and(stateTrg_noteRetracting))
             .onTrue(
                 Commands.sequence(
                     changeStateCmd(NoteState.NOTE_READY),
@@ -427,6 +440,25 @@ public class Superstructure {
             autonIntake = true;
             autonShoot = false;
         });
+    }
+
+    public Command ampShot(Measure<Angle> target) {
+        var waitForNoteReady = Commands.waitUntil(() -> m_state.idx > NoteState.ROLLER_BEAM_RETRACT.idx)
+            .andThen(Commands.print("====NOTE READY===="));
+        
+        var shoot = m_shooter.ampShot();
+
+        var aimCmd2 = m_aim.toAngleUntilAt(() -> target.plus(Degrees.of(10)), Degrees.of(0));
+
+        return Commands.parallel(
+            shoot,
+            Commands.sequence(
+            waitForNoteReady.andThen(Commands.print("AimAndSpinUp_NOTERD_DONE")),
+                Commands.sequence(
+                    Commands.waitUntil(irqTrg_conveyorBeamBreak.or(irqTrg_shooterBeamBreak)),
+                    aimCmd2.asProxy().andThen(Commands.print("aim"))
+            )
+        ));
     }
 
     public enum NoteState {
