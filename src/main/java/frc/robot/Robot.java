@@ -100,7 +100,7 @@ public class Robot extends TimedRobot {
 	private void mapAutonCommands() {
 		AutonChooser.setDefaultAuton(AutonOption.DO_NOTHING);
 		AutonChooser.assignAutonCommand(AutonOption.DO_NOTHING, Commands.none());
-		AutonChooser.assignAutonCommand(AutonOption.TWO_PC, AutonFactory.two(superstructure, shooter, swerve, aim),
+		AutonChooser.assignAutonCommand(AutonOption.TWO, AutonFactory.two(superstructure, shooter, swerve, aim),
 			Trajectories.ampSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.THREE, AutonFactory.three(superstructure, shooter, swerve, aim), 
 			Trajectories.ampSide.getInitialPose());
@@ -108,6 +108,12 @@ public class Robot extends TimedRobot {
 			Trajectories.ampSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.FIVE, AutonFactory.five(superstructure, shooter, swerve, aim), 
 			Trajectories.ampSide.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.CLEAR_TWO, AutonFactory.clearTwo(superstructure, shooter, swerve, aim),
+			Trajectories.clearCenter.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.CLEAR_THREE, AutonFactory.clearThree(superstructure, shooter, swerve, aim),
+			Trajectories.clearCenter.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.CLEAR_FOUR, AutonFactory.clearFour(superstructure, shooter, swerve, aim),
+			Trajectories.clearCenter.getInitialPose());
 	}
 
 	private void driverRumble(double intensity) {
