@@ -16,7 +16,8 @@ public class AutonChooser {
         DO_NOTHING("0 - do nothing", new ChoreoTrajectory()),
         TWO_PC("2 - wing", Trajectories.ampSide),
         THREE("3 - wing", Trajectories.ampSide),
-        THREE_POINT_FIVE("3.5 - wing + midline", Trajectories.ampSide);
+        FOUR("4 - wing + midline", Trajectories.ampSide),
+        FIVE("5 - wing + midline", Trajectories.ampSide);
 
         public final String m_description;
         public final ChoreoTrajectory m_traj;

@@ -186,7 +186,7 @@ public class Aim extends SubsystemBase {
     }
 
     public Command toAngleUntilAt(Measure<Angle> angle) {
-        return toAngleUntilAt(() -> angle, Degrees.of(1)); // TODO unmagify i'm lazy rn
+        return toAngleUntilAt(() -> angle, Degrees.of(0.25)).withName("ToAngleUntilAt"); // TODO unmagify i'm lazy rn
     }
 
     public Command toAngleUntilAt(Supplier<Measure<Angle>> angle, Measure<Angle> tolerance) {
@@ -208,7 +208,7 @@ public class Aim extends SubsystemBase {
     }
 
     public Command intakeAngleNearCmd() {
-        return toAngleUntilAt(Degrees.of(0), Degrees.of(10));
+        return toAngleUntilAt(Degrees.of(0), Degrees.of(10)).withName("AimToIntakeAngleNear");
     }
 
     public void setCoast(boolean coast) {

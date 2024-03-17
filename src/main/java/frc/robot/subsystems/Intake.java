@@ -57,29 +57,21 @@ public class Intake extends SubsystemBase {
             () -> {
                 runMainRollers(0);
                 m_feeder.set(0);
-            });
-    }
-
-    public Command runLilSpins() {
-        return runEnd(() -> {
-            m_feeder.set(-0.5);
-        }, () -> {
-            m_feeder.set(0);
-        });
+            }).withName("IntakeRun");
     }
 
     public Command start() {
         return run(() -> {
             runMainRollers(12);
             m_feeder.set(-0.5);
-        });
+        }).withName("IntakeStart");
     }
 
     public Command stop() {
         return run(() -> {
             runMainRollers(0);
             m_feeder.set(0);
-        });
+        }).withName("IntakeStop");
     }
 
     @Override

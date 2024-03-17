@@ -43,6 +43,7 @@ import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.util.AllianceFlipUtil;
+import frc.util.CommandLogger;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
 
@@ -77,7 +78,7 @@ public class Robot extends TimedRobot {
 
 	private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
 		.withDeadband(kMaxSpeed * 0.1).withRotationalDeadband(kMaxAngularRate * 0.1) // Add a 5% deadband
-		.withDriveRequestType(DriveRequestType.Velocity);
+		.withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 	private final SwerveRequest.RobotCentric robotCentric = new SwerveRequest.RobotCentric()
 		.withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 	private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
@@ -99,11 +100,13 @@ public class Robot extends TimedRobot {
 	private void mapAutonCommands() {
 		AutonChooser.setDefaultAuton(AutonOption.DO_NOTHING);
 		AutonChooser.assignAutonCommand(AutonOption.DO_NOTHING, Commands.none());
-		AutonChooser.assignAutonCommand(AutonOption.TWO_PC, AutonFactory.twoPc(superstructure, shooter, swerve, aim),
+		AutonChooser.assignAutonCommand(AutonOption.TWO_PC, AutonFactory.two(superstructure, shooter, swerve, aim),
 			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.THREE, AutonFactory.threePc(superstructure, shooter, swerve, aim), 
+		AutonChooser.assignAutonCommand(AutonOption.THREE, AutonFactory.three(superstructure, shooter, swerve, aim), 
 			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.THREE_POINT_FIVE, AutonFactory.threePointFive(superstructure, shooter, swerve, aim), 
+		AutonChooser.assignAutonCommand(AutonOption.FOUR, AutonFactory.four(superstructure, shooter, swerve, aim), 
+			Trajectories.ampSide.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.FIVE, AutonFactory.five(superstructure, shooter, swerve, aim), 
 			Trajectories.ampSide.getInitialPose());
 	}
 
@@ -210,6 +213,12 @@ public class Robot extends TimedRobot {
 
 		// path followy
 		driver.start().and(driver.povDown()).whileTrue(AutonFactory.followThreePointFive(swerve));
+
+		manipulator.a().whileTrue(shooter.farShot());
+		manipulator.back().whileTrue(shooter.farShotNoSpin());
+
+		driver.povUp().onTrue(shooter.moreSpin());
+		driver.povDown().onTrue(shooter.lessSpin());
 	}
 
 	private Command getAutonomousCommand() {
@@ -229,7 +238,10 @@ public class Robot extends TimedRobot {
 		if (kTestMode) {
 			swerve.setTestMode();
 		}
-		System.out.println(TunerConstants.kDriveRadius);
+
+		CommandScheduler.getInstance().onCommandInterrupt(
+			CommandLogger.commandInterruptLogger()
+		);
 	}
 
 	@Override

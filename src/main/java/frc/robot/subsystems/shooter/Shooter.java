@@ -119,7 +119,7 @@ public class Shooter extends SubsystemBase {
     }
 
 
-    private Command toVelo(Supplier<Measure<Velocity<Angle>>> velo, BooleanSupplier idle) {
+    public Command toVelo(Supplier<Measure<Velocity<Angle>>> velo, BooleanSupplier idle) {
         Runnable spin = () -> {
             var velMeas = velo.get();
             m_rightTarget = velMeas.times(m_spinAmt);
@@ -133,6 +133,8 @@ public class Shooter extends SubsystemBase {
         };
 
         Consumer<Boolean> stopSpin = (interrupted) -> {
+            boolean isAuton = !idle.getAsBoolean();
+            System.out.println("toVelo STOPPED. int: " + interrupted + ", auton: " + isAuton);
             m_rightTarget = RotationsPerSecond.of(0);
             m_leftTarget = RotationsPerSecond.of(0);
             m_right.setControl(m_request.withVelocity(0).withSlot(0));
@@ -141,7 +143,36 @@ public class Shooter extends SubsystemBase {
             m_left.setControl(m_coast);
         };
 
-        return new FunctionalCommand(spin, () -> {}, stopSpin, idle);
+        return new FunctionalCommand(spin, () -> {}, stopSpin, idle, this)
+            .withName("ShooterToVelo");
+    }
+
+    public Command toVelo(Supplier<Measure<Velocity<Angle>>> velo, BooleanSupplier idle, double spinAmt) {
+        Runnable spin = () -> {
+            var velMeas = velo.get();
+            m_rightTarget = velMeas.times(spinAmt);
+            m_leftTarget = velMeas;
+            var right = m_rightTarget.in(RotationsPerSecond);
+            var left = m_leftTarget.in(RotationsPerSecond);
+
+            // withSlot(0) to use slot 0 PIDFF gains for powerful shots
+            m_right.setControl(m_request.withVelocity(right).withSlot(0));
+            m_left.setControl(m_request.withVelocity(left).withSlot(0));
+        };
+
+        Consumer<Boolean> stopSpin = (interrupted) -> {
+            boolean isAuton = !idle.getAsBoolean();
+            System.out.println("toVelo STOPPED. int: " + interrupted + ", auton: " + isAuton);
+            m_rightTarget = RotationsPerSecond.of(0);
+            m_leftTarget = RotationsPerSecond.of(0);
+            m_right.setControl(m_request.withVelocity(0).withSlot(0));
+            m_left.setControl(m_request.withVelocity(0).withSlot(0));
+            m_right.setControl(m_coast);
+            m_left.setControl(m_coast);
+        };
+
+        return new FunctionalCommand(spin, () -> {}, stopSpin, idle, this)
+            .withName("ShooterToVelo");
     }
 
     private Command toVeloNoSpin(Supplier<Measure<Velocity<Angle>>> velo) {
@@ -173,12 +204,28 @@ public class Shooter extends SubsystemBase {
         });
     }
 
+    public Command moreSpin() {
+        return Commands.runOnce(() -> m_spinAmt -= 0.05);
+    }
+
+    public Command lessSpin() {
+        return Commands.runOnce(() -> m_spinAmt += 0.05);
+    }
+
     public Command subwoofer() {
-        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), () -> false);
+        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), () -> false).withName("ShooterToVelo_SubwooferTele");
+    }
+
+    public Command farShot() {
+        return toVelo(() -> Rotations.per(Minute).of(8000), () -> false).withName("ShooterToVelo_FarShotTele");
+    }
+
+    public Command farShotNoSpin() {
+        return toVeloNoSpin(() -> Rotations.per(Minute).of(8000)).withName("ShooterToVelo_FarShotNoSpin");
     }
 
     public Command subwoofer(BooleanSupplier idle) {
-        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), idle);
+        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), idle).withName("ShooterToVelo_SubwooferAuton");
     }
 
     public Command podium(BooleanSupplier idle) {
