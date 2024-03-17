@@ -43,7 +43,6 @@ public class Aim extends SubsystemBase {
     private final TalonFX m_motor = new TalonFX(kAimId, kCanbus);
     private final CANcoder m_cancoder = new CANcoder(15, kCanbus);
 
-    // TODO determine values
     private final DynamicMotionMagicVoltage m_dynamicRequest = new DynamicMotionMagicVoltage(0, 20, 40, 200);
     private final CoastOut m_coastRequest = new CoastOut();
 
@@ -64,9 +63,6 @@ public class Aim extends SubsystemBase {
 
     private Measure<Angle> m_targetAngle = Rotations.of(0);
 
-    // private final DigitalInput m_home = new DigitalInput(kHomeSwitch);
-    // private final Trigger m_homeTrigger = new Trigger(m_home::get).negate();
-
     private boolean m_isCoast;
 
     private final DoubleLogger log_targetAngle = WaltLogger.logDouble(kDbTabName, "targetAngle");
@@ -74,9 +70,14 @@ public class Aim extends SubsystemBase {
     private final DoubleLogger log_motorPos = WaltLogger.logDouble(kDbTabName, "motorPos");
     private final DoubleLogger log_cancoderPos = WaltLogger.logDouble(kDbTabName, "cancoderPos");
 
-    private final DoubleLogger log_closedLoopError = WaltLogger.logDouble(kDbTabName, "closedLoopError");
+    private final DoubleLogger log_error = WaltLogger.logDouble(kDbTabName, "error");
     private final DoubleLogger log_reference = WaltLogger.logDouble(kDbTabName, "reference");
     private final DoubleLogger log_output = WaltLogger.logDouble(kDbTabName, "output");
+    private final DoubleLogger log_ff = WaltLogger.logDouble(kDbTabName, "feedforward");
+
+    private final DoubleLogger log_statorCurrent = WaltLogger.logDouble(kDbTabName, "statorCurrent");
+    private final DoubleLogger log_supplyCurrent = WaltLogger.logDouble(kDbTabName, "supplyCurrent");
+    private final DoubleLogger log_tqCurrent = WaltLogger.logDouble(kDbTabName, "torqueCurrent");
 
     private final DoubleLogger log_simVoltage = WaltLogger.logDouble(kDbTabName + "/Sim", "motorVoltage");
     private final DoubleLogger log_simVelo = WaltLogger.logDouble(kDbTabName + "/Sim", "motorVelo");
@@ -198,7 +199,7 @@ public class Aim extends SubsystemBase {
             }, () -> {});
         return goThere.until(() -> {
             var error = Rotations.of(Math.abs(m_motor.getClosedLoopError().getValueAsDouble()));
-            log_closedLoopError.accept(error.in(Rotations));
+            log_error.accept(error.in(Degrees));
             return error.lte(tolerance);
         });
     }
@@ -241,13 +242,16 @@ public class Aim extends SubsystemBase {
         log_motorSpeed.accept(m_motor.get());
         log_motorPos.accept(Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()));
         log_targetAngle.accept(getTargetAngle());
-        log_cancoderPos.accept(m_cancoder.getPosition().getValueAsDouble());
+        log_cancoderPos.accept(Units.rotationsToDegrees(m_cancoder.getPosition().getValueAsDouble()));
 
-        log_closedLoopError.accept(m_motor.getClosedLoopError().getValueAsDouble());
-        log_reference.accept(m_motor.getClosedLoopReference().getValueAsDouble());
+        log_error.accept(Units.rotationsToDegrees(m_motor.getClosedLoopError().getValueAsDouble()));
+        log_reference.accept(Units.rotationsToDegrees(m_motor.getClosedLoopReference().getValueAsDouble()));
         log_output.accept(m_motor.getClosedLoopOutput().getValueAsDouble());
+        log_ff.accept(m_motor.getClosedLoopFeedForward().getValueAsDouble());
 
-        // m_target = Units.degreesToRotations(m_tunableAngle.get() - 22.5);
+        log_statorCurrent.accept(m_motor.getStatorCurrent().getValueAsDouble());
+        log_supplyCurrent.accept(m_motor.getSupplyCurrent().getValueAsDouble());
+        log_tqCurrent.accept(m_motor.getTorqueCurrent().getValueAsDouble());
 
         boolean dashCoast = nte_isCoast.getBoolean(false);
         if (dashCoast != m_isCoast) {
