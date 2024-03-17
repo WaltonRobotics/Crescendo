@@ -248,8 +248,9 @@ public class Aim extends SubsystemBase {
         trg_coast.and(RobotModeTriggers.disabled())
             .onTrue(
                 Commands.runOnce(() -> m_isCoast = true)
-            )
-            .onFalse(
+            );
+        (trg_coast.negate()).and(RobotModeTriggers.disabled())
+            .onTrue(
                 Commands.runOnce(() -> m_isCoast = false)
             );
     }
