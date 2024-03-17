@@ -47,7 +47,7 @@ public class Aim extends SubsystemBase {
     private final CANcoder m_cancoder = new CANcoder(15, kCanbus);
     private final DigitalInput m_coastSwitch = new DigitalInput(kCoastSwitchId);
 
-    private final Trigger trg_coast = new Trigger(() -> m_coastSwitch.get());
+    private final Trigger trg_coastSwitch = new Trigger(() -> m_coastSwitch.get());
 
     // TODO determine values
     private final DynamicMotionMagicVoltage m_dynamicRequest = new DynamicMotionMagicVoltage(0, 20, 40, 200);
@@ -122,7 +122,7 @@ public class Aim extends SubsystemBase {
             .withWidget(BuiltInWidgets.kToggleSwitch)
             .getEntry();
 
-        disabledAim();
+        configureCoastTrigger();
     }
 
     private void determineMotionMagicValues() {
@@ -244,14 +244,14 @@ public class Aim extends SubsystemBase {
         });
     }
 
-    public void disabledAim() {
-        trg_coast.and(RobotModeTriggers.disabled())
+    public void configureCoastTrigger() {
+        trg_coastSwitch.and(RobotModeTriggers.disabled())
             .onTrue(
-                Commands.runOnce(() -> m_isCoast = true)
+                Commands.runOnce(() -> setCoast(true))
             );
-        (trg_coast.negate()).and(RobotModeTriggers.disabled())
+        (trg_coastSwitch.negate()).and(RobotModeTriggers.disabled())
             .onTrue(
-                Commands.runOnce(() -> m_isCoast = false)
+                Commands.runOnce(() -> setCoast(false))
             );
     }
 
@@ -269,7 +269,7 @@ public class Aim extends SubsystemBase {
         // m_target = Units.degreesToRotations(m_tunableAngle.get() - 22.5);
 
         boolean dashCoast = nte_isCoast.getBoolean(false);
-        if (dashCoast != m_isCoast) {
+        if (dashCoast != m_isCoast && !trg_coastSwitch.getAsBoolean()) {
             m_isCoast = dashCoast;
             setCoast(m_isCoast);
         }
