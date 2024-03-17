@@ -85,7 +85,7 @@ public class Aim extends SubsystemBase {
 
     private final GenericEntry nte_isCoast;
 
-    private final Measure<Angle> kAngleAllowedError = Degrees.of(1);
+    private final Measure<Angle> kAngleAllowedError = Degrees.of(0.25);
     private final Measure<Angle> kAngleAllowedErrorAmp = Degrees.of(2);
 
     private final VoltageOut m_voltage = new VoltageOut(0);

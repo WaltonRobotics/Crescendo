@@ -211,9 +211,6 @@ public class Robot extends TimedRobot {
 		manipulator.start().and(manipulator.x()).whileTrue(aim.sysIdQuasistatic(Direction.kForward));
 		manipulator.start().and(manipulator.y()).whileTrue(aim.sysIdQuasistatic(Direction.kReverse));
 
-		// path followy
-		driver.start().and(driver.povDown()).whileTrue(AutonFactory.followThreePointFive(swerve));
-
 		manipulator.a().whileTrue(shooter.farShot());
 		manipulator.back().whileTrue(shooter.farShotNoSpin());
 

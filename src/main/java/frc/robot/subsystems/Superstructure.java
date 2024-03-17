@@ -275,7 +275,7 @@ public class Superstructure {
         (irqTrg_shooterBeamBreak.and(stateTrg_shooting))
             .onTrue(changeStateCmd(NoteState.LEFT_BEAM_BREAK));  
 
-        (stateTrg_shooting.debounce(1).and(RobotModeTriggers.autonomous()))
+        (stateTrg_shooting.debounce(0.4).and(RobotModeTriggers.autonomous()))
             .onTrue(changeStateCmd(NoteState.IDLE));
 
         // if left beam break for 0.1 sec
