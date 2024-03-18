@@ -5,5 +5,5 @@ import com.choreo.lib.ChoreoTrajectory;
 
 public class Trajectories {
 	public static final ChoreoTrajectory ampSide = Choreo.getTrajectory("amp_side");
-	public static final ChoreoTrajectory clearCenter = Choreo.getTrajectory("clear_center");
+	public static final ChoreoTrajectory sourceSide = Choreo.getTrajectory("source_side");
 }
