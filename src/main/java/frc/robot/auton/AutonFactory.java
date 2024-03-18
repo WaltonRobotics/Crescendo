@@ -148,7 +148,7 @@ public final class AutonFactory {
 		var three = ampThreeInternal(superstructure, shooter, swerve, aim);
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide3);
 		var intake = superstructure.autonIntakeCmd();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(0)).asProxy();
 		var fourthShotReq = superstructure.autonShootReq();
 
 		return sequence( // 3pc then (path and (wait then intake))
@@ -176,7 +176,7 @@ public final class AutonFactory {
 		var four = ampFourInternal(superstructure, shooter, swerve, aim);
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide4);
 		var intake = superstructure.autonIntakeCmd();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(0)).asProxy();
 		var fifthShotReq = superstructure.autonShootReq();
 
 		var auton = sequence( // 3pc then (path and (wait then intake))
@@ -202,7 +202,7 @@ public final class AutonFactory {
 		var pathFollow = AutoBuilder.followPath(Paths.sourceSide1).withName("PathFollow");
 		var preloadShot = preloadShot(superstructure, aim);
 		var intake = superstructure.autonIntakeCmd();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(2.5)).asProxy(); // superstructure requires Aim so this brokey stuff
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(1)).asProxy(); // superstructure requires Aim so this brokey stuff
 		var secondShotReq = superstructure.autonShootReq();
 
 		return sequence(
@@ -241,7 +241,7 @@ public final class AutonFactory {
 		var pathFollow = AutoBuilder.followPath(Paths.sourceSide2);
 		var intake = superstructure.autonIntakeCmd();
 		// var swerveAim = swerve.aim(0.4);
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(2.5)).asProxy();
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
 		var thirdShotReq = superstructure.autonShootReq();
 		
 		return sequence(
@@ -270,7 +270,7 @@ public final class AutonFactory {
 		var three = sourceThreeInternal(superstructure, shooter, swerve, aim);
 		var pathFollow = AutoBuilder.followPath(Paths.sourceSide3);
 		var intake = superstructure.autonIntakeCmd();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(2.5)).asProxy();
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
 		var fourthShotReq = superstructure.autonShootReq();
 
 		var auton = sequence( // 3pc then (path and (wait then intake))

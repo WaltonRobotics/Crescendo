@@ -24,6 +24,8 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.*;
 
+import static frc.robot.subsystems.Superstructure.NoteState.*;
+
 public class Superstructure {
     public final Aim m_aim;
     public final Intake m_intake;
@@ -60,7 +62,6 @@ public class Superstructure {
 
     private NoteState m_state;
 
-    /* note trackers. the note is named timothy. */
     private boolean autonIntake = false;
     private boolean autonShoot = false;
     private boolean driverRumbled = false;
@@ -77,8 +78,6 @@ public class Superstructure {
     private final Trigger trg_autonShootReq = new Trigger(() -> autonShoot);
 
     /** true = has note */
-    // private final Trigger trg_shooterSensor;
-    /** true = has note */
     private final Trigger trg_frontSensorIrq;
 
     public final Trigger trg_spunUp;
@@ -88,20 +87,20 @@ public class Superstructure {
     private final Trigger trg_shootReq;
 
     public final Trigger stateTrg_idle = new Trigger(sensorEventLoop,
-        () -> m_state == NoteState.IDLE);
+        () -> m_state == IDLE);
     private final Trigger stateTrg_intake = new Trigger(sensorEventLoop,
-        () -> m_state == NoteState.INTAKE);
+        () -> m_state == INTAKE);
     private final Trigger stateTrg_noteRetracting = new Trigger(sensorEventLoop,
-        () -> m_state == NoteState.ROLLER_BEAM_RETRACT);
-    public final Trigger stateTrg_shootOk = new Trigger(sensorEventLoop, () -> m_state == NoteState.SHOOT_OK);
+        () -> m_state == ROLLER_BEAM_RETRACT);
+    public final Trigger stateTrg_shootOk = new Trigger(sensorEventLoop, () -> m_state == SHOOT_OK);
     private final Trigger stateTrg_shooting = new Trigger(sensorEventLoop,
-        () -> m_state == NoteState.SHOOTING);
+        () -> m_state == SHOOTING);
     private final Trigger stateTrg_leftBeamBreak = new Trigger(sensorEventLoop,
-        () -> m_state == NoteState.LEFT_BEAM_BREAK);
+        () -> m_state == LEFT_BEAM_BREAK);
         private final Trigger extStateTrg_noteIn = new Trigger(sensorEventLoop, () -> m_state.idx > 2);
     private final Trigger extStateTrg_shooting = new Trigger(sensorEventLoop, () -> m_state.idx > 4);
     public final Trigger stateTrg_noteReady = new Trigger(sensorEventLoop,
-        () -> m_state == NoteState.NOTE_READY);
+        () -> m_state == NOTE_READY);
 
     /** To be set on any edge from the AsyncIrq callback  */
     // TODO: move to SynchronousInterrupt and handle in fastPeriodic()
@@ -166,7 +165,7 @@ public class Superstructure {
         trg_spunUp = new Trigger(m_shooter::spinUpFinished).debounce(0.05);
         trg_atAngle = new Trigger(m_aim::aimFinished);
 
-        m_state = NoteState.IDLE;
+        m_state = IDLE;
 
         configureStateTriggers();
     }
@@ -205,7 +204,7 @@ public class Superstructure {
 
         // intakeReq && idle
         (trg_intakeReq.and(stateTrg_idle))
-            .onTrue(Commands.runOnce(() -> m_state = NoteState.INTAKE));
+            .onTrue(Commands.runOnce(() -> m_state = INTAKE));
         
         (stateTrg_intake.and(RobotModeTriggers.autonomous().negate()))
             .onTrue(
@@ -219,7 +218,7 @@ public class Superstructure {
                 Commands.parallel(m_intake.run(), m_conveyor.startSlow()).withName("AutoIntake"));
 
         // !(intakeReq || idle) => !intakeReq && !idle
-        (trg_intakeReq.or(trg_frontSensorIrq)).onFalse(changeStateCmd(NoteState.IDLE));
+        (trg_intakeReq.or(trg_frontSensorIrq)).onFalse(changeStateCmd(IDLE));
 
         trg_frontSensorIrq
             .onTrue(
@@ -233,7 +232,7 @@ public class Superstructure {
         (irqTrg_conveyorBeamBreak.and((extStateTrg_noteIn).negate())).and(RobotModeTriggers.autonomous().negate())
             .onTrue(
                 Commands.parallel(
-                    changeStateCmd(NoteState.ROLLER_BEAM_RETRACT),
+                    changeStateCmd(ROLLER_BEAM_RETRACT),
                     Commands.runOnce(() -> driverRumbled = false)
                 )
             );
@@ -243,7 +242,7 @@ public class Superstructure {
                 Commands.parallel(
                     m_intake.stop(),
                     m_conveyor.stop(),
-                    changeStateCmd(NoteState.NOTE_READY)
+                    changeStateCmd(NOTE_READY)
                 )
             );
 
@@ -258,7 +257,7 @@ public class Superstructure {
         ((irqTrg_conveyorBeamBreak.negate().debounce(0.125)).and(stateTrg_noteRetracting))
             .onTrue(
                 Commands.sequence(
-                    changeStateCmd(NoteState.NOTE_READY),
+                    changeStateCmd(NOTE_READY),
                     m_conveyor.stop()).withName("NoteReady_StopConveyor"));
 
         // added back shoot ok
@@ -266,14 +265,14 @@ public class Superstructure {
             .onTrue(
                 Commands.parallel(
                     cmdDriverRumble(1, 0.5), 
-                    changeStateCmd(NoteState.SHOOT_OK)
+                    changeStateCmd(SHOOT_OK)
                 )
             );
 
         // if shooter spun up and asked to shoot
         // state -> SHOOTING
         (stateTrg_shootOk.and(trg_shootReq))
-            .onTrue(changeStateCmd(NoteState.SHOOTING));
+            .onTrue(changeStateCmd(SHOOTING));
 
         // if now shooting, note leaving, or note just left
         // cmd conveyorFast
@@ -286,15 +285,15 @@ public class Superstructure {
         // if note in shooter sensor and state shooting
         // state -> LEFT_BEAM_BREAK, timothy says bye :D
         (irqTrg_shooterBeamBreak.and(stateTrg_shooting))
-            .onTrue(changeStateCmd(NoteState.LEFT_BEAM_BREAK));  
+            .onTrue(changeStateCmd(LEFT_BEAM_BREAK));  
 
         (stateTrg_shooting.debounce(0.4).and(RobotModeTriggers.autonomous()))
-            .onTrue(changeStateCmd(NoteState.IDLE));
+            .onTrue(changeStateCmd(IDLE));
 
         // if left beam break for 0.1 sec
         // state -> IDLE
         (stateTrg_leftBeamBreak.debounce(0.2))
-            .onTrue(changeStateCmd(NoteState.IDLE));
+            .onTrue(changeStateCmd(IDLE));
 
         (stateTrg_idle.and(RobotModeTriggers.autonomous().negate()))
             .onTrue(
@@ -413,11 +412,13 @@ public class Superstructure {
     }
 
     public Command forceStateToNoteReady() {
-        return Commands.runOnce(() -> {
-            autonShoot = false;
-            autonIntake = false;
-            m_state = NoteState.NOTE_READY;
-        });
+        return Commands.parallel(
+            changeStateCmd(NOTE_READY),
+            Commands.runOnce(() -> {
+                autonShoot = false;
+                autonIntake = false;
+            })
+        );
     }
 
     public Command autonShootReq() {
@@ -428,11 +429,14 @@ public class Superstructure {
     }
 
     public Command forceStateToShooting() {
-        return Commands.runOnce(() -> m_state = NoteState.SHOOTING);
+        return changeStateCmd(SHOOTING);
     }
 
-    public Command forceStateToIdle() {
-        return Commands.runOnce(() -> m_state = NoteState.IDLE);
+    public Command forceStateToIntake() {
+        return Commands.parallel(
+            resetFlags(),
+            changeStateCmd(INTAKE)
+        );
     }
 
     public Command autonIntakeCmd() {
@@ -443,7 +447,7 @@ public class Superstructure {
     }
 
     public Command ampShot(Measure<Angle> target) {
-        var waitForNoteReady = Commands.waitUntil(() -> m_state.idx > NoteState.ROLLER_BEAM_RETRACT.idx)
+        var waitForNoteReady = Commands.waitUntil(() -> m_state.idx > ROLLER_BEAM_RETRACT.idx)
             .andThen(Commands.print("====NOTE READY===="));
         
         var shoot = m_shooter.ampShot();

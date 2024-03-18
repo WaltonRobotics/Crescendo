@@ -131,7 +131,7 @@ public class Aim extends SubsystemBase {
     }
 
     private void determineMotionMagicValues() {
-        if (m_targetAngle.lt(Rotations.of(m_motor.getPosition().getValueAsDouble()))) {
+        if (m_targetAngle.lt(Rotations.of(m_motor.getPosition().getValueAsDouble())) && m_motor.getPosition().getValueAsDouble() <= 0.1) {
             m_dynamicRequest.Velocity = 0.2;
             m_dynamicRequest.Acceleration = 0.3;
             m_dynamicRequest.Jerk = 0;

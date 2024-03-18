@@ -177,7 +177,7 @@ public class Robot extends TimedRobot {
 		driver.povUp().and(driver.start()).whileTrue(swerve.applyRequest(() -> robotCentric.withVelocityX(0.5)));
 
 		/* manipulator controls */
-		// reject note
+		// eject note
 		manipulator.rightTrigger().whileTrue(intake.outtake());
 
 		// subwoofer shot prep
@@ -190,8 +190,8 @@ public class Robot extends TimedRobot {
 		manipulator.b().and(manipulator.povUp())
 			.onTrue(superstructure.forceStateToShooting());
 
-		// manip force FSM reset
-		manipulator.b().and(manipulator.leftTrigger()).whileTrue(superstructure.forceStateToIdle());
+		// manip force FSM to intake
+		manipulator.b().and(manipulator.leftTrigger()).onTrue(superstructure.forceStateToIntake());
 
 		// aim safe angle
 		manipulator.x().whileTrue(aim.intakeAngleNearCmd());
