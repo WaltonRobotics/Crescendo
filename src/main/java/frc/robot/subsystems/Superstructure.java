@@ -81,7 +81,7 @@ public class Superstructure {
     private final Trigger trg_frontSensorIrq;
 
     public final Trigger trg_spunUp;
-    private final Trigger trg_atAngle;
+    public final Trigger trg_atAngle;
 
     private final Trigger trg_intakeReq;
     private final Trigger trg_shootReq;
@@ -292,7 +292,7 @@ public class Superstructure {
 
         // if left beam break for 0.1 sec
         // state -> IDLE
-        (stateTrg_leftBeamBreak.debounce(0.2))
+        (stateTrg_leftBeamBreak.debounce(0.1))
             .onTrue(changeStateCmd(IDLE));
 
         (stateTrg_idle.and(RobotModeTriggers.autonomous().negate()))

@@ -16,6 +16,7 @@ import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
@@ -149,6 +150,9 @@ public class Aim extends SubsystemBase {
     }
 
     public boolean aimFinished() {
+        if (m_targetAngle.baseUnitMagnitude() == 0 && !DriverStation.isAutonomous()) {
+            return false;
+        }
         var error = Rotations.of(Math.abs(m_targetAngle.in(Rotations) - m_motor.getPosition().getValueAsDouble()));
         return error.lte(kAngleAllowedError);
     }
