@@ -113,8 +113,6 @@ public class Robot extends TimedRobot {
 			Trajectories.sourceSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE, AutonFactory.sourceThree(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SOURCE_FOUR, AutonFactory.sourceFour(superstructure, shooter, swerve, aim),
-			Trajectories.sourceSide.getInitialPose());
 	}
 
 	private void driverRumble(double intensity) {

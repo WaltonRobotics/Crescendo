@@ -236,7 +236,7 @@ public class Constants {
 
         public static final double kSubwooferRpm = 7300;
         public static final double kPodiumRpm = 7600;
-        public static final double kAmpRpm = 700;
+        public static final double kAmpRpm = 800;
 
         public static final double kGearRatio = 18.0 / 36.0;
 
@@ -251,20 +251,20 @@ public class Constants {
 
     public static class AimK {
         public static final class AimConfigs {
-            private static final double kPUp = 200;
-            private static final double kIUp = 0;
+            private static final double kP = 200;
+            private static final double kI = 0;
             private static final double kS = 0.9;
-            public static final double kG = 0.16;
             private static final double kV = 37.44;
             private static final double kA = 2;
+            public static final double kG = 0.16;
 
             public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
             public static final CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
 
             static {
                 motorConfig.Slot0 = motorConfig.Slot0
-                    .withKP(kPUp)
-                    .withKI(kIUp)
+                    .withKP(kP)
+                    .withKI(kI)
                     .withKS(kS)
                     // .withKG(kG)
                     .withKV(kV)
@@ -300,7 +300,7 @@ public class Constants {
                     .withReverseSoftLimitEnable(true);
 
                 cancoderConfig.MagnetSensor = cancoderConfig.MagnetSensor
-                    .withMagnetOffset(-0.4873046875)
+                    .withMagnetOffset(-0.24365234375)
                     .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
                     .withAbsoluteSensorRange(AbsoluteSensorRangeValue.Signed_PlusMinusHalf);
             }

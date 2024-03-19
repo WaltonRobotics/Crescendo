@@ -107,7 +107,7 @@ public class Superstructure {
     private boolean frontVisiSightSeenNote = false;
     private final AsynchronousInterrupt ai_frontVisiSight = new AsynchronousInterrupt(frontVisiSight,
         (Boolean rising, Boolean falling) -> {
-            if ((rising || falling) && !frontVisiSightSeenNote) {
+            if ((rising || falling) && !frontVisiSightSeenNote && stateTrg_intake.getAsBoolean()) {
                 frontVisiSightSeenNote = true;
                 log_frontVisiSightIrq.accept(true);
             }
@@ -439,7 +439,7 @@ public class Superstructure {
         );
     }
 
-    public Command autonIntakeCmd() {
+    public Command autonIntakeReq() {
         return Commands.runOnce(() -> {
             autonIntake = true;
             autonShoot = false;
@@ -452,7 +452,7 @@ public class Superstructure {
         
         var shoot = m_shooter.ampShot();
 
-        var aimCmd2 = m_aim.toAngleUntilAt(() -> target.plus(Degrees.of(10)), Degrees.of(0));
+        var aimCmd = m_aim.toAngleUntilAt(() -> target.plus(Degrees.of(10)), Degrees.of(0));
 
         return Commands.parallel(
             shoot,
@@ -460,7 +460,7 @@ public class Superstructure {
             waitForNoteReady.andThen(Commands.print("AimAndSpinUp_NOTERD_DONE")),
                 Commands.sequence(
                     Commands.waitUntil(irqTrg_conveyorBeamBreak.or(irqTrg_shooterBeamBreak)),
-                    aimCmd2.asProxy().andThen(Commands.print("aim"))
+                    aimCmd.asProxy().andThen(Commands.print("aim"))
             )
         ));
     }
