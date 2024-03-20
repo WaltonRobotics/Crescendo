@@ -236,7 +236,7 @@ public class Constants {
 
         public static final double kSubwooferRpm = 7300;
         public static final double kPodiumRpm = 7600;
-        public static final double kAmpRpm = 800;
+        public static final double kAmpRpm = 600;
 
         public static final double kGearRatio = 18.0 / 36.0;
 
@@ -325,7 +325,7 @@ public class Constants {
 
         public static final Measure<Angle> kSubwooferAngle = Rotations.of(0.08);
         public static final Measure<Angle> kAmpAngle = Rotations.of(0.195);
-        public static final Measure<Angle> kPodiumAngle = Degrees.of(8.25);
+        public static final Measure<Angle> kPodiumAngle = Degrees.of(6.5);
 
         public static final Measure<Angle> kTolerance = Degrees.of(2);
     }

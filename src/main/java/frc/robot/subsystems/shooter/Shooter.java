@@ -176,20 +176,7 @@ public class Shooter extends SubsystemBase {
     }
 
     private Command toVeloNoSpin(Supplier<Measure<Velocity<Angle>>> velo) {
-        return runEnd(
-            () -> {
-                var velMeas = velo.get();
-                m_rightTarget = m_leftTarget = velMeas;
-                var right = m_rightTarget.in(RotationsPerSecond);
-                var left = m_leftTarget.in(RotationsPerSecond);
-
-                // withSlot(1) to use slot 1 PIDFF gains for unpowerful shots
-                m_right.setControl(m_request.withVelocity(right).withSlot(1));
-                m_left.setControl(m_request.withVelocity(left).withSlot(1));
-            }, () -> {
-                m_right.setControl(m_coast);
-                m_left.setControl(m_coast);
-            });
+        return toVelo(velo, () -> false, 1);
     }
 
     public Command increaseRpm() {

@@ -98,6 +98,8 @@ public class Aim extends SubsystemBase {
     private final GenericEntry nte_isCoast;
 
     private final Measure<Angle> kAngleAllowedError = Degrees.of(0.5);
+    private final Measure<Angle> kAmpAngleAllowedError = Degrees.of(0.75);
+
     private final Timer m_targetTimer = new Timer();
 
     private final VoltageOut m_voltage = new VoltageOut(0);
@@ -150,10 +152,13 @@ public class Aim extends SubsystemBase {
     }
 
     public boolean aimFinished() {
-        if (m_targetAngle.baseUnitMagnitude() == 0 && !DriverStation.isAutonomous()) {
+        if (m_targetAngle.in(Degrees) == 2 && !DriverStation.isAutonomous()) {
             return false;
         }
         var error = Rotations.of(Math.abs(m_targetAngle.in(Rotations) - m_motor.getPosition().getValueAsDouble()));
+        if (m_targetAngle.baseUnitMagnitude() == kAmpAngle.baseUnitMagnitude()) {
+            return error.lte(kAmpAngleAllowedError);
+        }
         return error.lte(kAngleAllowedError);
     }
 

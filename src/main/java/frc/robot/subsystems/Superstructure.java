@@ -73,12 +73,13 @@ public class Superstructure {
     private final Trigger trg_driverIntakeReq;
     /** true = driver wants to shoot */
     private final Trigger trg_driverShootReq;
+    private final Trigger trg_driverAmpReq;
 
     private final Trigger trg_autonIntakeReq = new Trigger(() -> autonIntake);
     private final Trigger trg_autonShootReq = new Trigger(() -> autonShoot);
 
     /** true = has note */
-    private final Trigger trg_frontSensorIrq;
+    private final Trigger irqTrg_frontSensor;
 
     public final Trigger trg_spunUp;
     public final Trigger trg_atAngle;
@@ -97,8 +98,8 @@ public class Superstructure {
         () -> m_state == SHOOTING);
     private final Trigger stateTrg_leftBeamBreak = new Trigger(sensorEventLoop,
         () -> m_state == LEFT_BEAM_BREAK);
-        private final Trigger extStateTrg_noteIn = new Trigger(sensorEventLoop, () -> m_state.idx > 2);
-    private final Trigger extStateTrg_shooting = new Trigger(sensorEventLoop, () -> m_state.idx > 4);
+        private final Trigger extStateTrg_noteIn = new Trigger(sensorEventLoop, () -> m_state.idx > ROLLER_BEAM_RETRACT.idx);
+    private final Trigger extStateTrg_shooting = new Trigger(sensorEventLoop, () -> m_state.idx > SHOOT_OK.idx);
     public final Trigger stateTrg_noteReady = new Trigger(sensorEventLoop,
         () -> m_state == NOTE_READY);
 
@@ -134,7 +135,7 @@ public class Superstructure {
         
     public Superstructure(
         Aim aim, Intake intake, Conveyor conveyor, Shooter shooter,
-        Trigger intaking, Trigger shooting,
+        Trigger intaking, Trigger shooting, Trigger ampShot,
         DoubleConsumer driverRumbler, DoubleConsumer manipRumbler) {
         m_aim = aim;
         m_intake = intake;
@@ -146,6 +147,7 @@ public class Superstructure {
 
         trg_driverIntakeReq = intaking;
         trg_driverShootReq = shooting;
+        trg_driverAmpReq = ampShot;
 
         trg_intakeReq = trg_driverIntakeReq.or(trg_autonIntakeReq);
         trg_shootReq = trg_driverShootReq.or(trg_autonShootReq);
@@ -156,7 +158,7 @@ public class Superstructure {
         irq_conveyorBeamBreak.setInterruptEdges(true, true);
         irq_shooterBeamBreak.setInterruptEdges(true, true);
 
-        trg_frontSensorIrq = new Trigger(sensorEventLoop, () -> frontVisiSightSeenNote);
+        irqTrg_frontSensor = new Trigger(sensorEventLoop, () -> frontVisiSightSeenNote);
         
         irqTrg_conveyorBeamBreak = new Trigger(sensorEventLoop, () -> conveyorBeamBreakIrq);
         irqTrg_shooterBeamBreak = new Trigger(sensorEventLoop, () -> shooterBeamBreakIrq);
@@ -195,7 +197,9 @@ public class Superstructure {
     private Command changeStateCmd(NoteState state) {
         return Commands.runOnce(() -> {
             if (m_state == state) { return; }
+            var oldState = m_state;
             m_state = state;
+            System.out.println("changing state from " + oldState + " to " + m_state);
         }).withName("SuperStateChange_To" + state);
     }
 
@@ -218,9 +222,9 @@ public class Superstructure {
                 Commands.parallel(m_intake.run(), m_conveyor.startSlow()).withName("AutoIntake"));
 
         // !(intakeReq || idle) => !intakeReq && !idle
-        (trg_intakeReq.or(trg_frontSensorIrq)).onFalse(changeStateCmd(IDLE));
+        (trg_intakeReq.or(irqTrg_frontSensor)).onFalse(changeStateCmd(IDLE));
 
-        trg_frontSensorIrq
+        irqTrg_frontSensor
             .onTrue(
                 Commands.parallel(
                     cmdDriverRumble(1, 0.5),
@@ -229,7 +233,7 @@ public class Superstructure {
             );
 
         // note in shooter and not shooting
-        (irqTrg_conveyorBeamBreak.and((extStateTrg_noteIn).negate())).and(RobotModeTriggers.autonomous().negate())
+        (irqTrg_conveyorBeamBreak.and(irqTrg_frontSensor).and((extStateTrg_noteIn).negate())).and(RobotModeTriggers.autonomous().negate())
             .onTrue(
                 Commands.parallel(
                     changeStateCmd(ROLLER_BEAM_RETRACT),
@@ -284,8 +288,11 @@ public class Superstructure {
         
         // if note in shooter sensor and state shooting
         // state -> LEFT_BEAM_BREAK, timothy says bye :D
-        (irqTrg_shooterBeamBreak.and(stateTrg_shooting))
+        (irqTrg_shooterBeamBreak.and(stateTrg_shooting).and(trg_driverAmpReq.negate()))
             .onTrue(changeStateCmd(LEFT_BEAM_BREAK));  
+
+        (irqTrg_shooterBeamBreak.and(irqTrg_conveyorBeamBreak.negate()).and(stateTrg_shooting).and(trg_driverAmpReq))
+            .onTrue(changeStateCmd(LEFT_BEAM_BREAK)); 
 
         (stateTrg_shooting.debounce(0.4).and(RobotModeTriggers.autonomous()))
             .onTrue(changeStateCmd(IDLE));

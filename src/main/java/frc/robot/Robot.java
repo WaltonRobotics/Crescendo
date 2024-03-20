@@ -70,7 +70,7 @@ public class Robot extends TimedRobot {
 
 	public final Superstructure superstructure = new Superstructure(
 		aim, intake, conveyor, shooter,
-		manipulator.leftTrigger(), driver.rightTrigger(),
+		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()),
 		(intensity) -> driverRumble(intensity), (intensity) -> manipulatorRumble(intensity));
 
 	public static Translation3d speakerPose;
@@ -221,6 +221,8 @@ public class Robot extends TimedRobot {
 
 		driver.povUp().onTrue(shooter.moreSpin());
 		driver.povDown().onTrue(shooter.lessSpin());
+
+		manipulator.start().onTrue(superstructure.forceStateToNoteReady());
 	}
 
 	private Command getAutonomousCommand() {
