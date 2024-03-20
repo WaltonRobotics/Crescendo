@@ -52,7 +52,7 @@ public class Aim extends SubsystemBase {
     private final CANcoder m_cancoder = new CANcoder(15, kCanbus);
     private final DigitalInput m_coastSwitch = new DigitalInput(kCoastSwitchId);
 
-    private final Trigger trg_coastSwitch = new Trigger(() -> m_coastSwitch.get());
+    private final Trigger trg_coastSwitch = new Trigger(m_coastSwitch::get);
 
     private final DynamicMotionMagicVoltage m_dynamicRequest = new DynamicMotionMagicVoltage(0, 20, 40, 200);
     private final CoastOut m_coastRequest = new CoastOut();
@@ -152,12 +152,17 @@ public class Aim extends SubsystemBase {
     }
 
     public boolean aimFinished() {
-        if (m_targetAngle.in(Degrees) == 2 && !DriverStation.isAutonomous()) {
+        if ((m_targetAngle.in(Degrees) == 0 || m_targetAngle.in(Degrees) == 4) && !DriverStation.isAutonomous()) {
             return false;
         }
         var error = Rotations.of(Math.abs(m_targetAngle.in(Rotations) - m_motor.getPosition().getValueAsDouble()));
+
         if (m_targetAngle.baseUnitMagnitude() == kAmpAngle.baseUnitMagnitude()) {
             return error.lte(kAmpAngleAllowedError);
+        }
+
+        if (m_targetAngle.in(Degrees) < 2) {
+            return error.lte(Degrees.of(0.25));
         }
         return error.lte(kAngleAllowedError);
     }
@@ -230,7 +235,11 @@ public class Aim extends SubsystemBase {
     }
 
     public Command intakeAngleNearCmd() {
-        return toAngleUntilAt(Degrees.of(2), Degrees.of(10)).withName("AimToIntakeAngleNear");
+        return toAngleUntilAt(Degrees.of(4), Degrees.of(10)).withName("AimToIntakeAngleNear");
+    }
+
+    public Command hardStop() {
+        return toAngleUntilAt(Degrees.of(0));
     }
 
     public void setCoast(boolean coast) {

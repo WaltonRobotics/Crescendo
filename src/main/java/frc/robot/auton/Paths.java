@@ -10,4 +10,6 @@ public class Paths {
 
     public static final PathPlannerPath sourceSide1 = PathPlannerPath.fromChoreoTrajectory("source_side.1");
     public static final PathPlannerPath sourceSide2 = PathPlannerPath.fromChoreoTrajectory("source_side.2");
+    public static final PathPlannerPath sourceSide3 = PathPlannerPath.fromChoreoTrajectory("source_side.3");
+
 }
