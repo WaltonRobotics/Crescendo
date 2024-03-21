@@ -219,7 +219,8 @@ public class Superstructure {
 
         (stateTrg_intake.and(RobotModeTriggers.autonomous()))
             .onTrue(
-                Commands.parallel(m_intake.run(), m_conveyor.startSlow()).withName("AutoIntake"));
+                Commands.parallel(m_intake.run(), m_conveyor.startSlow()).withName("AutoIntake")
+            );
 
         // !(intakeReq || idle) => !intakeReq && !idle
         (trg_intakeReq.or(irqTrg_frontSensor)).onFalse(changeStateCmd(IDLE));

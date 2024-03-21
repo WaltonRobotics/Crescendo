@@ -115,6 +115,8 @@ public class Robot extends TimedRobot {
 			Trajectories.sourceSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE_POINT_FIVE, AutonFactory.sourceThreePointFive(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.SOURCE_FOUR, AutonFactory.sourceFour(superstructure, shooter, swerve, aim),
+			Trajectories.sourceSide.getInitialPose());
 	}
 
 	private void driverRumble(double intensity) {
@@ -212,10 +214,10 @@ public class Robot extends TimedRobot {
 		driver.back().and(driver.y()).whileTrue(swerve.wheelRadiusCharacterisation(-1));
 
 		// sysid buttons
-		manipulator.back().and(manipulator.x()).whileTrue(aim.sysIdDynamic(Direction.kForward));
-		manipulator.back().and(manipulator.y()).whileTrue(aim.sysIdDynamic(Direction.kReverse));
-		manipulator.start().and(manipulator.x()).whileTrue(aim.sysIdQuasistatic(Direction.kForward));
-		manipulator.start().and(manipulator.y()).whileTrue(aim.sysIdQuasistatic(Direction.kReverse));
+		manipulator.back().and(manipulator.x()).whileTrue(shooter.sysIdDynamic(Direction.kForward));
+		manipulator.back().and(manipulator.y()).whileTrue(shooter.sysIdDynamic(Direction.kReverse));
+		manipulator.start().and(manipulator.x()).whileTrue(shooter.sysIdQuasistatic(Direction.kForward));
+		manipulator.start().and(manipulator.y()).whileTrue(shooter.sysIdQuasistatic(Direction.kReverse));
 
 		driver.povUp().onTrue(shooter.moreSpin());
 		driver.povDown().onTrue(shooter.lessSpin());

@@ -81,7 +81,7 @@ public final class AutonFactory {
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide1).withName("PathFollow");
 		var preloadShot = preloadShot(superstructure, aim);
 		var intake = superstructure.autonIntakeReq();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(2.5)).asProxy(); // superstructure requires Aim so this brokey stuff
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(2.25)).asProxy(); // superstructure requires Aim so this brokey stuff
 		var secondShotReq = superstructure.autonShootReq();
 
 		return sequence(
@@ -221,7 +221,7 @@ public final class AutonFactory {
 			parallel(
 				print("should be intaking"),
 				sequence(
-					waitSeconds(0.8),
+					waitSeconds(1.5),
 					intake
 				),
 				pathFollow.andThen(print("path follow finished")),
@@ -272,7 +272,7 @@ public final class AutonFactory {
 
 	public static Command sourceThreePointFive(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var three = sourceThreeInternal(superstructure, shooter, swerve, aim);
-		var pathFollow = AutoBuilder.followPath(Paths.sourceSide3);
+		var pathFollow = AutoBuilder.followPath(Paths.sourceSideAlt1);
 		var intake = superstructure.autonIntakeReq();
 		
 		var auton = sequence(
@@ -287,5 +287,25 @@ public final class AutonFactory {
 		).withName("SourceThreePointFiveSequence");
 
 		return theWrapper(auton, shooter).withName("SourceThreePointFiveFullAuton"); // what a silly and goofy long name
+	}
+
+	public static Command sourceFour(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
+		var three = sourceThreeInternal(superstructure, shooter, swerve, aim);
+		var pathFollow = AutoBuilder.followPath(Paths.sourceSide3);
+		var intake = superstructure.autonIntakeReq();
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(20)).asProxy();
+		var fourthShotReq = superstructure.autonShootReq();
+		
+		var auton = sequence(
+			three,
+			parallel(
+				pathFollow,
+				intake,
+				aimCmd
+			),
+			fourthShotReq
+		).withName("SourceFourSequence");
+
+		return theWrapper(auton, shooter).withName("SourceFourFullAuton"); // what a silly and goofy long name
 	}
 }
