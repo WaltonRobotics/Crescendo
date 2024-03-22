@@ -97,7 +97,7 @@ public class Aim extends SubsystemBase {
 
     private final GenericEntry nte_isCoast;
 
-    private final Measure<Angle> kAngleAllowedError = Degrees.of(0.5);
+    private final Measure<Angle> kAngleAllowedError = Degrees.of(0.6);
     private final Measure<Angle> kAmpAngleAllowedError = Degrees.of(0.75);
 
     private final Timer m_targetTimer = new Timer();
@@ -161,9 +161,6 @@ public class Aim extends SubsystemBase {
             return error.lte(kAmpAngleAllowedError);
         }
 
-        if (m_targetAngle.in(Degrees) < 2) {
-            return error.lte(Degrees.of(0.25));
-        }
         return error.lte(kAngleAllowedError);
     }
 
