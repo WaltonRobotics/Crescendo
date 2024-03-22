@@ -30,6 +30,7 @@ public class Intake extends SubsystemBase {
 
     public Intake() {
         m_motor.getConfigurator().apply(IntakeConfigs.kConfigs);
+        runMainRollers(0);
     }
 
     private void runMainRollers(double volts) {
