@@ -1,25 +1,26 @@
 package frc.robot.subsystems.shooter;
 
+import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.controls.CoastOut;
-import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
+import com.ctre.phoenix6.controls.DynamicMotionMagicVoltage;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
-import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Voltage;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
@@ -29,31 +30,31 @@ import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants.AimK.AimConfigs;
-import frc.util.AllianceFlipUtil;
+import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 
-import static frc.robot.Constants.FieldK.*;
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Radians;
-import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.*;
 import static frc.robot.Constants.kCanbus;
 import static frc.robot.Constants.AimK.*;
-import static frc.robot.Constants.FieldK.SpeakerK.*;
+import static frc.robot.Constants.AimK.AimConfigs.*;
 import static frc.robot.Constants.RobotK.kSimInterval;
-import static frc.robot.Robot.*;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 public class Aim extends SubsystemBase {
-    private final Supplier<Pose3d> m_robotPoseSupplier;
-
     private final TalonFX m_motor = new TalonFX(kAimId, kCanbus);
     private final CANcoder m_cancoder = new CANcoder(15, kCanbus);
+    private final DigitalInput m_coastSwitch = new DigitalInput(kCoastSwitchId);
 
-    private final MotionMagicExpoVoltage m_request = new MotionMagicExpoVoltage(0);
+    private final Trigger trg_coastSwitch = new Trigger(m_coastSwitch::get);
+
+    private final DynamicMotionMagicVoltage m_dynamicRequest = new DynamicMotionMagicVoltage(0, 20, 40, 200);
     private final CoastOut m_coastRequest = new CoastOut();
 
     private final DCMotor m_aimGearbox = DCMotor.getFalcon500(1);
@@ -72,10 +73,6 @@ public class Aim extends SubsystemBase {
             new Color8Bit(Color.kHotPink)));
 
     private Measure<Angle> m_targetAngle = Rotations.of(0);
-    private Translation3d m_ampPose;
-
-    // private final DigitalInput m_home = new DigitalInput(kHomeSwitch);
-    // private final Trigger m_homeTrigger = new Trigger(m_home::get).negate();
 
     private boolean m_isCoast;
 
@@ -84,9 +81,14 @@ public class Aim extends SubsystemBase {
     private final DoubleLogger log_motorPos = WaltLogger.logDouble(kDbTabName, "motorPos");
     private final DoubleLogger log_cancoderPos = WaltLogger.logDouble(kDbTabName, "cancoderPos");
 
-    private final DoubleLogger log_closedLoopError = WaltLogger.logDouble(kDbTabName, "closedLoopError");
+    private final DoubleLogger log_error = WaltLogger.logDouble(kDbTabName, "error");
     private final DoubleLogger log_reference = WaltLogger.logDouble(kDbTabName, "reference");
     private final DoubleLogger log_output = WaltLogger.logDouble(kDbTabName, "output");
+    private final DoubleLogger log_ff = WaltLogger.logDouble(kDbTabName, "feedforward");
+
+    private final DoubleLogger log_statorCurrent = WaltLogger.logDouble(kDbTabName, "statorCurrent");
+    private final DoubleLogger log_supplyCurrent = WaltLogger.logDouble(kDbTabName, "supplyCurrent");
+    private final DoubleLogger log_tqCurrent = WaltLogger.logDouble(kDbTabName, "torqueCurrent");
 
     private final DoubleLogger log_simVoltage = WaltLogger.logDouble(kDbTabName + "/Sim", "motorVoltage");
     private final DoubleLogger log_simVelo = WaltLogger.logDouble(kDbTabName + "/Sim", "motorVelo");
@@ -95,14 +97,26 @@ public class Aim extends SubsystemBase {
 
     private final GenericEntry nte_isCoast;
 
-    private final Measure<Angle> kAngleAllowedError = Degrees.of(1);
-    private final Measure<Angle> kAngleAllowedErrorAmp = Degrees.of(2);
+    private final Measure<Angle> kAngleAllowedError = Degrees.of(0.5);
+    private final Measure<Angle> kAmpAngleAllowedError = Degrees.of(0.75);
 
-    public Aim(Supplier<Pose3d> robotPoseSupplier) {
-        m_robotPoseSupplier = robotPoseSupplier;
+    private final Timer m_targetTimer = new Timer();
 
-        m_motor.getConfigurator().apply(AimConfigs.motorConfig);
-        m_cancoder.getConfigurator().apply(AimConfigs.cancoderConfig);
+    private final VoltageOut m_voltage = new VoltageOut(0);
+
+    private final SysIdRoutine m_sysId = new SysIdRoutine(
+        new SysIdRoutine.Config(
+            Volts.of(1).per(Second),
+            Volts.of(1.25),
+            Seconds.of(15),
+            (state) -> SignalLogger.writeString("state", state.toString())),
+        new SysIdRoutine.Mechanism((Measure<Voltage> volts) -> {
+            m_motor.setControl(m_voltage.withOutput(volts.in(Volts)));
+        }, null, this));
+
+    public Aim() {
+        m_motor.getConfigurator().apply(motorConfig);
+        m_cancoder.getConfigurator().apply(cancoderConfig);
 
         SmartDashboard.putData("Mech2d", m_mech2d);
 
@@ -110,40 +124,47 @@ public class Aim extends SubsystemBase {
             // In simulation, make sure the CANcoder starts at the correct position
             m_cancoder.setPosition(Units.radiansToRotations(m_aimSim.getAngleRads()) * 1.69);
         }
-        // m_homeTrigger.onTrue(Commands.runOnce(() -> m_motor.setPosition(kInitAngle.in(Rotations)))
-        //     .ignoringDisable(true));
 
         nte_isCoast = Shuffleboard.getTab(kDbTabName)
             .add("isCoast", false)
             .withWidget(BuiltInWidgets.kToggleSwitch)
             .getEntry();
+
+        // configureCoastTrigger();
+    }
+
+    private void determineMotionMagicValues() {
+        if (m_targetAngle.lt(Rotations.of(m_motor.getPosition().getValueAsDouble())) && m_motor.getPosition().getValueAsDouble() <= 0.1) {
+            m_dynamicRequest.Velocity = 0.2;
+            m_dynamicRequest.Acceleration = 0.3;
+            m_dynamicRequest.Jerk = 0;
+            m_dynamicRequest.Slot = 0;
+        } else {
+            m_dynamicRequest.Velocity = 0.3;
+            m_dynamicRequest.Acceleration = 1;
+            m_dynamicRequest.Jerk = 0;
+            m_dynamicRequest.Slot = 0;
+        }
+    }
+
+    private double getDegrees() {
+        return Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()) + 28;
     }
 
     public boolean aimFinished() {
-        var error = Rotations.of(m_motor.getClosedLoopError().getValueAsDouble());
-        if (m_motor.getClosedLoopReference().getValueAsDouble() >= 0.195) {
-            return error.lte(kAngleAllowedErrorAmp);
+        if ((m_targetAngle.in(Degrees) == 0 || m_targetAngle.in(Degrees) == 4) && !DriverStation.isAutonomous()) {
+            return false;
+        }
+        var error = Rotations.of(Math.abs(m_targetAngle.in(Rotations) - m_motor.getPosition().getValueAsDouble()));
+
+        if (m_targetAngle.baseUnitMagnitude() == kAmpAngle.baseUnitMagnitude()) {
+            return error.lte(kAmpAngleAllowedError);
+        }
+
+        if (m_targetAngle.in(Degrees) < 2) {
+            return error.lte(Degrees.of(0.25));
         }
         return error.lte(kAngleAllowedError);
-    }
-
-    public double getDegrees() {
-        return m_motor.getPosition().getValueAsDouble() * 360 + 22.5;
-    }
-
-    // not even close.
-    public Command to90ish() {
-        return runOnce(() -> {
-            m_targetAngle = Rotations.of(0.275879);
-            m_motor.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
-        });
-    }
-
-    public Command to0() {
-        return runOnce(() -> {
-            m_targetAngle = Rotations.of(0);
-            m_motor.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
-        });
     }
 
     public Command coastOut() {
@@ -153,21 +174,24 @@ public class Aim extends SubsystemBase {
     public Command increaseAngle() {
         return Commands.runOnce(() -> {
             m_targetAngle = m_targetAngle.plus(Degrees.of(0.5));
-            m_motor.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
+            determineMotionMagicValues();
+            m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
         });
     }
 
     public Command decreaseAngle() {
         return Commands.runOnce(() -> {
             m_targetAngle = m_targetAngle.minus(Degrees.of(0.5));
-            m_motor.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
+            determineMotionMagicValues();
+            m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
         });
     }
 
     public Command amp() {
         return runOnce(() -> {
             m_targetAngle = kAmpAngle;
-            m_motor.setControl(m_request.withPosition(m_targetAngle.in(Rotations)));
+            determineMotionMagicValues();
+            m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
         });
     }
 
@@ -175,46 +199,47 @@ public class Aim extends SubsystemBase {
         return m_targetAngle.in(Degrees);
     }
 
-    private Command toAngle(Measure<Angle> angle) {
-        return runOnce(
-            () -> {
-                m_targetAngle = angle;
-                m_motor.setControl(m_request.withPosition(angle.in(Rotations)));
-            });
+    public Command toAngleUntilAt(Measure<Angle> angle, Measure<Angle> tolerance) {
+        return toAngleUntilAt(() -> angle, tolerance);
     }
 
-    public Command toAngleUntilAt(Measure<Angle> angle, Measure<Angle> tolerance) {
-        var goThere = startEnd(
-            () -> {
-                m_targetAngle = angle;
-                m_motor.setControl(m_request.withPosition(angle.in(Rotations)));
-            }, () -> {});
-        return goThere.until(() -> {
-            var error = Rotations.of(Math.abs(m_motor.getClosedLoopError().getValueAsDouble()));
-            log_closedLoopError.accept(error.in(Rotations));
-            return error.lte(tolerance);
-        });
+    public Command toAngleUntilAt(Measure<Angle> angle) {
+        return toAngleUntilAt(() -> angle, Degrees.of(0.25)).withName("ToAngleUntilAt"); // TODO unmagify i'm lazy rn
     }
 
     public Command toAngleUntilAt(Supplier<Measure<Angle>> angle, Measure<Angle> tolerance) {
-        var goThere = startEnd(
-            () -> {
-                m_targetAngle = angle.get();
-                m_motor.setControl(m_request.withPosition(angle.get().in(Rotations)));
-            }, () -> {});
-        return goThere.until(() -> {
-            var error = Rotations.of(Math.abs(m_motor.getClosedLoopError().getValueAsDouble()));
-            log_closedLoopError.accept(error.in(Rotations));
-            return error.lte(tolerance);
-        });
-    }
+        Runnable goThere = () -> {
+            m_targetAngle = angle.get();
+            determineMotionMagicValues();
+            var ff = Math.cos(Units.degreesToRadians(getDegrees())) * kG;
+            var request = m_dynamicRequest
+                .withPosition(angle.get().in(Rotations))
+                .withFeedForward(ff);
+            m_motor.setControl(request);
+        };
+        BooleanSupplier isFinished = () -> {
+            var error = Rotations.of(Math.abs(m_targetAngle.in(Rotations) - m_motor.getPosition().getValueAsDouble()));
+            log_error.accept(error.in(Degrees));
 
-    public Command hardStop() {
-        return toAngle(Degrees.of(0));
+            boolean imThere = error.lte(tolerance);
+            if (imThere) {
+                m_targetTimer.stop();
+                System.out.println("[AIM] Reached target in " + m_targetTimer.get() + " seconds");
+                m_targetTimer.reset();
+            }
+            return imThere;
+        };
+
+        return new FunctionalCommand(() -> m_targetTimer.start(), goThere, (intr) -> {}, isFinished, this)
+            .withName("AimToAngleUntilAt_+-" + tolerance.in(Degrees));
     }
 
     public Command intakeAngleNearCmd() {
-        return toAngleUntilAt(Degrees.of(0), Degrees.of(10));
+        return toAngleUntilAt(Degrees.of(4), Degrees.of(10)).withName("AimToIntakeAngleNear");
+    }
+
+    public Command hardStop() {
+        return toAngleUntilAt(Degrees.of(0));
     }
 
     public void setCoast(boolean coast) {
@@ -242,87 +267,14 @@ public class Aim extends SubsystemBase {
         });
     }
 
-    public Command aim() {
-        return setAimTarget().andThen(toTarget()).repeatedly();
-    }
-
-    public Command toTarget() {
-        return toAngle(m_targetAngle);
-    }
-
-    public Command beAt90() {
-        return runOnce(() -> m_motor.setPosition(Units.degreesToRotations(90)));
-    }
-
-    /**
-     * @return a command that changes the target angle of the shooter based on where it is relative to the speaker
-     */
-    public Command setAimTarget() {
-        var translation = AllianceFlipUtil.apply(m_robotPoseSupplier.get().getTranslation());
-        var poseToSpeaker = speakerPose.plus(translation);
-        return runOnce(
-            () -> {
-                m_targetAngle = Radians.of(Math.atan((poseToSpeaker.getZ()) / (poseToSpeaker.getX())));
-                m_targetAngle = Degrees
-                    .of(MathUtil.clamp(m_targetAngle.in(Degrees), kMinAngle.magnitude(), kMaxAngle.magnitude()));
-            });
-    }
-
-    /**
-     * if the robot is to the right of the speaker center, aim at the left corner
-     * of the speaker and vice versa
-     *
-     * @return a command that changes the target speaker pose based on the robot's position
-     */
-    public Command changeSpeakerTarget() {
-        // TODO check math
-        var trans = m_robotPoseSupplier.get().getTranslation();
-        var alliance = DriverStation.getAlliance();
-
-        if (alliance.isPresent() && alliance.get() == Alliance.Red) {
-            if (trans.getY() > (kRedCenterOpening.getY() + kAimOffset.baseUnitMagnitude())) {
-                return runOnce(() -> speakerPose = AllianceFlipUtil.apply(kTopRight));
-            } else if (trans.getY() < (kRedCenterOpening.getY() - kAimOffset.baseUnitMagnitude())) {
-                return runOnce(() -> speakerPose = AllianceFlipUtil.apply(kTopLeft));
-            } else {
-                return runOnce(() -> speakerPose = kRedCenterOpening);
-            }
-        } else if (alliance.isPresent() && alliance.get() == Alliance.Blue) {
-            if (trans.getY() < (kBlueCenterOpening.getY() + kAimOffset.baseUnitMagnitude())) {
-                return runOnce(() -> speakerPose = kTopRight);
-            } else if (trans.getY() > (kBlueCenterOpening.getY() - kAimOffset.baseUnitMagnitude())) {
-                return runOnce(() -> speakerPose = kTopLeft);
-            } else {
-                return runOnce(() -> speakerPose = kBlueCenterOpening);
-            }
-        }
-
-        return Commands.none();
-    }
-
-    public void aimAtAmp() {
-        var translation = m_robotPoseSupplier.get().getTranslation();
-        var poseToAmp = m_ampPose.minus(translation);
-        m_targetAngle = Radians.of(Math.atan((poseToAmp.getZ()) / (poseToAmp.getX())));
-        m_targetAngle = Degrees
-            .of(MathUtil.clamp(m_targetAngle.in(Degrees), kMinAngle.magnitude(), kMaxAngle.magnitude()));
-    }
-
-    /**
-     * @return a command that changes the angle of the shooter near the stage to avoid hitting it
-     */
-    public Command stageMode() {
-        Pose3d pose = m_robotPoseSupplier.get();
-
-        if (pose.getY() > kBlueStageClearanceRight && pose.getY() < kBlueStageClearanceLeft) {
-            if (pose.getX() > kBlueStageClearanceDs && pose.getX() < kBlueStageClearanceCenter) {
-                return toAngle(kStageClearance);
-            } else if (pose.getX() > kRedStageClearanceDs && pose.getX() < kRedStageClearanceCenter) {
-                return toAngle(kStageClearance);
-            }
-        }
-
-        return Commands.none();
+    public void configureCoastTrigger() {
+        trg_coastSwitch.and(RobotModeTriggers.disabled())
+            .onTrue(
+                runOnce(() -> setCoast(true)).ignoringDisable(true)
+            )
+            .onFalse(
+                runOnce(() -> setCoast(false)).ignoringDisable(true)
+            );
     }
 
     @Override
@@ -330,16 +282,19 @@ public class Aim extends SubsystemBase {
         log_motorSpeed.accept(m_motor.get());
         log_motorPos.accept(Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()));
         log_targetAngle.accept(getTargetAngle());
-        log_cancoderPos.accept(m_cancoder.getPosition().getValueAsDouble());
+        log_cancoderPos.accept(Units.rotationsToDegrees(m_cancoder.getPosition().getValueAsDouble()));
 
-        log_closedLoopError.accept(m_motor.getClosedLoopError().getValueAsDouble());
-        log_reference.accept(m_motor.getClosedLoopReference().getValueAsDouble());
+        log_error.accept(Units.rotationsToDegrees(m_motor.getClosedLoopError().getValueAsDouble()));
+        log_reference.accept(Units.rotationsToDegrees(m_motor.getClosedLoopReference().getValueAsDouble()));
         log_output.accept(m_motor.getClosedLoopOutput().getValueAsDouble());
+        log_ff.accept(m_motor.getClosedLoopFeedForward().getValueAsDouble());
 
-        // m_target = Units.degreesToRotations(m_tunableAngle.get() - 22.5);
+        log_statorCurrent.accept(m_motor.getStatorCurrent().getValueAsDouble());
+        log_supplyCurrent.accept(m_motor.getSupplyCurrent().getValueAsDouble());
+        log_tqCurrent.accept(m_motor.getTorqueCurrent().getValueAsDouble());
 
         boolean dashCoast = nte_isCoast.getBoolean(false);
-        if (dashCoast != m_isCoast) {
+        if (dashCoast != m_isCoast && !trg_coastSwitch.getAsBoolean()) {
             m_isCoast = dashCoast;
             setCoast(m_isCoast);
         }
@@ -369,5 +324,13 @@ public class Aim extends SubsystemBase {
         log_simVelo.accept(m_aimSim.getVelocityRadPerSec());
         log_simAngle.accept(angle);
         log_simTarget.accept(m_targetAngle.in(Degrees));
+    }
+
+    public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+        return m_sysId.quasistatic(direction);
+    }
+
+    public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+        return m_sysId.dynamic(direction);
     }
 }

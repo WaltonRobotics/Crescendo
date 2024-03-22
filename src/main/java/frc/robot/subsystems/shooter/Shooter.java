@@ -8,11 +8,6 @@ import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
-import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
@@ -32,12 +27,8 @@ import frc.util.logging.WaltLogger.DoubleLogger;
 import static frc.robot.Constants.ShooterK.FlywheelSimK.*;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.Constants.kCanbus;
-import static frc.robot.Constants.kStickDeadband;
-import static frc.robot.Robot.*;
-
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public class Shooter extends SubsystemBase {
@@ -75,7 +66,6 @@ public class Shooter extends SubsystemBase {
     private final BooleanLogger log_leftOk = WaltLogger.logBoolean(kDbTabName, "leftOk");
     private final BooleanLogger log_rightOk = WaltLogger.logBoolean(kDbTabName, "rightOk");
 
-    private double time = 0;
     private boolean found = false;
     private final FlywheelSim m_flywheelSim = new FlywheelSim(DCMotor.getFalcon500(1), kGearRatio, kMoi);
 
@@ -129,7 +119,7 @@ public class Shooter extends SubsystemBase {
     }
 
 
-    private Command toVelo(Supplier<Measure<Velocity<Angle>>> velo, BooleanSupplier idle) {
+    public Command toVelo(Supplier<Measure<Velocity<Angle>>> velo, BooleanSupplier idle) {
         Runnable spin = () -> {
             var velMeas = velo.get();
             m_rightTarget = velMeas.times(m_spinAmt);
@@ -143,6 +133,8 @@ public class Shooter extends SubsystemBase {
         };
 
         Consumer<Boolean> stopSpin = (interrupted) -> {
+            boolean isAuton = !idle.getAsBoolean();
+            System.out.println("toVelo STOPPED. int: " + interrupted + ", auton: " + isAuton);
             m_rightTarget = RotationsPerSecond.of(0);
             m_leftTarget = RotationsPerSecond.of(0);
             m_right.setControl(m_request.withVelocity(0).withSlot(0));
@@ -151,24 +143,40 @@ public class Shooter extends SubsystemBase {
             m_left.setControl(m_coast);
         };
 
-        return new FunctionalCommand(spin, () -> {}, stopSpin, idle);
+        return new FunctionalCommand(spin, () -> {}, stopSpin, idle, this)
+            .withName("ShooterToVelo");
+    }
+
+    public Command toVelo(Supplier<Measure<Velocity<Angle>>> velo, BooleanSupplier idle, double spinAmt) {
+        Runnable spin = () -> {
+            var velMeas = velo.get();
+            m_rightTarget = velMeas.times(spinAmt);
+            m_leftTarget = velMeas;
+            var right = m_rightTarget.in(RotationsPerSecond);
+            var left = m_leftTarget.in(RotationsPerSecond);
+
+            // withSlot(0) to use slot 0 PIDFF gains for powerful shots
+            m_right.setControl(m_request.withVelocity(right).withSlot(0));
+            m_left.setControl(m_request.withVelocity(left).withSlot(0));
+        };
+
+        Consumer<Boolean> stopSpin = (interrupted) -> {
+            boolean isAuton = !idle.getAsBoolean();
+            System.out.println("toVelo STOPPED. int: " + interrupted + ", auton: " + isAuton);
+            m_rightTarget = RotationsPerSecond.of(0);
+            m_leftTarget = RotationsPerSecond.of(0);
+            m_right.setControl(m_request.withVelocity(0).withSlot(0));
+            m_left.setControl(m_request.withVelocity(0).withSlot(0));
+            m_right.setControl(m_coast);
+            m_left.setControl(m_coast);
+        };
+
+        return new FunctionalCommand(spin, () -> {}, stopSpin, idle, this)
+            .withName("ShooterToVelo");
     }
 
     private Command toVeloNoSpin(Supplier<Measure<Velocity<Angle>>> velo) {
-        return runEnd(
-            () -> {
-                var velMeas = velo.get();
-                m_rightTarget = m_leftTarget = velMeas;
-                var right = m_rightTarget.in(RotationsPerSecond);
-                var left = m_leftTarget.in(RotationsPerSecond);
-
-                // withSlot(1) to use slot 1 PIDFF gains for unpowerful shots
-                m_right.setControl(m_request.withVelocity(right).withSlot(1));
-                m_left.setControl(m_request.withVelocity(left).withSlot(1));
-            }, () -> {
-                m_right.setControl(m_coast);
-                m_left.setControl(m_coast);
-            });
+        return toVelo(velo, () -> false, 1);
     }
 
     public Command increaseRpm() {
@@ -183,16 +191,32 @@ public class Shooter extends SubsystemBase {
         });
     }
 
+    public Command moreSpin() {
+        return Commands.runOnce(() -> m_spinAmt -= 0.05);
+    }
+
+    public Command lessSpin() {
+        return Commands.runOnce(() -> m_spinAmt += 0.05);
+    }
+
     public Command subwoofer() {
-        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), () -> false);
+        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), () -> false).withName("ShooterToVelo_SubwooferTele");
+    }
+
+    public Command farShot() {
+        return toVelo(() -> Rotations.per(Minute).of(8000), () -> false).withName("ShooterToVelo_FarShotTele");
+    }
+
+    public Command farShotNoSpin() {
+        return toVeloNoSpin(() -> Rotations.per(Minute).of(8000)).withName("ShooterToVelo_FarShotNoSpin");
     }
 
     public Command subwoofer(BooleanSupplier idle) {
-        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), idle);
+        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), idle).withName("ShooterToVelo_SubwooferAuton");
     }
 
     public Command podium(BooleanSupplier idle) {
-        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), idle);
+        return toVelo(() -> Rotations.per(Minute).of(kPodiumRpm), idle);
     }
 
     public Command ampShot() {
@@ -232,23 +256,6 @@ public class Shooter extends SubsystemBase {
             });
     }
 
-    // idk i just wrote a couple methods cuz they might be able to be used but i'm
-    // prob gonna have to redo everything anyway ^-^ tehe
-
-    public Pose2d getAdjustedPose(Supplier<Pose3d> robotPose, DoubleSupplier x, DoubleSupplier y,
-        DoubleSupplier omega) {
-        var xPower = MathUtil.applyDeadband(x.getAsDouble(), kStickDeadband);
-        var yPower = MathUtil.applyDeadband(y.getAsDouble(), kStickDeadband);
-        var omegaPower = MathUtil.applyDeadband(omega.getAsDouble(), kStickDeadband);
-        var futureXVelo = xPower * kMaxSpeed;
-        var futureYVelo = yPower * kMaxSpeed;
-        var futureOmegaVelo = omegaPower * kMaxAngularRate;
-        var curPose = robotPose.get().toPose2d();
-        var adjustedPose = curPose.plus(new Transform2d(futureXVelo * m_shotTime, futureYVelo * m_shotTime,
-            Rotation2d.fromRadians(futureOmegaVelo * m_shotTime)));
-        return adjustedPose;
-    }
-
     public void periodic() {
         log_leftTargetRpm.accept(m_leftTarget.in(Rotations.per(Minute)));
         log_rightTargetRpm.accept(m_rightTarget.in(Rotations.per(Minute)));
@@ -274,7 +281,6 @@ public class Shooter extends SubsystemBase {
             found = true;
         }
 
-        time += kSimInterval;
         m_flywheelSim.update(kSimInterval);
     }
 

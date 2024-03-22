@@ -14,10 +14,14 @@ import edu.wpi.first.wpilibj2.command.Commands;
 public class AutonChooser {
     public enum AutonOption {
         DO_NOTHING("0 - do nothing", new ChoreoTrajectory()),
-        LEAVE("1 - not amp side", Trajectories.leave),
-        TWO_PC("2 - speaker", Trajectories.twoPc),
-        THREE("3 - speaker", Trajectories.twoPc),
-        THREE_POINT_FIVE("3.5 - speaker", Trajectories.twoPc);
+        AMP_TWO("2 - center -> amp side", Trajectories.ampSide),
+        AMP_THREE("3 - center -> amp side", Trajectories.ampSide),
+        AMP_FOUR("4 - center -> amp side", Trajectories.ampSide),
+        AMP_FIVE("5 - center -> amp side", Trajectories.ampSide),
+        SOURCE_TWO("2 - source side", Trajectories.sourceSide),
+        SOURCE_THREE("3 - source side", Trajectories.sourceSide),
+        SOURCE_THREE_POINT_FIVE("3.5 - source side", Trajectories.sourceSide),
+        SOURCE_FOUR("4 - source side", Trajectories.sourceSide);
 
         public final String m_description;
         public final ChoreoTrajectory m_traj;

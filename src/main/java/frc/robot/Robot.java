@@ -13,10 +13,10 @@ import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.DriveRequestType;
+import com.pathplanner.lib.commands.FollowPathCommand;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -31,6 +31,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.AimK;
 import frc.robot.Constants.FieldK.SpeakerK;
 import frc.robot.auton.AutonChooser;
@@ -43,17 +44,17 @@ import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.util.AllianceFlipUtil;
+import frc.util.CommandLogger;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
 
+import static frc.robot.Constants.AimK.kAmpAngle;
+import static frc.robot.Constants.AimK.kPodiumAngle;
 import static frc.robot.Constants.RobotK.*;
-import static frc.robot.generated.TunerConstants.*;
-
-import java.util.function.Supplier;
 
 public class Robot extends TimedRobot {
 	/** 5.21 meters per second desired top speed */
-	public static final double kMaxSpeed = kSpeedAt12VoltsMps;
+	public static final double kMaxSpeed = 5;
 	/** 1.5 of a rotation per second max angular velocity */
 	public static final double kMaxAngularRate = 1.5 * (Math.PI * 2);
 
@@ -63,15 +64,14 @@ public class Robot extends TimedRobot {
 
 	public final Swerve swerve = TunerConstants.drivetrain;
 	public final Vision vision = new Vision(swerve::addVisionMeasurement);
-	public final Supplier<Pose3d> robotPoseSupplier = swerve::getPose3d;
 	public final Shooter shooter = new Shooter();
-	public final Aim aim = new Aim(robotPoseSupplier);
+	public final Aim aim = new Aim();
 	public final Intake intake = new Intake();
 	public final Conveyor conveyor = new Conveyor();
 
 	public final Superstructure superstructure = new Superstructure(
 		aim, intake, conveyor, shooter,
-		manipulator.leftTrigger(), driver.rightTrigger(),
+		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()),
 		(intensity) -> driverRumble(intensity), (intensity) -> manipulatorRumble(intensity));
 
 	public static Translation3d speakerPose;
@@ -102,14 +102,22 @@ public class Robot extends TimedRobot {
 	private void mapAutonCommands() {
 		AutonChooser.setDefaultAuton(AutonOption.DO_NOTHING);
 		AutonChooser.assignAutonCommand(AutonOption.DO_NOTHING, Commands.none());
-		AutonChooser.assignAutonCommand(AutonOption.LEAVE, AutonFactory.leave(superstructure, shooter, swerve),
-			Trajectories.leave.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.TWO_PC, AutonFactory.twoPc(superstructure, shooter, swerve),
-			Trajectories.twoPc.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.THREE, AutonFactory.threePc(superstructure, shooter, swerve), 
-			Trajectories.twoPc.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.THREE_POINT_FIVE, AutonFactory.threePointFive(superstructure, shooter, swerve), 
-			Trajectories.twoPc.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.AMP_TWO, AutonFactory.ampTwo(superstructure, shooter, swerve, aim),
+			Trajectories.ampSide.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.AMP_THREE, AutonFactory.ampThree(superstructure, shooter, swerve, aim), 
+			Trajectories.ampSide.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.AMP_FOUR, AutonFactory.ampFour(superstructure, shooter, swerve, aim), 
+			Trajectories.ampSide.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.AMP_FIVE, AutonFactory.ampFive(superstructure, shooter, swerve, aim), 
+			Trajectories.ampSide.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.SOURCE_TWO, AutonFactory.sourceTwo(superstructure, shooter, swerve, aim),
+			Trajectories.sourceSide.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE, AutonFactory.sourceThree(superstructure, shooter, swerve, aim),
+			Trajectories.sourceSide.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE_POINT_FIVE, AutonFactory.sourceThreePointFive(superstructure, shooter, swerve, aim),
+			Trajectories.sourceSide.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.SOURCE_FOUR, AutonFactory.sourceFour(superstructure, shooter, swerve, aim),
+			Trajectories.sourceSide.getInitialPose());
 	}
 
 	private void driverRumble(double intensity) {
@@ -151,46 +159,33 @@ public class Robot extends TimedRobot {
 					-driver.getLeftX()))));
 
 		// force shot
-		driver.b().and(driver.rightTrigger()).onTrue(Commands.runOnce(() -> superstructure.forceStateToShooting()));
-		
-		// Drive to auton start pose
-		// driver.x().whileTrue(swerve.goToAutonPose());
+		driver.b().and(driver.rightTrigger()).onTrue(superstructure.forceStateToShooting());
 
 		// rezero
 		driver.leftBumper().onTrue(swerve.runOnce(() -> swerve.seedFieldRelative()));
 
-		// aim to 0
-		// driver.y().whileTrue(swerve.aim(0));
-
-		// auton pose reset
-		// driver.rightBumper().onTrue(swerve.resetPoseToSpeaker());
-
 		// podium shot
-		driver.leftTrigger().whileTrue(superstructure.aimAndSpinUp(AimK.kPodiumAngle, true));
-
-		// wheel pointy straight for pit
-		driver.povUp().and(driver.start()).whileTrue(swerve.applyRequest(() -> robotCentric.withVelocityX(0.5)));
+		driver.leftTrigger().whileTrue(aim.toAngleUntilAt(kPodiumAngle, Degrees.of(1)));
 
 		/* manipulator controls */
-
-		// reject note
+		// eject note
 		manipulator.rightTrigger().whileTrue(intake.outtake());
 
 		// subwoofer shot prep
-		manipulator.rightBumper().whileTrue(superstructure.subwooferSpinUp());
+		manipulator.rightBumper().whileTrue(shooter.subwoofer());
 
 		// amp shot prep
-		manipulator.leftBumper().whileTrue(superstructure.ampSpinUp(AimK.kAmpAngle));
+		manipulator.leftBumper().whileTrue(superstructure.ampShot(kAmpAngle));
 
 		// manip force shot
 		manipulator.b().and(manipulator.povUp())
-			.onTrue(Commands.runOnce(() -> superstructure.forceStateToShooting()));
+			.onTrue(superstructure.forceStateToShooting());
 
-		// manip force FSM reset
-		manipulator.b().and(manipulator.leftTrigger()).whileTrue(Commands.runOnce(() -> superstructure.forceStateToIdle()));
+		// manip force FSM to intake
+		manipulator.b().and(manipulator.leftTrigger()).onTrue(superstructure.forceStateToIntake());
 
 		// aim safe angle
-		manipulator.x().whileTrue(aim.intakeAngleNearCmd());
+		manipulator.x().whileTrue(aim.hardStop());
 
 		// aim rezero
 		manipulator.b().and(manipulator.povDown()).onTrue(aim.rezero());
@@ -202,6 +197,26 @@ public class Robot extends TimedRobot {
 		manipulator.rightBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kSubwooferAngle, Degrees.of(2)));
 	}
 
+	public void configureTestingBindings() {
+		// spinny buttons
+		driver.back().and(driver.x()).whileTrue(swerve.wheelRadiusCharacterisation(1));
+		driver.back().and(driver.y()).whileTrue(swerve.wheelRadiusCharacterisation(-1));
+
+		// sysid buttons
+		manipulator.back().and(manipulator.x()).whileTrue(shooter.sysIdDynamic(Direction.kForward));
+		manipulator.back().and(manipulator.y()).whileTrue(shooter.sysIdDynamic(Direction.kReverse));
+		manipulator.start().and(manipulator.x()).whileTrue(shooter.sysIdQuasistatic(Direction.kForward));
+		manipulator.start().and(manipulator.y()).whileTrue(shooter.sysIdQuasistatic(Direction.kReverse));
+
+		driver.povUp().onTrue(shooter.moreSpin());
+		driver.povDown().onTrue(shooter.lessSpin());
+
+		manipulator.start().onTrue(superstructure.forceStateToNoteReady());
+
+		// wheel pointy straight for pit
+		driver.povUp().and(driver.start()).whileTrue(swerve.applyRequest(() -> robotCentric.withVelocityX(0.5)));
+	}
+
 	private Command getAutonomousCommand() {
 		return AutonChooser.getChosenAutonCmd();
 	}
@@ -210,15 +225,23 @@ public class Robot extends TimedRobot {
 	public void robotInit() {
 		addPeriodic(() -> {
 			superstructure.fastPeriodic();
-			superstructure.sensorEventLoop.poll();
 		}, 0.00125);
 		SmartDashboard.putData(field2d);
 		speakerPose = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpening);
 		mapAutonCommands();
 		configureBindings();
+		if (!DriverStation.isFMSAttached()) {
+			configureTestingBindings();
+		}
 		if (kTestMode) {
 			swerve.setTestMode();
 		}
+
+		CommandScheduler.getInstance().onCommandInterrupt(
+			CommandLogger.commandInterruptLogger()
+		);
+
+		FollowPathCommand.warmupCommand();
 	}
 
 	@Override

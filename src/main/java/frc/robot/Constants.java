@@ -16,7 +16,6 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
-import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
@@ -109,12 +108,11 @@ public class Constants {
     }
 
     public class AutoK {
-        public static final double kPX = 10;
-        public static final double kPY = 10;
+        public static final double kPTranslation = 5;
         public static final double kPTheta = 6.5; // 1
 
         public static final HolonomicPathFollowerConfig kPathFollowerConfig = new HolonomicPathFollowerConfig(
-            new PIDConstants(kPX),
+            new PIDConstants(kPTranslation),
             new PIDConstants(kPTheta),
             kMaxSpeed,
             TunerConstants.kDriveRadius,
@@ -238,7 +236,7 @@ public class Constants {
 
         public static final double kSubwooferRpm = 7300;
         public static final double kPodiumRpm = 7600;
-        public static final double kAmpRpm = 800;
+        public static final double kAmpRpm = 600;
 
         public static final double kGearRatio = 18.0 / 36.0;
 
@@ -253,10 +251,12 @@ public class Constants {
 
     public static class AimK {
         public static final class AimConfigs {
-            private static final double kP = 150; // idk
-            private static final double kS = 0.25;
-            private static final double kG = 0;
-            private static final double kV = 0;
+            private static final double kP = 200;
+            private static final double kI = 0;
+            private static final double kS = 0.9;
+            private static final double kV = 37.44;
+            private static final double kA = 2;
+            public static final double kG = 0.16;
 
             public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
             public static final CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
@@ -264,13 +264,15 @@ public class Constants {
             static {
                 motorConfig.Slot0 = motorConfig.Slot0
                     .withKP(kP)
+                    .withKI(kI)
                     .withKS(kS)
-                    .withKG(kG)
+                    // .withKG(kG)
                     .withKV(kV)
-                    .withGravityType(GravityTypeValue.Arm_Cosine);
+                    .withKA(kA);
+                    // .withGravityType(GravityTypeValue.Arm_Cosine);
 
                 motorConfig.Feedback = motorConfig.Feedback
-                    .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
+                    .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
                     .withFeedbackRemoteSensorID(15)
                     .withRotorToSensorRatio(kGearRatio / 1.69) // ?
                     .withSensorToMechanismRatio(1.69 / 1.0);
@@ -287,11 +289,6 @@ public class Constants {
                     .withSupplyCurrentLimit(16)
                     .withSupplyCurrentLimitEnable(true);
 
-                motorConfig.MotionMagic = motorConfig.MotionMagic
-                    .withMotionMagicCruiseVelocity(2)
-                    .withMotionMagicAcceleration(12)
-                    .withMotionMagicJerk(2);
-
                 motorConfig.HardwareLimitSwitch = motorConfig.HardwareLimitSwitch
                     .withForwardLimitEnable(false)
                     .withReverseLimitEnable(false);
@@ -303,10 +300,12 @@ public class Constants {
                     .withReverseSoftLimitEnable(true);
 
                 cancoderConfig.MagnetSensor = cancoderConfig.MagnetSensor
-                    .withMagnetOffset(-0.150634765625)
+                    .withMagnetOffset(-0.248291015625)
                     .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
                     .withAbsoluteSensorRange(AbsoluteSensorRangeValue.Signed_PlusMinusHalf);
             }
+
+            public static final int kCoastSwitchId = 3;
         }
 
         public static final String kDbTabName = "Aim";
@@ -326,7 +325,7 @@ public class Constants {
 
         public static final Measure<Angle> kSubwooferAngle = Rotations.of(0.08);
         public static final Measure<Angle> kAmpAngle = Rotations.of(0.195);
-        public static final Measure<Angle> kPodiumAngle = Degrees.of(8.25);
+        public static final Measure<Angle> kPodiumAngle = Degrees.of(6.5);
 
         public static final Measure<Angle> kTolerance = Degrees.of(2);
     }

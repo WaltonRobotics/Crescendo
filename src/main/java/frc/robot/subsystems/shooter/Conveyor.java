@@ -24,15 +24,15 @@ public class Conveyor extends SubsystemBase {
             m_conveyor.set(0);
         });
 
-        return go;
+        return go.withName("ConveyorRunFast");
     }
 
     public Command retract() {
-        return runEnd(() -> m_conveyor.set(-0.2), () -> m_conveyor.set(0));
+        return runEnd(() -> m_conveyor.set(-0.2), () -> m_conveyor.set(0)).withName("ConveyorRetract");
     }
 
     public Command startSlow() {
-        return run(() -> m_conveyor.set(0.35));
+        return run(() -> m_conveyor.set(0.35)).withName("ConveyorRunSlow");
     }
 
     public Command runBackwards() {
@@ -46,7 +46,7 @@ public class Conveyor extends SubsystemBase {
     }
 
     public Command stop() {
-        return run(() -> m_conveyor.set(0));
+        return run(() -> m_conveyor.set(0)).withName("ConveyorStop");
     }
 
     @Override

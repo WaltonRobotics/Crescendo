@@ -25,7 +25,6 @@ public class Intake extends SubsystemBase {
     private final DoubleLogger log_supplyVoltage = WaltLogger.logDouble("Intake", "supplyVoltage");
 
     private final DoubleLogger log_middleStatorCurrent = WaltLogger.logDouble("Intake/MiddleRoller", "statorCurrent");
-    private final DoubleLogger log_middleSupplyCurrent = WaltLogger.logDouble("Intake/MiddleRoller", "supplyCurrent");
     private final DoubleLogger log_middleOutputVoltage = WaltLogger.logDouble("Intake/MiddleRoller", "outputVoltage");
     private final DoubleLogger log_middleSupplyVoltage = WaltLogger.logDouble("Intake/MiddleRoller", "supplyVoltage");
 
@@ -58,29 +57,21 @@ public class Intake extends SubsystemBase {
             () -> {
                 runMainRollers(0);
                 m_feeder.set(0);
-            });
-    }
-
-    public Command runLilSpins() {
-        return runEnd(() -> {
-            m_feeder.set(-0.5);
-        }, () -> {
-            m_feeder.set(0);
-        });
+            }).withName("IntakeRun");
     }
 
     public Command start() {
         return run(() -> {
             runMainRollers(12);
             m_feeder.set(-0.5);
-        });
+        }).withName("IntakeStart");
     }
 
     public Command stop() {
         return run(() -> {
             runMainRollers(0);
             m_feeder.set(0);
-        });
+        }).withName("IntakeStop");
     }
 
     @Override
