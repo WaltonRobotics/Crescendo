@@ -177,7 +177,7 @@ public final class AutonFactory {
 		var four = ampFourInternal(superstructure, shooter, swerve, aim);
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide4);
 		var intake = superstructure.autonIntakeReq();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(2)).asProxy();
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
 		var fifthShotReq = superstructure.autonShootReq();
 
 		var auton = sequence( // 3pc then (path and (wait then intake))
