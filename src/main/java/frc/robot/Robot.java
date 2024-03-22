@@ -13,6 +13,7 @@ import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.DriveRequestType;
+import com.pathplanner.lib.commands.FollowPathCommand;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -159,24 +160,12 @@ public class Robot extends TimedRobot {
 
 		// force shot
 		driver.b().and(driver.rightTrigger()).onTrue(superstructure.forceStateToShooting());
-		
-		// Drive to auton start pose
-		// driver.x().whileTrue(swerve.goToAutonPose());
 
 		// rezero
 		driver.leftBumper().onTrue(swerve.runOnce(() -> swerve.seedFieldRelative()));
 
-		// aim to 0
-		// driver.y().whileTrue(swerve.aim(0));
-
-		// auton pose reset
-		// driver.rightBumper().onTrue(swerve.resetPoseToSpeaker());
-
 		// podium shot
 		driver.leftTrigger().whileTrue(aim.toAngleUntilAt(kPodiumAngle, Degrees.of(1)));
-
-		// wheel pointy straight for pit
-		driver.povUp().and(driver.start()).whileTrue(swerve.applyRequest(() -> robotCentric.withVelocityX(0.5)));
 
 		/* manipulator controls */
 		// eject note
@@ -208,7 +197,7 @@ public class Robot extends TimedRobot {
 		manipulator.rightBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kSubwooferAngle, Degrees.of(2)));
 	}
 
-	public void atHomeBindings() {
+	public void configureTestingBindings() {
 		// spinny buttons
 		driver.back().and(driver.x()).whileTrue(swerve.wheelRadiusCharacterisation(1));
 		driver.back().and(driver.y()).whileTrue(swerve.wheelRadiusCharacterisation(-1));
@@ -223,6 +212,9 @@ public class Robot extends TimedRobot {
 		driver.povDown().onTrue(shooter.lessSpin());
 
 		manipulator.start().onTrue(superstructure.forceStateToNoteReady());
+
+		// wheel pointy straight for pit
+		driver.povUp().and(driver.start()).whileTrue(swerve.applyRequest(() -> robotCentric.withVelocityX(0.5)));
 	}
 
 	private Command getAutonomousCommand() {
@@ -238,7 +230,9 @@ public class Robot extends TimedRobot {
 		speakerPose = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpening);
 		mapAutonCommands();
 		configureBindings();
-		atHomeBindings();
+		if (!DriverStation.isFMSAttached()) {
+			configureTestingBindings();
+		}
 		if (kTestMode) {
 			swerve.setTestMode();
 		}
@@ -246,6 +240,8 @@ public class Robot extends TimedRobot {
 		CommandScheduler.getInstance().onCommandInterrupt(
 			CommandLogger.commandInterruptLogger()
 		);
+
+		FollowPathCommand.warmupCommand();
 	}
 
 	@Override
