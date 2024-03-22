@@ -467,7 +467,7 @@ public class Superstructure {
             Commands.sequence(
             waitForNoteReady.andThen(Commands.print("AimAndSpinUp_NOTERD_DONE")),
                 Commands.sequence(
-                    Commands.waitUntil(irqTrg_conveyorBeamBreak.or(irqTrg_shooterBeamBreak)),
+                    Commands.waitUntil(irqTrg_shooterBeamBreak),
                     aimCmd.asProxy().andThen(Commands.print("aim"))
             )
         ));
