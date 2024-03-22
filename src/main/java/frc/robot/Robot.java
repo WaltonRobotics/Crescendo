@@ -21,6 +21,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -188,7 +189,7 @@ public class Robot extends TimedRobot {
 		manipulator.x().whileTrue(aim.hardStop());
 
 		// aim rezero
-		manipulator.b().and(manipulator.povDown()).onTrue(aim.rezero());
+		manipulator.b().and(manipulator.povDown()).and(manipulator.x()).onTrue(aim.rezero());
 
 		// aim amp
 		manipulator.leftBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kAmpAngle, Degrees.of(0.25)));
@@ -230,6 +231,7 @@ public class Robot extends TimedRobot {
 		speakerPose = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpening);
 		mapAutonCommands();
 		configureBindings();
+		DriverStation.startDataLog(DataLogManager.getLog());
 		if (!DriverStation.isFMSAttached()) {
 			configureTestingBindings();
 		}
