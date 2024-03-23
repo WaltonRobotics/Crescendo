@@ -340,7 +340,7 @@ public final class AutonFactory {
 		var aimCmd2 = aim.toAngleUntilAt(Degrees.of(1)).asProxy(); // superstructure requires Aim so this brokey stuff
 		var thirdShotReq = superstructure.autonShootReq();
 
-		return sequence(
+		var auton = sequence(
 			logSeqIncr(),
 			parallel(
 				resetPose,
@@ -373,6 +373,8 @@ public final class AutonFactory {
 				aimCmd2.until(superstructure.trg_atAngle)
 			),
 			thirdShotReq
-		).withName("SourceTwoPcSequence");
+		).withName("G28Counter");
+
+		return theWrapper(auton, shooter).withName("G28CounterFull");
 	}
 }
