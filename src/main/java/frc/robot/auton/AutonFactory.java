@@ -372,7 +372,8 @@ public final class AutonFactory {
 				pathFollow2.andThen(print("path follow finished")),
 				aimCmd2.until(superstructure.trg_atAngle)
 			),
-			thirdShotReq
+			thirdShotReq,
+			waitUntil(superstructure.stateTrg_idle)
 		).withName("G28Counter");
 
 		return theWrapper(auton, shooter).withName("G28CounterFull");
