@@ -226,7 +226,7 @@ public class Constants {
 
         public static final String kDbTabName = "Shooter";
 
-        public static final Measure<Velocity<Angle>> kAmpTolerance = RotationsPerSecond.of(2);
+        public static final Measure<Velocity<Angle>> kAmpTolerance = RotationsPerSecond.of(1.25);
         public static final Measure<Velocity<Angle>> kBigShootTolerance = RotationsPerSecond.of(2);
 
         public static final int kRightId = 13;
