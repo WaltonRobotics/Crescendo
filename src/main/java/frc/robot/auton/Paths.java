@@ -13,4 +13,7 @@ public class Paths {
     public static final PathPlannerPath sourceSide3 = PathPlannerPath.fromChoreoTrajectory("source_side.3");
 
     public static final PathPlannerPath sourceSideAlt1 = PathPlannerPath.fromChoreoTrajectory("source_side_alt.1");
+
+    public static final PathPlannerPath g28Counter1 = PathPlannerPath.fromChoreoTrajectory("9500_counter.1");
+    public static final PathPlannerPath g28Counter2 = PathPlannerPath.fromChoreoTrajectory("9500_counter.2");
 }

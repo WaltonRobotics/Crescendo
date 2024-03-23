@@ -6,4 +6,5 @@ import com.choreo.lib.ChoreoTrajectory;
 public class Trajectories {
 	public static final ChoreoTrajectory ampSide = Choreo.getTrajectory("amp_side");
 	public static final ChoreoTrajectory sourceSide = Choreo.getTrajectory("source_side");
+	public static final ChoreoTrajectory g28Counter = Choreo.getTrajectory("9500_counter");
 }
