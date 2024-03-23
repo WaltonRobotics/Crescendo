@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.util.WaltRangeChecker;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.*;
 
@@ -103,26 +104,28 @@ public class Superstructure {
     public final Trigger stateTrg_noteReady = new Trigger(sensorEventLoop,
         () -> m_state == NOTE_READY);
 
-    /** To be set on any edge from the AsyncIrq callback  */
-    // TODO: move to SynchronousInterrupt and handle in fastPeriodic()
-    private boolean frontVisiSightSeenNote = false;
-    private final AsynchronousInterrupt ai_frontVisiSight = new AsynchronousInterrupt(frontVisiSight,
+        
+        /** To be set on any edge from the AsyncIrq callback  */
+        // TODO: move to SynchronousInterrupt and handle in fastPeriodic()
+        private boolean frontVisiSightSeenNote = false;
+        private final AsynchronousInterrupt ai_frontVisiSight = new AsynchronousInterrupt(frontVisiSight,
         (Boolean rising, Boolean falling) -> {
             if ((rising || falling) && !frontVisiSightSeenNote && stateTrg_intake.getAsBoolean()) {
                 frontVisiSightSeenNote = true;
                 log_frontVisiSightIrq.accept(true);
             }
         });
-
-    private boolean conveyorBeamBreakIrq = false;
-    private double conveyorBeamBreakIrqLastRising = 0;
+        
+        private boolean conveyorBeamBreakIrq = false;
+        private double conveyorBeamBreakIrqLastRising = 0;
     private double conveyorBeamBreakIrqLastFalling = 0;
     private final SynchronousInterrupt irq_conveyorBeamBreak = new SynchronousInterrupt(conveyorBeamBreak);
-
+    
     private boolean shooterBeamBreakIrq = false;
     private double shooterBeamBreakIrqLastRising = 0;
     private double shooterBeamBreakIrqLastFalling = 0;
     private final SynchronousInterrupt irq_shooterBeamBreak = new SynchronousInterrupt(shooterBeamBreak);
+    private int shooterBeamBreakVal = 0;
 
     private final Trigger irqTrg_conveyorBeamBreak;
     private final Trigger irqTrg_shooterBeamBreak;
@@ -170,6 +173,17 @@ public class Superstructure {
         m_state = IDLE;
 
         configureStateTriggers();
+
+        // can't cast boolean to int :sob:
+        irqTrg_shooterBeamBreak
+            .onTrue(
+                Commands.runOnce(() -> shooterBeamBreakVal = 1)
+            )
+            .onFalse(
+                Commands.runOnce(() -> shooterBeamBreakVal = 0)
+            );
+        
+        WaltRangeChecker.addIntegerChecker("ShooterBeamBreak", () -> shooterBeamBreakVal, -1, 1, 5, true);
     }
 
    private Command cmdDriverRumble(double intensity, double seconds) {
