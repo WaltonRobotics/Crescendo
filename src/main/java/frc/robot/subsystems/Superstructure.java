@@ -13,6 +13,7 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.wpilibj.AsynchronousInterrupt;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.SynchronousInterrupt;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.event.EventLoop;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -135,6 +136,8 @@ public class Superstructure {
     private final BooleanLogger log_driverIntakeReq = WaltLogger.logBoolean(kDbTabName, "intakeButton");
     private final BooleanLogger log_driverShootReq = WaltLogger.logBoolean(kDbTabName, "shootButton");
     private final BooleanLogger log_aimReady = WaltLogger.logBoolean(kDbTabName, "aimReady");
+
+    private Timer timer = new Timer();
         
     public Superstructure(
         Aim aim, Intake intake, Conveyor conveyor, Shooter shooter,
@@ -184,6 +187,8 @@ public class Superstructure {
             );
         
         WaltRangeChecker.addIntegerChecker("ShooterBeamBreak", () -> shooterBeamBreakVal, -1, 1, 5, true);
+
+        shootTimer();
     }
 
    private Command cmdDriverRumble(double intensity, double seconds) {
@@ -215,6 +220,20 @@ public class Superstructure {
             m_state = state;
             System.out.println("changing state from " + oldState + " to " + m_state);
         }).withName("SuperStateChange_To" + state);
+    }
+
+    private void shootTimer() {
+        trg_driverShootReq
+            .onTrue(Commands.runOnce(() -> timer.restart()))
+            .onFalse(Commands.runOnce(() -> timer.stop()));
+
+        stateTrg_shooting.onTrue(
+            Commands.sequence(
+            Commands.runOnce(() -> {
+                timer.stop();
+            }),
+            Commands.print("[SUPERSTRUCTURE] Time from shoot req to shoot: " + timer.get())
+        ));
     }
 
     private void configureStateTriggers() {
