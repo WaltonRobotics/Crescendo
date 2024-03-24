@@ -225,15 +225,14 @@ public class Superstructure {
     private void shootTimer() {
         trg_driverShootReq
             .onTrue(Commands.runOnce(() -> timer.restart()))
-            .onFalse(Commands.runOnce(() -> timer.stop()));
+            .onFalse(Commands.runOnce(() -> timer.reset()));
 
         stateTrg_shooting.onTrue(
-            Commands.sequence(
-            Commands.runOnce(() -> {
-                timer.stop();
-            }),
-            Commands.print("[SUPERSTRUCTURE] Time from shoot req to shoot: " + timer.get())
-        ));
+            Commands.parallel(
+                Commands.runOnce(() -> timer.stop()),
+                Commands.print("[SUPERSTRUCTURE] Time from shoot req to shoot: " + timer.get())
+            )
+        );
     }
 
     private void configureStateTriggers() {
