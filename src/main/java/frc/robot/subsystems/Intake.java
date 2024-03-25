@@ -7,6 +7,7 @@ import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.util.WaltRangeChecker;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 
@@ -30,6 +31,30 @@ public class Intake extends SubsystemBase {
 
     public Intake() {
         m_motor.getConfigurator().apply(IntakeConfigs.kConfigs);
+        runMainRollers(0);
+
+        m_motor.getStatorCurrent().setUpdateFrequency(50);
+        m_motor.getSupplyCurrent().setUpdateFrequency(50);
+        m_motor.getMotorVoltage().setUpdateFrequency(50);
+        m_motor.getDeviceTemp().setUpdateFrequency(10);
+        m_motor.getSupplyVoltage().setUpdateFrequency(50);
+
+        WaltRangeChecker.addDoubleChecker(
+            "IntakeStatorCurrent",
+            () -> m_motor.getStatorCurrent().getValueAsDouble(), 0, 35, 1, false
+        );
+
+        WaltRangeChecker.addDoubleChecker(
+            "IntakeSupplyCurrent",
+            () -> m_motor.getSupplyCurrent().getValueAsDouble(), 0, 30, 1, false
+        );
+
+        WaltRangeChecker.addDoubleChecker(
+            "IntakeTemperature",
+            () -> m_motor.getDeviceTemp().getValueAsDouble(), 0, 40, 1, true
+        );
+
+        m_motor.optimizeBusUtilization();
     }
 
     private void runMainRollers(double volts) {

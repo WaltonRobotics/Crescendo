@@ -21,7 +21,8 @@ public class AutonChooser {
         SOURCE_TWO("2 - source side", Trajectories.sourceSide),
         SOURCE_THREE("3 - source side", Trajectories.sourceSide),
         SOURCE_THREE_POINT_FIVE("3.5 - source side", Trajectories.sourceSide),
-        SOURCE_FOUR("4 - source side", Trajectories.sourceSide);
+        SOURCE_FOUR("4 - source side", Trajectories.sourceSide),
+        G28_COUNTER("3 - g28 counter", Trajectories.g28Counter);
 
         public final String m_description;
         public final ChoreoTrajectory m_traj;

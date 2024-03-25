@@ -97,7 +97,7 @@ public class Aim extends SubsystemBase {
 
     private final GenericEntry nte_isCoast;
 
-    private final Measure<Angle> kAngleAllowedError = Degrees.of(0.5);
+    private final Measure<Angle> kAngleAllowedError = Degrees.of(0.6);
     private final Measure<Angle> kAmpAngleAllowedError = Degrees.of(0.75);
 
     private final Timer m_targetTimer = new Timer();
@@ -156,14 +156,12 @@ public class Aim extends SubsystemBase {
             return false;
         }
         var error = Rotations.of(Math.abs(m_targetAngle.in(Rotations) - m_motor.getPosition().getValueAsDouble()));
+        log_error.accept(error.in(Degrees));
 
         if (m_targetAngle.baseUnitMagnitude() == kAmpAngle.baseUnitMagnitude()) {
             return error.lte(kAmpAngleAllowedError);
         }
 
-        if (m_targetAngle.in(Degrees) < 2) {
-            return error.lte(Degrees.of(0.25));
-        }
         return error.lte(kAngleAllowedError);
     }
 
@@ -284,7 +282,7 @@ public class Aim extends SubsystemBase {
         log_targetAngle.accept(getTargetAngle());
         log_cancoderPos.accept(Units.rotationsToDegrees(m_cancoder.getPosition().getValueAsDouble()));
 
-        log_error.accept(Units.rotationsToDegrees(m_motor.getClosedLoopError().getValueAsDouble()));
+        // log_error.accept(Units.rotationsToDegrees(m_motor.getClosedLoopError().getValueAsDouble()));
         log_reference.accept(Units.rotationsToDegrees(m_motor.getClosedLoopReference().getValueAsDouble()));
         log_output.accept(m_motor.getClosedLoopOutput().getValueAsDouble());
         log_ff.accept(m_motor.getClosedLoopFeedForward().getValueAsDouble());

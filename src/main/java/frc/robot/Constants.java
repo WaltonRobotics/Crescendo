@@ -226,7 +226,7 @@ public class Constants {
 
         public static final String kDbTabName = "Shooter";
 
-        public static final Measure<Velocity<Angle>> kAmpTolerance = RotationsPerSecond.of(2);
+        public static final Measure<Velocity<Angle>> kAmpTolerance = RotationsPerSecond.of(1.25);
         public static final Measure<Velocity<Angle>> kBigShootTolerance = RotationsPerSecond.of(2);
 
         public static final int kRightId = 13;
@@ -251,7 +251,7 @@ public class Constants {
 
     public static class AimK {
         public static final class AimConfigs {
-            private static final double kP = 200;
+            private static final double kP = 225;
             private static final double kI = 0;
             private static final double kS = 0.9;
             private static final double kV = 37.44;
@@ -300,7 +300,7 @@ public class Constants {
                     .withReverseSoftLimitEnable(true);
 
                 cancoderConfig.MagnetSensor = cancoderConfig.MagnetSensor
-                    .withMagnetOffset(-0.248291015625)
+                    .withMagnetOffset(-0.157470703125)
                     .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
                     .withAbsoluteSensorRange(AbsoluteSensorRangeValue.Signed_PlusMinusHalf);
             }

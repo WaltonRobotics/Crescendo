@@ -21,6 +21,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -118,6 +119,8 @@ public class Robot extends TimedRobot {
 			Trajectories.sourceSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.SOURCE_FOUR, AutonFactory.sourceFour(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.G28_COUNTER, AutonFactory.g28Counter(superstructure, shooter, swerve, aim),
+			Trajectories.g28Counter.getInitialPose());
 	}
 
 	private void driverRumble(double intensity) {
@@ -188,13 +191,22 @@ public class Robot extends TimedRobot {
 		manipulator.x().whileTrue(aim.hardStop());
 
 		// aim rezero
-		manipulator.b().and(manipulator.povDown()).onTrue(aim.rezero());
+		manipulator.b().and(manipulator.povDown()).and(manipulator.x()).onTrue(aim.rezero());
 
 		// aim amp
 		manipulator.leftBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kAmpAngle, Degrees.of(0.25)));
 		
 		// aim subwoofer
-		manipulator.rightBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kSubwooferAngle, Degrees.of(2)));
+		manipulator.rightBumper().and(manipulator.y()).onTrue(
+			Commands.either(
+				aim.toAngleUntilAt(() -> AimK.kSubwooferAngle.minus(Degrees.of(0.5)), Degrees.of(2)), 
+				aim.toAngleUntilAt(() -> AimK.kSubwooferAngle, Degrees.of(2)),
+				() -> {
+					var alliance = DriverStation.getAlliance();
+					return alliance.isPresent() && alliance.get() == Alliance.Blue;
+				}
+			)
+		);
 	}
 
 	public void configureTestingBindings() {
@@ -230,6 +242,7 @@ public class Robot extends TimedRobot {
 		speakerPose = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpening);
 		mapAutonCommands();
 		configureBindings();
+		DriverStation.startDataLog(DataLogManager.getLog());
 		if (!DriverStation.isFMSAttached()) {
 			configureTestingBindings();
 		}

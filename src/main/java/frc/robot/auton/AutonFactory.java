@@ -1,7 +1,9 @@
 package frc.robot.auton;
 
 import edu.wpi.first.networktables.PubSubOption;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
@@ -147,7 +149,8 @@ public final class AutonFactory {
 		var three = ampThreeInternal(superstructure, shooter, swerve, aim);
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide3);
 		var intake = superstructure.autonIntakeReq();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
+		var redAim = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
+		var blueAim = aim.toAngleUntilAt(Degrees.of(0.5)).asProxy();
 		var fourthShotReq = superstructure.autonShootReq();
 
 		return sequence( // 3pc then (path and (wait then intake))
@@ -161,7 +164,14 @@ public final class AutonFactory {
 				pathFollow
 			),
 			parallel(
-				aimCmd,
+				either(
+					blueAim,
+					redAim,
+					() -> {
+						var alliance = DriverStation.getAlliance();
+						return alliance.isPresent() && alliance.get() == Alliance.Blue;
+					}
+				),
 				fourthShotReq
 			),
 			waitUntil(superstructure.stateTrg_idle)
@@ -177,13 +187,15 @@ public final class AutonFactory {
 		var four = ampFourInternal(superstructure, shooter, swerve, aim);
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide4);
 		var intake = superstructure.autonIntakeReq();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(2)).asProxy();
+		var redAim = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
+		var blueAim = aim.toAngleUntilAt(Degrees.of(0.5)).asProxy();
 		var fifthShotReq = superstructure.autonShootReq();
 
 		var auton = sequence( // 3pc then (path and (wait then intake))
 			four,
 			waitUntil(superstructure.stateTrg_idle),
 			parallel( // path and (wait then intake) 
+
 				sequence( // wait then intake
 					waitSeconds(0.8),
 					intake
@@ -191,7 +203,14 @@ public final class AutonFactory {
 				pathFollow
 			),
 			parallel(
-				aimCmd,
+				either(
+					blueAim,
+					redAim,
+					() -> {
+						var alliance = DriverStation.getAlliance();
+						return alliance.isPresent() && alliance.get() == Alliance.Blue;
+					}
+				),
 				fifthShotReq
 			),
 			waitUntil(superstructure.stateTrg_idle)
@@ -307,5 +326,56 @@ public final class AutonFactory {
 		).withName("SourceFourSequence");
 
 		return theWrapper(auton, shooter).withName("SourceFourFullAuton"); // what a silly and goofy long name
+	}
+
+	public static Command g28Counter(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
+		var resetPose = swerve.resetPose(Paths.g28Counter1);
+		var pathFollow = AutoBuilder.followPath(Paths.g28Counter1).withName("PathFollow");
+		var preloadShot = preloadShot(superstructure, aim);
+		var intake = superstructure.autonIntakeReq();
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(1)).asProxy(); // superstructure requires Aim so this brokey stuff
+		var secondShotReq = superstructure.autonShootReq();
+		var pathFollow2 = AutoBuilder.followPath(Paths.g28Counter2).withName("PathFollow2");
+		var intake2 = superstructure.autonIntakeReq();
+		var aimCmd2 = aim.toAngleUntilAt(Degrees.of(1)).asProxy(); // superstructure requires Aim so this brokey stuff
+		var thirdShotReq = superstructure.autonShootReq();
+
+		var auton = sequence(
+			logSeqIncr(),
+			parallel(
+				resetPose,
+				preloadShot
+			),
+			print("resetPose and preloadShot done"),
+			logSeqIncr(),
+			waitUntil(superstructure.stateTrg_idle),
+			logSeqIncr(),
+			parallel(
+				print("should be intaking"),
+				sequence(
+					waitSeconds(1.5),
+					intake
+				),
+				pathFollow.andThen(print("path follow finished")),
+				aimCmd.until(superstructure.trg_atAngle)
+			),
+			print("aim finished, path follow finished, should be shooting"),
+			logSeqIncr(),
+			secondShotReq,
+			logSeqIncr(),
+			waitUntil(superstructure.stateTrg_idle),
+			parallel(
+				sequence(
+					waitSeconds(1.5),
+					intake2
+				),
+				pathFollow2.andThen(print("path follow finished")),
+				aimCmd2.until(superstructure.trg_atAngle)
+			),
+			thirdShotReq,
+			waitUntil(superstructure.stateTrg_idle)
+		).withName("G28Counter");
+
+		return theWrapper(auton, shooter).withName("G28CounterFull");
 	}
 }
