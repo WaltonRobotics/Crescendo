@@ -53,6 +53,8 @@ import static frc.robot.Constants.AimK.kAmpAngle;
 import static frc.robot.Constants.AimK.kPodiumAngle;
 import static frc.robot.Constants.RobotK.*;
 
+import java.util.function.Supplier;
+
 public class Robot extends TimedRobot {
 	/** 5.21 meters per second desired top speed */
 	public static final double kMaxSpeed = 5;
@@ -63,12 +65,12 @@ public class Robot extends TimedRobot {
 	private final CommandXboxController driver = new CommandXboxController(0); // My joystick
 	private final CommandXboxController manipulator = new CommandXboxController(1);
 
-	public final Swerve swerve = TunerConstants.drivetrain;
-	public final Vision vision = new Vision();
-	public final Shooter shooter = new Shooter();
-	public final Aim aim = new Aim();
-	public final Intake intake = new Intake();
-	public final Conveyor conveyor = new Conveyor();
+	private final Swerve swerve = TunerConstants.drivetrain;
+	private final Vision vision = new Vision();
+	private final Shooter shooter = new Shooter();
+	private final Aim aim = new Aim();
+	private final Intake intake = new Intake();
+	private final Conveyor conveyor = new Conveyor();
 
 	public final Superstructure superstructure = new Superstructure(
 		aim, intake, conveyor, shooter, vision,
@@ -80,7 +82,7 @@ public class Robot extends TimedRobot {
 	public static final Field2d field2d = new Field2d();
 
 	private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-		.withDeadband(kMaxSpeed * 0.1).withRotationalDeadband(kMaxAngularRate * 0.1) // Add a 5% deadband
+		.withDeadband(kMaxSpeed * 0.1) // Add a 5% deadband
 		.withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 	private final SwerveRequest.RobotCentric robotCentric = new SwerveRequest.RobotCentric()
 		.withDriveRequestType(DriveRequestType.OpenLoopVoltage);
@@ -135,6 +137,18 @@ public class Robot extends TimedRobot {
 		}
 	}
 
+	private Supplier<SwerveRequest.FieldCentric> getTeleSwerveReq() {
+		return () -> {
+			double leftY = -driver.getLeftY();
+			double leftX = -driver.getLeftX();
+			return drive
+				.withVelocityX(leftY * kMaxSpeed)
+				.withVelocityY(leftX * kMaxSpeed)
+				.withRotationalRate(-driver.getRightX() * kMaxAngularRate)
+				.withRotationalDeadband(kMaxAngularRate * 0.1);
+		};
+	}
+
 	private void configureBindings() {
 		/* drivetrain */
 		if (Utils.isSimulation()) {
@@ -143,14 +157,9 @@ public class Robot extends TimedRobot {
 		swerve.registerTelemetry(logger::telemeterize);
 
 		/* driver controls */
-		swerve.setDefaultCommand(swerve.applyRequest(() -> {
-			double leftY = -driver.getLeftY();
-			double leftX = -driver.getLeftX();
-			return drive
-				.withVelocityX(leftY * kMaxSpeed)
-				.withVelocityY(leftX * kMaxSpeed)
-				.withRotationalRate(-driver.getRightX() * kMaxAngularRate);
-		}));
+		swerve.setDefaultCommand(swerve.applyFcRequest(getTeleSwerveReq()));
+
+		driver.rightBumper().whileTrue(swerve.faceSpeakerTag(getTeleSwerveReq(), vision));
 
 		// swerve brake
 		driver.a().whileTrue(swerve.applyRequest(() -> brake));

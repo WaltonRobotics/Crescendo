@@ -40,6 +40,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Vision;
 import frc.robot.Vision.VisionMeasurement3d;
 import frc.robot.auton.AutonChooser;
 import frc.util.AdvantageScopeUtil;
@@ -200,7 +201,27 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			initialize, executeEnd);
 	}
 
+	public Command faceSpeakerTag(Supplier<SwerveRequest.FieldCentric> rqSup, Vision vision) {
+		return applyRequest(() -> {
+			var speakerTarget = vision.speakerTargetSupplier().get();
+			if (speakerTarget.isEmpty()) {
+				return rqSup.get();
+			}
+
+			var yawEffort = -speakerTarget.get().getYaw() * 0.3;
+
+			return rqSup.get()
+				.withRotationalDeadband(0)
+				.withRotationalRate(yawEffort);
+			}
+		);
+	}
+
 	public Command applyRequest(Supplier<SwerveRequest> requestSupplier) {
+		return run(() -> setControl(requestSupplier.get()));
+	}
+
+	public Command applyFcRequest(Supplier<SwerveRequest.FieldCentric> requestSupplier) {
 		return run(() -> setControl(requestSupplier.get()));
 	}
 
