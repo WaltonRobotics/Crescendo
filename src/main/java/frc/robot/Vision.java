@@ -1,63 +1,75 @@
 package frc.robot;
 
 import org.photonvision.PhotonCamera;
-import org.photonvision.PhotonPoseEstimator;
-import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.util.AllianceFlipUtil;
+import frc.util.logging.WaltLogger;
+import frc.util.logging.WaltLogger.DoubleLogger;
 
-import static frc.robot.Constants.FieldK.kFieldLayout;
-import static frc.robot.Constants.VisionK.*;
-
-import java.util.function.Consumer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 public class Vision {
-    public static final record VisionMeasurement (Pose2d measure, double latency, Matrix<N3, N1> stdDevs) {}
+    public static final record VisionMeasurement2d (Integer id, Double yaw, Double pitch, Double area) {}
+    public static final record VisionMeasurement3d (Pose2d measure, double latency, Matrix<N3, N1> stdDevs) {}
+    
     private final Matrix<N3, N1> kDefaultStdDevs = VecBuilder.fill(0.9, 0.9, 0.9);
 
-    private final Consumer<VisionMeasurement> m_visionMeasurementConsumer;
+    private final PhotonCamera m_shooterCam = new PhotonCamera("shooter");
 
-    private final PhotonCamera m_frontTagCam = new PhotonCamera("frontTag");
-    private final PhotonPoseEstimator m_frontTagEst = new PhotonPoseEstimator(
-        kFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, 
-        m_frontTagCam, kFrontTagCamLocation);
+    private final DoubleLogger log_shooterYaw = WaltLogger.logDouble("Vision", "shooterYaw");
 
-    private final PhotonCamera m_rearTagCam = new PhotonCamera("rearTag");
-    private final PhotonPoseEstimator m_rearTagEst = new PhotonPoseEstimator(
-        kFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-        m_rearTagCam, kRearTagCamLocation);
-            
-    private final PhotonCamera m_frontObjCam = new PhotonCamera("frontObjCam");
+    public Vision() {}
 
-    public Vision(Consumer<VisionMeasurement> visionMeasurementConsumer) {
-        m_visionMeasurementConsumer = visionMeasurementConsumer;
-
+    private int getMiddleSpeakerId() {
+        boolean red = AllianceFlipUtil.shouldFlip();
+        return red ? 4 : 7;
     }
 
+    public Supplier<Optional<List<VisionMeasurement2d>>> shooterDataSupplier() {
+        return () -> {
+            var result = m_shooterCam.getLatestResult();
+            if (result.hasTargets()) {
+                var targets = result.getTargets();
+                var measurements = new ArrayList<VisionMeasurement2d>();
+                
+                for (PhotonTrackedTarget t : targets) {
+                    measurements.add(new VisionMeasurement2d(t.getFiducialId(), t.getYaw(), t.getPitch(), t.getArea()));
+                }
+
+                return Optional.of(measurements);
+            }
+            return Optional.empty();
+        };
+    }
+
+    public Supplier<Optional<Rotation2d>> shooterYawSupplier() {
+        return () -> {
+            var result = m_shooterCam.getLatestResult();
+            if (result.hasTargets()) {
+                var tag = result.targets.get(getMiddleSpeakerId());
+                if (tag != null) {
+                    var yaw = tag.getYaw();
+                    log_shooterYaw.accept(yaw);
+                    return Optional.of(Rotation2d.fromDegrees(yaw));
+                }
+            }
+            return Optional.empty();
+        };
+    }
+
+
+
     public void run() {
-        var frontTagUpdate = m_frontTagEst.update();
-        if (frontTagUpdate.isPresent()) {
-            var est = frontTagUpdate.get();
-            m_visionMeasurementConsumer.accept(
-                new VisionMeasurement(est.estimatedPose.toPose2d(), est.timestampSeconds, kDefaultStdDevs));
-        }
-
-        var rearTagUpdate = m_rearTagEst.update();
-        if (rearTagUpdate.isPresent()) {
-            var est = rearTagUpdate.get();
-            m_visionMeasurementConsumer.accept(
-                new VisionMeasurement(est.estimatedPose.toPose2d(), est.timestampSeconds, kDefaultStdDevs));
-        }
-
-        var objCamResult = m_frontObjCam.getLatestResult();
-        if (objCamResult.hasTargets()) {
-            var noteYaw = objCamResult.getBestTarget().getYaw();
-            SmartDashboard.putNumber("bestNoteYaw", noteYaw); // TODO: do something more clever with this
-        }
+        // TODO do things in here
     }
 }

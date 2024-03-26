@@ -64,14 +64,14 @@ public class Robot extends TimedRobot {
 	private final CommandXboxController manipulator = new CommandXboxController(1);
 
 	public final Swerve swerve = TunerConstants.drivetrain;
-	public final Vision vision = new Vision(swerve::addVisionMeasurement);
+	public final Vision vision = new Vision();
 	public final Shooter shooter = new Shooter();
 	public final Aim aim = new Aim();
 	public final Intake intake = new Intake();
 	public final Conveyor conveyor = new Conveyor();
 
 	public final Superstructure superstructure = new Superstructure(
-		aim, intake, conveyor, shooter,
+		aim, intake, conveyor, shooter, vision,
 		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()),
 		(intensity) -> driverRumble(intensity), (intensity) -> manipulatorRumble(intensity));
 

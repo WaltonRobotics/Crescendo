@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.Vision;
 import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
@@ -29,10 +30,11 @@ import frc.util.logging.WaltLogger.*;
 import static frc.robot.subsystems.Superstructure.NoteState.*;
 
 public class Superstructure {
-    public final Aim m_aim;
-    public final Intake m_intake;
-    public final Conveyor m_conveyor;
-    public final Shooter m_shooter;
+    private final Aim m_aim;
+    private final Intake m_intake;
+    private final Conveyor m_conveyor;
+    private final Shooter m_shooter;
+    private final Vision m_vision;
 
     private final DoubleConsumer m_driverRumbler, m_manipRumbler;
 
@@ -117,8 +119,8 @@ public class Superstructure {
             }
         });
         
-        private boolean conveyorBeamBreakIrq = false;
-        private double conveyorBeamBreakIrqLastRising = 0;
+    private boolean conveyorBeamBreakIrq = false;
+    private double conveyorBeamBreakIrqLastRising = 0;
     private double conveyorBeamBreakIrqLastFalling = 0;
     private final SynchronousInterrupt irq_conveyorBeamBreak = new SynchronousInterrupt(conveyorBeamBreak);
     
@@ -140,13 +142,14 @@ public class Superstructure {
     private Timer timer = new Timer();
         
     public Superstructure(
-        Aim aim, Intake intake, Conveyor conveyor, Shooter shooter,
+        Aim aim, Intake intake, Conveyor conveyor, Shooter shooter, Vision vision,
         Trigger intaking, Trigger shooting, Trigger ampShot,
         DoubleConsumer driverRumbler, DoubleConsumer manipRumbler) {
         m_aim = aim;
         m_intake = intake;
         m_conveyor = conveyor;
         m_shooter = shooter;
+        m_vision = vision;
 
         m_driverRumbler = driverRumbler;
         m_manipRumbler = manipRumbler;

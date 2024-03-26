@@ -40,7 +40,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.Vision.VisionMeasurement;
+import frc.robot.Vision.VisionMeasurement3d;
 import frc.robot.auton.AutonChooser;
 import frc.util.AdvantageScopeUtil;
 import frc.util.AllianceFlipUtil;
@@ -121,7 +121,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final DoubleArrayLogger log_wheelVeloTargets = WaltLogger.logDoubleArray("Swerve", "wheelVeloTargets");
 	private double[] m_wheelVeloTargets = new double[4];
 
-	public void addVisionMeasurement(VisionMeasurement measurement) {
+	public void addVisionMeasurement(VisionMeasurement3d measurement) {
 		m_odometry.addVisionMeasurement(
 			measurement.measure(), measurement.latency(), measurement.stdDevs());
 	}
@@ -282,8 +282,6 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			setControl(m_autoRequest.withSpeeds(speeds));
 		}).until(() -> {
 			boolean check = MathUtil.isNear(m_desiredRot.getDegrees(), getState().Pose.getRotation().getDegrees(), 1);
-			if (check) {
-			}
 			return check;
 		});
 	}
