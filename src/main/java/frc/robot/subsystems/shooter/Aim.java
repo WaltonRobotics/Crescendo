@@ -4,11 +4,13 @@ import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.DynamicMotionMagicVoltage;
+import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.GenericEntry;
@@ -35,6 +37,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Vision;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 
@@ -56,6 +59,7 @@ public class Aim extends SubsystemBase {
 
     private final DynamicMotionMagicVoltage m_dynamicRequest = new DynamicMotionMagicVoltage(0, 20, 40, 200);
     private final CoastOut m_coastRequest = new CoastOut();
+    private final StaticBrake m_brakeRequest = new StaticBrake();
 
     private final DCMotor m_aimGearbox = DCMotor.getFalcon500(1);
     private final SingleJointedArmSim m_aimSim = new SingleJointedArmSim(
@@ -94,6 +98,9 @@ public class Aim extends SubsystemBase {
     private final DoubleLogger log_simVelo = WaltLogger.logDouble(kDbTabName + "/Sim", "motorVelo");
     private final DoubleLogger log_simAngle = WaltLogger.logDouble(kDbTabName + "/Sim", "curAngle");
     private final DoubleLogger log_simTarget = WaltLogger.logDouble(kDbTabName + "/Sim", "targetAngle");
+
+    private final DoubleLogger log_pitchErr = WaltLogger.logDouble(kDbTabName, "pitchErr");
+    private final DoubleLogger log_desiredAngle = WaltLogger.logDouble(kDbTabName, "desiredAngle");
 
     private final GenericEntry nte_isCoast;
 
@@ -203,6 +210,22 @@ public class Aim extends SubsystemBase {
 
     public Command toAngleUntilAt(Measure<Angle> angle) {
         return toAngleUntilAt(() -> angle, Degrees.of(0.25)).withName("ToAngleUntilAt"); // TODO unmagify i'm lazy rn
+    }
+
+    public Command aim(Vision vision) {
+        return runEnd(() -> {
+            var target = vision.speakerTargetSupplier().get();
+            if (target.isPresent()) {
+                var pitch = target.get().getPitch();
+                var err = 14 + pitch;
+                log_pitchErr.accept(err);
+                var angle = m_motor.getPosition().getValueAsDouble() + Units.degreesToRotations(err);
+                log_desiredAngle.accept(Units.rotationsToDegrees(angle));
+                angle = MathUtil.clamp(angle, 1 / 360.0, 45 / 360.0);
+                m_targetAngle = Rotations.of(angle);
+                m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
+            }
+        }, () -> m_motor.setControl(m_brakeRequest));
     }
 
     public Command toAngleUntilAt(Supplier<Measure<Angle>> angle, Measure<Angle> tolerance) {
