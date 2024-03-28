@@ -11,6 +11,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.GenericEntry;
@@ -60,6 +61,10 @@ public class Aim extends SubsystemBase {
     private final DynamicMotionMagicVoltage m_dynamicRequest = new DynamicMotionMagicVoltage(0, 20, 40, 200);
     private final CoastOut m_coastRequest = new CoastOut();
     private final StaticBrake m_brakeRequest = new StaticBrake();
+
+    private final TimeInterpolatableBuffer<Double> m_buffer = TimeInterpolatableBuffer.createDoubleBuffer(0.2);
+    
+    private double m_desiredPitch = 14;
 
     private final DCMotor m_aimGearbox = DCMotor.getFalcon500(1);
     private final SingleJointedArmSim m_aimSim = new SingleJointedArmSim(
@@ -161,17 +166,17 @@ public class Aim extends SubsystemBase {
     public BooleanSupplier aimFinished() {
         return (
             () -> {
-        if ((m_targetAngle.in(Degrees) == 0 || m_targetAngle.in(Degrees) == 4) && !DriverStation.isAutonomous()) {
-            return false;
-        }
-        var error = Rotations.of(Math.abs(m_targetAngle.in(Rotations) - m_motor.getPosition().getValueAsDouble()));
-        log_error.accept(error.in(Degrees));
+                if ((m_targetAngle.in(Degrees) == 0 || m_targetAngle.in(Degrees) == 4) && !DriverStation.isAutonomous()) {
+                    return false;
+                }
+                var error = Rotations.of(Math.abs(m_targetAngle.in(Rotations) - m_motor.getPosition().getValueAsDouble()));
+                log_error.accept(error.in(Degrees));
 
-        if (m_targetAngle.baseUnitMagnitude() == kAmpAngle.baseUnitMagnitude()) {
-            return error.lte(kAmpAngleAllowedError);
-        }
+                if (m_targetAngle.baseUnitMagnitude() == kAmpAngle.baseUnitMagnitude()) {
+                    return error.lte(kAmpAngleAllowedError);
+                }
 
-        return error.lte(kAngleAllowedError);
+                return error.lte(kAngleAllowedError);
             }
         );
     }
@@ -217,20 +222,27 @@ public class Aim extends SubsystemBase {
     }
 
     public Command aim(Vision vision) {
-        return runEnd(() -> {
-            var target = vision.speakerTargetSupplier().get();
-            if (target.isPresent()) {
-                var pitch = target.get().getPitch();
-                var err = 14 + pitch;
+        return runOnce(() -> {
+            var curAngle = m_motor.getPosition().getValueAsDouble();
+            m_buffer.addSample(Timer.getFPGATimestamp(), curAngle);
+            var targetOpt = vision.speakerTargetSupplier().get();
+            if (targetOpt.isPresent()) {
+                var target = targetOpt.get();
+                var pitch = target.getPitch();
+                var err = 10 + pitch;
                 log_pitchErr.accept(err);
-                var angle = m_motor.getPosition().getValueAsDouble() + Units.degreesToRotations(err);
-                log_desiredAngle.accept(Units.rotationsToDegrees(angle));
-                angle = MathUtil.clamp(angle, 1 / 360.0, 45 / 360.0);
-                m_targetAngle = Rotations.of(angle);
-                m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
+                var bufferAngle = m_buffer.getSample(Timer.getFPGATimestamp() - 0.4);
+                if (bufferAngle.isPresent()) {
+                    var angle = bufferAngle.get() + Units.degreesToRotations(err);
+                    log_desiredAngle.accept(Units.rotationsToDegrees(angle));
+                    angle = MathUtil.clamp(angle, Units.degreesToRotations(1), Units.degreesToRotations(45));
+                    m_targetAngle = Rotations.of(angle);
+                    m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
+                }
             }
-        }, () -> m_motor.setControl(m_brakeRequest));
+        }).withName("AimWithVision");
     }
+
 
     public Command toAngleUntilAt(Supplier<Measure<Angle>> angle, Measure<Angle> tolerance) {
         Runnable goThere = () -> {
