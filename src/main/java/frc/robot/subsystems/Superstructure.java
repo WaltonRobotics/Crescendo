@@ -174,7 +174,7 @@ public class Superstructure {
 
 
         trg_spunUp = new Trigger(m_shooter::spinUpFinished).debounce(0.05);
-        trg_atAngle = new Trigger(m_aim::aimFinished);
+        trg_atAngle = new Trigger(m_aim.aimFinished());
 
         m_state = IDLE;
 

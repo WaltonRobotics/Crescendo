@@ -158,7 +158,9 @@ public class Aim extends SubsystemBase {
         return Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()) + 28;
     }
 
-    public boolean aimFinished() {
+    public BooleanSupplier aimFinished() {
+        return (
+            () -> {
         if ((m_targetAngle.in(Degrees) == 0 || m_targetAngle.in(Degrees) == 4) && !DriverStation.isAutonomous()) {
             return false;
         }
@@ -170,6 +172,8 @@ public class Aim extends SubsystemBase {
         }
 
         return error.lte(kAngleAllowedError);
+            }
+        );
     }
 
     public Command coastOut() {
