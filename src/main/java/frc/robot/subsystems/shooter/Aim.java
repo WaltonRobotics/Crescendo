@@ -230,7 +230,7 @@ public class Aim extends SubsystemBase {
                 var measurement = measurementOpt.get();
                 var target = measurement.target();
                 var pitch = target.getPitch();
-                var err = 10 + pitch; // TODO: De-magify this '10'
+                var err = m_desiredPitch + pitch;
                 log_pitchErr.accept(err);
                 var bufferAngle = m_buffer.getSample(Timer.getFPGATimestamp() - (measurement.latencyMilliseconds() / 1000.0));
                 if (bufferAngle.isPresent()) {

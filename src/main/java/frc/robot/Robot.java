@@ -159,8 +159,6 @@ public class Robot extends TimedRobot {
 		/* driver controls */
 		swerve.setDefaultCommand(swerve.applyFcRequest(getTeleSwerveReq()));
 
-		driver.rightBumper().whileTrue(swerve.faceSpeakerTag(getTeleSwerveReq(), vision));
-
 		// swerve brake
 		driver.a().whileTrue(swerve.applyRequest(() -> brake));
 
@@ -176,8 +174,8 @@ public class Robot extends TimedRobot {
 		// rezero
 		driver.leftBumper().onTrue(swerve.runOnce(() -> swerve.seedFieldRelative()));
 
-		// podium shot
-		driver.leftTrigger().whileTrue(aim.toAngleUntilAt(kPodiumAngle, Degrees.of(1)));
+		// face speaker tag
+		driver.leftTrigger().whileTrue(swerve.faceSpeakerTag(getTeleSwerveReq(), vision));
 
 		/* manipulator controls */
 		// eject note

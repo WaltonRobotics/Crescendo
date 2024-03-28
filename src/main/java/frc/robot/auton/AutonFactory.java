@@ -195,7 +195,6 @@ public final class AutonFactory {
 			four,
 			waitUntil(superstructure.stateTrg_idle),
 			parallel( // path and (wait then intake) 
-
 				sequence( // wait then intake
 					waitSeconds(0.8),
 					intake
