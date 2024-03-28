@@ -222,7 +222,7 @@ public class Aim extends SubsystemBase {
     }
 
     public Command aim(Vision vision) {
-        return runOnce(() -> {
+        return runEnd(() -> {
             var curAngle = m_motor.getPosition().getValueAsDouble();
             m_buffer.addSample(Timer.getFPGATimestamp(), curAngle);
             var measurementOpt = vision.speakerTargetSupplier().get();
@@ -241,7 +241,7 @@ public class Aim extends SubsystemBase {
                     m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
                 }
             }
-        }).withName("AimWithVision");
+        }, () -> m_motor.setControl(m_brakeRequest)).withName("AimWithVision");
     }
 
 
