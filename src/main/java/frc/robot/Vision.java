@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 public class Vision {
+    public static final record PhotonMeasurement (PhotonTrackedTarget target, double latencyMilliseconds) {}
     public static final record VisionMeasurement2d (Integer id, Double yaw, Double pitch, Double area) {}
     public static final record VisionMeasurement3d (Pose2d measure, double latency, Matrix<N3, N1> stdDevs) {}
     
@@ -51,14 +52,15 @@ public class Vision {
         };
     }
 
-    public Supplier<Optional<PhotonTrackedTarget>> speakerTargetSupplier() {
+    public Supplier<Optional<PhotonMeasurement>> speakerTargetSupplier() {
         return () -> {
             var result = m_shooterCam.getLatestResult();
             if (result.hasTargets()) {
                 for (var target : result.targets) {
                     if(target.getFiducialId() == getMiddleSpeakerId()) {
                         log_shooterYaw.accept(target.getYaw());
-                        return Optional.of(target);
+                        var msmt = new PhotonMeasurement(target, result.getLatencyMillis());
+                        return Optional.of(msmt);
                     }
                 }
             }

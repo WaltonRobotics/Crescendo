@@ -203,12 +203,12 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	public Command faceSpeakerTag(Supplier<SwerveRequest.FieldCentric> rqSup, Vision vision) {
 		return applyRequest(() -> {
-			var speakerTarget = vision.speakerTargetSupplier().get();
-			if (speakerTarget.isEmpty()) {
+			var speakerMeasurementOpt = vision.speakerTargetSupplier().get();
+			if (speakerMeasurementOpt.isEmpty()) {
 				return rqSup.get();
 			}
 
-			var yawEffort = -speakerTarget.get().getYaw() * 0.3;
+			var yawEffort = -speakerMeasurementOpt.get().target().getYaw() * 0.3;
 
 			return rqSup.get()
 				.withRotationalDeadband(0)

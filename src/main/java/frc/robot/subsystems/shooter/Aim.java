@@ -225,13 +225,14 @@ public class Aim extends SubsystemBase {
         return runOnce(() -> {
             var curAngle = m_motor.getPosition().getValueAsDouble();
             m_buffer.addSample(Timer.getFPGATimestamp(), curAngle);
-            var targetOpt = vision.speakerTargetSupplier().get();
-            if (targetOpt.isPresent()) {
-                var target = targetOpt.get();
+            var measurementOpt = vision.speakerTargetSupplier().get();
+            if (measurementOpt.isPresent()) {
+                var measurement = measurementOpt.get();
+                var target = measurement.target();
                 var pitch = target.getPitch();
-                var err = 10 + pitch;
+                var err = 10 + pitch; // TODO: De-magify this '10'
                 log_pitchErr.accept(err);
-                var bufferAngle = m_buffer.getSample(Timer.getFPGATimestamp() - 0.4);
+                var bufferAngle = m_buffer.getSample(Timer.getFPGATimestamp() - (measurement.latencyMilliseconds() / 1000.0));
                 if (bufferAngle.isPresent()) {
                     var angle = bufferAngle.get() + Units.degreesToRotations(err);
                     log_desiredAngle.accept(Units.rotationsToDegrees(angle));
