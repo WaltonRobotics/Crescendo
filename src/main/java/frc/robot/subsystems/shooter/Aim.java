@@ -11,6 +11,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
@@ -105,6 +106,8 @@ public class Aim extends SubsystemBase {
     private final DoubleLogger log_simTarget = WaltLogger.logDouble(kDbTabName + "/Sim", "targetAngle");
 
     private final DoubleLogger log_pitchErr = WaltLogger.logDouble(kDbTabName, "pitchErr");
+    private final DoubleLogger log_timeSample = WaltLogger.logDouble(kDbTabName, "timeSample");
+    private final DoubleLogger log_latency = WaltLogger.logDouble(kDbTabName, "latency");
     private final DoubleLogger log_desiredAngle = WaltLogger.logDouble(kDbTabName, "desiredAngle");
 
     private final GenericEntry nte_isCoast;
@@ -224,24 +227,38 @@ public class Aim extends SubsystemBase {
     public Command aim(Vision vision) {
         return runEnd(() -> {
             var curAngle = m_motor.getPosition().getValueAsDouble();
+            // adding a sample to the timeinterpolatablebuffer so that i can get the arm's position in the past
             m_buffer.addSample(Timer.getFPGATimestamp(), curAngle);
             var measurementOpt = vision.speakerTargetSupplier().get();
             if (measurementOpt.isPresent()) {
                 var measurement = measurementOpt.get();
                 var target = measurement.target();
                 var pitch = target.getPitch();
+                // i want the pitch to the speaker apriltag to be -14 degrees (m_desiredPitch = 14)
                 var err = m_desiredPitch + pitch;
                 log_pitchErr.accept(err);
-                var bufferAngle = m_buffer.getSample(Timer.getFPGATimestamp() - (measurement.latencyMilliseconds() / 1000.0));
+                var latency = measurement.latencyMilliseconds() / 1000.0;
+                log_latency.accept(latency);
+                // time to get the robot arm measurement from (accounting for camera latency)
+                var time = Timer.getFPGATimestamp() - latency;
+                log_timeSample.accept(time);
+                // using the a timeinterpolatablebuffer to estimate where arm was at the time i want to get the measurement from
+                var bufferAngle = m_buffer.getSample(time);
                 if (bufferAngle.isPresent()) {
+                    // angle i want the arm to be at
+                    // based on position a certain amt of time ago and the pitch error that long ago
                     var angle = bufferAngle.get() + Units.degreesToRotations(err);
                     log_desiredAngle.accept(Units.rotationsToDegrees(angle));
                     angle = MathUtil.clamp(angle, Units.degreesToRotations(1), Units.degreesToRotations(45));
                     m_targetAngle = Rotations.of(angle);
                     m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
                 }
+            } else {
+                m_motor.setControl(m_dynamicRequest.withPosition(Units.degreesToRotations(25)));
             }
-        }, () -> m_motor.setControl(m_brakeRequest)).withName("AimWithVision");
+        }, () -> {
+            m_motor.setControl(m_brakeRequest);
+        }).withName("AimWithVision");
     }
 
 
