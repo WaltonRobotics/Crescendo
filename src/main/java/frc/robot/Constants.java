@@ -253,10 +253,10 @@ public class Constants {
         public static final class AimConfigs {
             private static final double kP = 225;
             private static final double kI = 0;
-            private static final double kS = 0.9;
-            private static final double kV = 37.44;
-            private static final double kA = 2;
-            public static final double kG = 0.16;
+            private static final double kS = 0.9 * 1.25;
+            private static final double kV = 37.44 * 1.25;
+            private static final double kA = 2 * 1.25;
+            public static final double kG = 0.16 * 1.25;
 
             public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
             public static final CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
@@ -313,8 +313,9 @@ public class Constants {
         public static final int kAimId = 20;
         public static final int kHomeSwitch = 1;
 
-        // 125:1 MaxPlanetary, 24:60 belt drive, 312.5:1 total
-        public static final double kGearRatio = (125 * (60.0 / 24));
+        // 5 * 5 * 4 : 1 gearbox, 24:61 belt drive, 254.167 : 1 total
+        // omg! poofs number!
+        public static final double kGearRatio = ((5.0 * 5.0 * 4.0) * (61.0 / 24.0));
 
         public static final Measure<Distance> kLength = Inches.of(19.75);
         // asin((22 - kHeightTilShooter) / kLength)
