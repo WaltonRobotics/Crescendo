@@ -253,7 +253,7 @@ public class Constants {
     }
 
     public static class AimK {
-        public static Transform3d kTagToSpeaker = new Transform3d(Units.inchesToMeters(10), 0.0, Units.inchesToMeters(26), new Rotation3d());
+        public static Transform3d kTagToSpeaker = new Transform3d(Units.inchesToMeters(10), 0.0, Units.inchesToMeters(24), new Rotation3d());
 
         public static final class AimConfigs {
             private static final double kP = 225;
@@ -322,7 +322,7 @@ public class Constants {
         // omg! poofs number!
         public static final double kGearRatio = ((5.0 * 5.0 * 4.0) * (61.0 / 24.0));
 
-        public static final Measure<Distance> kLength = Inches.of(19.75);
+        public static final Measure<Distance> kLength = Inches.of(18);
         // asin((22 - kHeightTilShooter) / kLength)
         public static final Measure<Angle> kStageClearance = Degrees.of(47.097);
         public static final Measure<Angle> kMinAngle = Rotations.of(0);

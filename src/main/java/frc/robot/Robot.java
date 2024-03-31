@@ -196,7 +196,7 @@ public class Robot extends TimedRobot {
 		// aim safe angle
 		manipulator.x().whileTrue(aim.hardStop());
 		
-		manipulator.y().and((manipulator.rightBumper().or(manipulator.leftBumper())).negate()).whileTrue(aim.aim());
+		manipulator.y().whileTrue(aim.aim());
 
 		// aim rezero
 		manipulator.b().and(manipulator.povDown()).and(manipulator.x()).onTrue(aim.rezero());
@@ -205,16 +205,16 @@ public class Robot extends TimedRobot {
 		manipulator.leftBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kAmpAngle, Degrees.of(0.25)));
 		
 		// aim subwoofer
-		manipulator.rightBumper().and(manipulator.y()).onTrue(
-			Commands.either(
-				aim.toAngleUntilAt(() -> AimK.kSubwooferAngle.minus(Degrees.of(0.5)), Degrees.of(2)), 
-				aim.toAngleUntilAt(() -> AimK.kSubwooferAngle, Degrees.of(2)),
-				() -> {
-					var alliance = DriverStation.getAlliance();
-					return alliance.isPresent() && alliance.get() == Alliance.Blue;
-				}
-			)
-		);
+		// manipulator.rightBumper().and(manipulator.y()).onTrue(
+		// 	Commands.either(
+		// 		aim.toAngleUntilAt(() -> AimK.kSubwooferAngle.minus(Degrees.of(0.5)), Degrees.of(2)), 
+		// 		aim.toAngleUntilAt(() -> AimK.kSubwooferAngle, Degrees.of(2)),
+		// 		() -> {
+		// 			var alliance = DriverStation.getAlliance();
+		// 			return alliance.isPresent() && alliance.get() == Alliance.Blue;
+		// 		}
+		// 	)
+		// );
 	}
 
 	public void configureTestingBindings() {

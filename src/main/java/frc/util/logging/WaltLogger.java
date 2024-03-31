@@ -6,6 +6,7 @@ import java.util.function.Consumer;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.geometry.struct.*;
 import edu.wpi.first.networktables.*;
@@ -123,6 +124,30 @@ public class WaltLogger {
 
     public static Translation3dLogger logTranslation3d(String table, String name, PubSubOption... options) {
         return new Translation3dLogger(table, name, options);
+    }
+
+    public static final class Translation2dLogger implements Consumer<Translation2d> {
+        public final StructPublisher<Translation2d> ntPub;
+        public final StructLogEntry<Translation2d> logEntry;
+
+        public Translation2dLogger(String subTable, String name, PubSubOption... options) {
+            StructTopic<Translation2d> topic = logTable.getSubTable(subTable).getStructTopic(name, new Translation2dStruct());
+            ntPub = topic.publish(options);
+            logEntry = StructLogEntry.create(DataLogManager.getLog(), "Robot/" + subTable + "/" + name, new Translation2dStruct());
+        }
+
+        @Override
+        public void accept(Translation2d value) {
+            if (shouldPublishNt()) {
+                ntPub.set(value);
+            } else {
+                logEntry.append(value);
+            }
+        }
+    }
+
+    public static Translation2dLogger logTranslation2d(String table, String name, PubSubOption... options) {
+        return new Translation2dLogger(table, name, options);
     }
 
     public static final class IntLogger implements Consumer<Integer> {
