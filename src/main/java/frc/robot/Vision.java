@@ -6,8 +6,11 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.util.Units;
 import frc.util.AllianceFlipUtil;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
@@ -28,6 +31,10 @@ public class Vision {
     // private final Matrix<N3, N1> kDefaultStdDevs = VecBuilder.fill(0.9, 0.9, 0.9);
 
     private final PhotonCamera m_shooterCam = new PhotonCamera("ShooterCam");
+    private final PhotonCamera m_swerveGuardCam = new PhotonCamera("InsertNameHere"); // FIXME
+    private final Transform3d m_robotToCam = new Transform3d(
+        Units.inchesToMeters(-9.095), Units.inchesToMeters(11.212), Units.inchesToMeters(10.739), 
+        new Rotation3d(0, Units.degreesToRadians(20), Units.degreesToRadians(20)));
 
     private final DoubleLogger log_shooterYaw = WaltLogger.logDouble("Vision", "shooterYaw");
     private final Transform3dLogger log_speakerTag = WaltLogger.logTransform3d("Vision", "speakerTag");
