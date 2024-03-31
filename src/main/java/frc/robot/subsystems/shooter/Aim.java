@@ -218,7 +218,7 @@ public class Aim extends SubsystemBase {
 
     private void sendAngleRequestToMotor(boolean vision) {
         var target = m_targetAngle.in(Degrees);
-        var safeAngle = MathUtil.clamp(target, 1, vision ? 25 : 45);
+        var safeAngle = MathUtil.clamp(target, 1, vision ? 25 : 120);
         m_targetAngle = Degrees.of(safeAngle);
         determineMotionMagicValues(vision);
 
