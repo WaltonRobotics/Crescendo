@@ -4,7 +4,6 @@ import org.photonvision.PhotonCamera;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.numbers.N1;
@@ -26,7 +25,7 @@ public class Vision {
     public static final record VisionMeasurement2d (Integer id, Double yaw, Double pitch, Double area) {}
     public static final record VisionMeasurement3d (Pose2d measure, double latency, Matrix<N3, N1> stdDevs) {}
     
-    private final Matrix<N3, N1> kDefaultStdDevs = VecBuilder.fill(0.9, 0.9, 0.9);
+    // private final Matrix<N3, N1> kDefaultStdDevs = VecBuilder.fill(0.9, 0.9, 0.9);
 
     private final PhotonCamera m_shooterCam = new PhotonCamera("ShooterCam");
 
@@ -80,7 +79,5 @@ public class Vision {
 
 
 
-    public void run() {
-        // TODO do things in here
-    }
+    public void run() {}
 }

@@ -11,13 +11,10 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.filter.LinearFilter;
-import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.GenericEntry;
@@ -31,7 +28,6 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
@@ -76,12 +72,9 @@ public class Aim extends SubsystemBase {
     private final CoastOut m_coastRequest = new CoastOut();
     private final StaticBrake m_brakeRequest = new StaticBrake();
 
-    private final TimeInterpolatableBuffer<Double> m_buffer = TimeInterpolatableBuffer.createDoubleBuffer(0.2);
+    // private final TimeInterpolatableBuffer<Double> m_buffer = TimeInterpolatableBuffer.createDoubleBuffer(0.2);
     private LoggedTunableNumber log_desiredPitch = new LoggedTunableNumber("desiredPitch", 14.0);
     private LoggedTunableNumber log_latencyFudgeFactor = new LoggedTunableNumber("latencyFudgeFactor");
-
-    private final LinearFilter m_filter = LinearFilter.movingAverage(5);
-    private final SlewRateLimiter m_limiter = new SlewRateLimiter(1.0 / 50.0);
     
     private double m_desiredPitch = 14;
     private double m_latencyFudgeFactor = 0;
@@ -104,10 +97,10 @@ public class Aim extends SubsystemBase {
     private Measure<Angle> m_targetAngle = Rotations.of(0);
     private Pose3d speaker = new Pose3d();
 
-    private Translation2d cameraTranslation2dXZ = new Translation2d();
-    private Translation2d pivotTranslation2dXZ = new Translation2d();
-    private Translation2d shotTranslation2dXZ = new Translation2d();
-    private Translation2d pivotToShotPose = new Translation2d();
+    private Translation2d m_cameraTranslation2dXZ = new Translation2d();
+    private Translation2d m_pivotTranslation2dXZ = new Translation2d();
+    private Translation2d m_shotTranslation2dXZ = new Translation2d();
+    private Translation2d m_pivotToShotPose = new Translation2d();
     private double m_pitchToSpeaker = 0;
 
     private boolean m_isCoast;
@@ -134,7 +127,6 @@ public class Aim extends SubsystemBase {
     private final DoubleLogger log_pitchErr = WaltLogger.logDouble(kDbTabName, "pitchErr");
     private final Pose3dLogger log_camLocation = WaltLogger.logPose3d(kDbTabName, "camLocation");
     private final Pose3dLogger log_camToSpeakerTarget = WaltLogger.logPose3d(kDbTabName, "speakerTarget");
-
 
     private final Pose2dLogger log_pivotPos = WaltLogger.logPose2d(kDbTabName, "pivotPos");
     private final Pose2dLogger log_speakerPos = WaltLogger.logPose2d(kDbTabName, "speakerPos");
@@ -177,10 +169,6 @@ public class Aim extends SubsystemBase {
             .getEntry();
 
         // configureCoastTrigger();
-    }
-
-    private void determineMotionMagicValues() {
-        determineMotionMagicValues(false);
     }
 
     private void determineMotionMagicValues(boolean vision) {
@@ -362,25 +350,25 @@ public class Aim extends SubsystemBase {
             var tagCamFieldPose = tagFieldPose.plus(cameraTargetTransform);
             log_camToSpeakerTarget.accept(tagCamFieldPose);
 
-            cameraTranslation2dXZ = GeometryUtil.pose2dOnPlane(tagCamFieldPose, Plane.XZPlane).getTranslation();
+            m_cameraTranslation2dXZ = GeometryUtil.pose2dOnPlane(tagCamFieldPose, Plane.XZ).getTranslation();
 
-            pivotTranslation2dXZ = new Translation2d(
-                cameraTranslation2dXZ.getX() - (kLength.baseUnitMagnitude() * Math.asin(Units.degreesToRadians(getDegrees()))), 
-                cameraTranslation2dXZ.getY() - (kLength.baseUnitMagnitude() * Math.acos(Units.degreesToRadians(getDegrees()))));
+            m_pivotTranslation2dXZ = new Translation2d(
+                m_cameraTranslation2dXZ.getX() - (kLength.baseUnitMagnitude() * Math.asin(Units.degreesToRadians(getDegrees()))), 
+                m_cameraTranslation2dXZ.getY() - (kLength.baseUnitMagnitude() * Math.acos(Units.degreesToRadians(getDegrees()))));
 
-            shotTranslation2dXZ = GeometryUtil.pose2dOnPlane(speaker, Plane.XZPlane).getTranslation();
+            m_shotTranslation2dXZ = GeometryUtil.pose2dOnPlane(speaker, Plane.XZ).getTranslation();
 
-            log_pivotPos.accept(new Pose2d(pivotTranslation2dXZ, new Rotation2d()));
-            log_speakerPos.accept(new Pose2d(shotTranslation2dXZ, new Rotation2d()));
+            log_pivotPos.accept(new Pose2d(m_pivotTranslation2dXZ, new Rotation2d()));
+            log_speakerPos.accept(new Pose2d(m_shotTranslation2dXZ, new Rotation2d()));
 
-            pivotToShotPose = shotTranslation2dXZ.minus(pivotTranslation2dXZ);
+            m_pivotToShotPose = m_shotTranslation2dXZ.minus(m_pivotTranslation2dXZ);
 
             // var delaySample = m_buffer.getSample(Timer.getFPGATimestamp() - 0.4);
             // if (delaySample.isPresent()) {
                 // m_pitchToSpeaker = delaySample.get();
             // } else {
-                // }
-            m_pitchToSpeaker = pivotToShotPose.getAngle().getRotations() - Units.degreesToRotations(28);
+            m_pitchToSpeaker = m_pivotToShotPose.getAngle().getRotations() - Units.degreesToRotations(28);
+            // }
             m_pitchToSpeaker = MathUtil.clamp(m_pitchToSpeaker, Units.rotationsToDegrees(1), Units.rotationsToDegrees(45));
 
             log_pitchErr.accept(Units.rotationsToDegrees(m_pitchToSpeaker - m_motor.getPosition().getValueAsDouble()));

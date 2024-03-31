@@ -44,7 +44,6 @@ import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
-import frc.util.AdvantageScopeUtil;
 import frc.util.AllianceFlipUtil;
 import frc.util.CommandLogger;
 import frc.util.logging.WaltLogger;
