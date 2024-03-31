@@ -15,6 +15,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.GenericEntry;
@@ -72,7 +73,7 @@ public class Aim extends SubsystemBase {
     private final CoastOut m_coastRequest = new CoastOut();
     private final StaticBrake m_brakeRequest = new StaticBrake();
 
-    // private final TimeInterpolatableBuffer<Double> m_buffer = TimeInterpolatableBuffer.createDoubleBuffer(0.2);
+    private final TimeInterpolatableBuffer<Double> m_buffer = TimeInterpolatableBuffer.createDoubleBuffer(0.2);
     private LoggedTunableNumber log_desiredPitch = new LoggedTunableNumber("desiredPitch", 14.0);
     private LoggedTunableNumber log_latencyFudgeFactor = new LoggedTunableNumber("latencyFudgeFactor");
     
@@ -125,6 +126,7 @@ public class Aim extends SubsystemBase {
     private final DoubleLogger log_simTarget = WaltLogger.logDouble(kDbTabName + "/Sim", "targetAngle");
 
     private final DoubleLogger log_pitchErr = WaltLogger.logDouble(kDbTabName, "pitchErr");
+    private final DoubleLogger log_pitchToSpeaker = WaltLogger.logDouble(kDbTabName, "pitchToSpeaker");
     private final Pose3dLogger log_camLocation = WaltLogger.logPose3d(kDbTabName, "camLocation");
     private final Pose3dLogger log_camToSpeakerTarget = WaltLogger.logPose3d(kDbTabName, "speakerTarget");
 
@@ -174,9 +176,9 @@ public class Aim extends SubsystemBase {
     private void determineMotionMagicValues(boolean vision) {
         if (vision) {
             m_dynamicRequest.Velocity = 0.1;
-            m_dynamicRequest.Acceleration = 0.025;
+            m_dynamicRequest.Acceleration = 0.5;
             m_dynamicRequest.Jerk = 0;
-            m_dynamicRequest.Slot = 0;
+            m_dynamicRequest.Slot = 1;
         } else if (m_targetAngle.lt(Rotations.of(m_motor.getPosition().getValueAsDouble())) && m_motor.getPosition().getValueAsDouble() <= 0.2) {
             m_dynamicRequest.Velocity = 0.2;
             m_dynamicRequest.Acceleration = 0.3;
@@ -195,21 +197,19 @@ public class Aim extends SubsystemBase {
     }
 
     public BooleanSupplier aimFinished() {
-        return (
-            () -> {
-                if ((m_targetAngle.in(Degrees) == 0 || m_targetAngle.in(Degrees) == 4) && !DriverStation.isAutonomous()) {
-                    return false;
-                }
-                var error = Rotations.of(Math.abs(m_targetAngle.in(Rotations) - m_motor.getPosition().getValueAsDouble()));
-                log_error.accept(error.in(Degrees));
-
-                if (m_targetAngle.baseUnitMagnitude() == kAmpAngle.baseUnitMagnitude()) {
-                    return error.lte(kAmpAngleAllowedError);
-                }
-
-                return error.lte(kAngleAllowedError);
+        return () -> {
+            if ((m_targetAngle.in(Degrees) == 0 || m_targetAngle.in(Degrees) == 4) && !DriverStation.isAutonomous()) {
+                return false;
             }
-        );
+            var error = Rotations.of(Math.abs(m_targetAngle.in(Rotations) - m_motor.getPosition().getValueAsDouble()));
+            log_error.accept(error.in(Degrees));
+
+            if (m_targetAngle.baseUnitMagnitude() == kAmpAngle.baseUnitMagnitude()) {
+                return error.lte(kAmpAngleAllowedError);
+            }
+
+            return error.lte(kAngleAllowedError);
+        };
     }
 
     public Command coastOut() {
@@ -218,7 +218,7 @@ public class Aim extends SubsystemBase {
 
     private void sendAngleRequestToMotor(boolean vision) {
         var target = m_targetAngle.in(Degrees);
-        var safeAngle = MathUtil.clamp(target, 1, vision ? kSubwooferAngle.in(Degrees) : 120);
+        var safeAngle = MathUtil.clamp(target, 0, vision ? kSubwooferAngle.in(Degrees) : 120);
         m_targetAngle = Degrees.of(safeAngle);
         determineMotionMagicValues(vision);
 
@@ -338,15 +338,16 @@ public class Aim extends SubsystemBase {
 
     @Override
     public void periodic() {
-        // m_buffer.addSample(Timer.getFPGATimestamp(), pivotToShotPose.getAngle().getRotations());
         var targetOpt = m_vision.speakerTargetSupplier().get();
-
+        
         if (targetOpt.isPresent()) {
+            m_buffer.addSample(Timer.getFPGATimestamp(), m_motor.getPosition().getValueAsDouble());
             var tagFieldPose = Vision.getMiddleSpeakerTagPose();
             var target = targetOpt.get();
+
             var cameraTargetTransform = target.target().getBestCameraToTarget().inverse();
-            // var camFieldPose = new Pose3d().plus(cameraTargetTransform);
             log_camLocation.accept(new Pose3d().plus(cameraTargetTransform));
+
             var tagCamFieldPose = tagFieldPose.plus(cameraTargetTransform);
             log_camToSpeakerTarget.accept(tagCamFieldPose);
 
@@ -355,25 +356,22 @@ public class Aim extends SubsystemBase {
             m_pivotTranslation2dXZ = new Translation2d(
                 m_cameraTranslation2dXZ.getX() - (kLength.baseUnitMagnitude() * Math.asin(Units.degreesToRadians(getDegrees()))), 
                 m_cameraTranslation2dXZ.getY() - (kLength.baseUnitMagnitude() * Math.acos(Units.degreesToRadians(getDegrees()))));
+            log_pivotPos.accept(new Pose2d(m_pivotTranslation2dXZ, new Rotation2d()));
 
             m_shotTranslation2dXZ = GeometryUtil.pose2dOnPlane(speaker, Plane.XZ).getTranslation();
-
-            log_pivotPos.accept(new Pose2d(m_pivotTranslation2dXZ, new Rotation2d()));
             log_speakerPos.accept(new Pose2d(m_shotTranslation2dXZ, new Rotation2d()));
 
             m_pivotToShotPose = m_shotTranslation2dXZ.minus(m_pivotTranslation2dXZ);
 
-            // var delaySample = m_buffer.getSample(Timer.getFPGATimestamp() - 0.4);
-            // if (delaySample.isPresent()) {
-                // m_pitchToSpeaker = delaySample.get();
-            // } else {
             m_pitchToSpeaker = m_pivotToShotPose.getAngle().getRotations() - Units.degreesToRotations(28);
-            // }
             m_pitchToSpeaker = MathUtil.clamp(m_pitchToSpeaker, Units.degreesToRotations(0), kSubwooferAngle.in(Rotations));
             log_pitchToSpeaker.accept(m_pitchToSpeaker);
 
             log_pitchErr.accept(Units.rotationsToDegrees(m_pitchToSpeaker - m_motor.getPosition().getValueAsDouble()));
         }
+
+        // m_pitchToSpeaker = atan((robot to speaker z)/(robot to speaker x));
+        // robot to speaker = cam to speaker + robot to cam
 
         log_motorSpeed.accept(m_motor.get());
         log_motorPos.accept(Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()));

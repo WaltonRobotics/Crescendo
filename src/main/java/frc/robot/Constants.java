@@ -256,7 +256,8 @@ public class Constants {
         public static Transform3d kTagToSpeaker = new Transform3d(Units.inchesToMeters(10), 0.0, Units.inchesToMeters(24), new Rotation3d());
 
         public static final class AimConfigs {
-            private static final double kP = 225;
+            private static final double kP = 200;
+            private static final double kPVision = 40;
             private static final double kI = 0;
             private static final double kS = 0.9 * 1.25;
             private static final double kV = 37.44 * 1.25;
@@ -271,10 +272,15 @@ public class Constants {
                     .withKP(kP)
                     .withKI(kI)
                     .withKS(kS)
-                    // .withKG(kG)
                     .withKV(kV)
                     .withKA(kA);
-                    // .withGravityType(GravityTypeValue.Arm_Cosine);
+
+                motorConfig.Slot1 = motorConfig.Slot1
+                    .withKP(kPVision)
+                    .withKI(kI)
+                    .withKS(kS)
+                    .withKV(kV)
+                    .withKA(kA);
 
                 motorConfig.Feedback = motorConfig.Feedback
                     .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
