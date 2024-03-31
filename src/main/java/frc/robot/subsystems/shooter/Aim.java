@@ -218,7 +218,7 @@ public class Aim extends SubsystemBase {
 
     private void sendAngleRequestToMotor(boolean vision) {
         var target = m_targetAngle.in(Degrees);
-        var safeAngle = MathUtil.clamp(target, 1, vision ? 25 : 120);
+        var safeAngle = MathUtil.clamp(target, 1, vision ? kSubwooferAngle.in(Degrees) : 120);
         m_targetAngle = Degrees.of(safeAngle);
         determineMotionMagicValues(vision);
 
@@ -369,7 +369,7 @@ public class Aim extends SubsystemBase {
             // } else {
             m_pitchToSpeaker = m_pivotToShotPose.getAngle().getRotations() - Units.degreesToRotations(28);
             // }
-            m_pitchToSpeaker = MathUtil.clamp(m_pitchToSpeaker, Units.degreesToRotations(0), Units.degreesToRotations(45));
+            m_pitchToSpeaker = MathUtil.clamp(m_pitchToSpeaker, Units.degreesToRotations(0), kSubwooferAngle.in(Rotations));
             log_pitchToSpeaker.accept(m_pitchToSpeaker);
 
             log_pitchErr.accept(Units.rotationsToDegrees(m_pitchToSpeaker - m_motor.getPosition().getValueAsDouble()));
