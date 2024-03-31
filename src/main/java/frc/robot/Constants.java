@@ -55,10 +55,16 @@ public class Constants {
         public static final Measure<Distance> kFieldLength = Meters.of(16.54);
         public static final Measure<Distance> kFieldWidth = Meters.of(8.21);
 
-        public static final AprilTagFieldLayout kFieldLayout = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
+        public static boolean inField(Pose3d pose) {
+            return (pose.getX() > 0
+                && pose.getX() < kFieldLength.in(Meters)
+                && pose.getY() > 0
+                && pose.getY() < kFieldWidth.in(Meters));
+          }
 
-        public static final Pose3d kTag4Pose = kFieldLayout.getTagPose(4).get();
-        public static final Pose3d kTag7Pose = kFieldLayout.getTagPose(7).get();
+        public static final AprilTagFieldLayout kTagLayout = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
+        public static final Pose3d kTag4Pose = kTagLayout.getTagPose(4).get();
+        public static final Pose3d kTag7Pose = kTagLayout.getTagPose(7).get();
 
         // taken from 6328. All in blue alliance origin.
         /* speaker constants */

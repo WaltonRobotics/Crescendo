@@ -34,6 +34,7 @@ import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -122,9 +123,16 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final DoubleArrayLogger log_wheelVeloTargets = WaltLogger.logDoubleArray("Swerve", "wheelVeloTargets");
 	private double[] m_wheelVeloTargets = new double[4];
 
-	public void addVisionMeasurement(VisionMeasurement3d measurement) {
-		m_odometry.addVisionMeasurement(
-			measurement.measure(), measurement.latency(), measurement.stdDevs());
+public void addVisionMeasurement3d(VisionMeasurement3d measurement) {
+		// sadge!
+		var now = Timer.getFPGATimestamp();
+		var timestamp = measurement.estimate().timestampSeconds;
+		if (timestamp > now) return;
+
+		addVisionMeasurement(
+			measurement.estimate().estimatedPose.toPose2d(),
+			timestamp,
+			measurement.stdDevs());
 	}
 
 	private void configureAutoBuilder() {

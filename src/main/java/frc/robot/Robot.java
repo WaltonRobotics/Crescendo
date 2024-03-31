@@ -97,7 +97,13 @@ public class Robot extends TimedRobot {
 		if (Robot.isSimulation()) {
 			DriverStation.silenceJoystickConnectionWarning(true);
 		}
-		addPeriodic(vision::run, 0.01);
+		addPeriodic(() -> {
+			var frontCamEstOpt = vision.getFrontCamPoseEst();
+			if (frontCamEstOpt.isPresent()) {
+				
+				// swerve.addVisionMeasurement3d(frontCamEstOpt.get());
+			}
+		}, 0.02);
 	}
 
 	private void mapAutonCommands() {
