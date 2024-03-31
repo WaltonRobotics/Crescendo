@@ -6,11 +6,15 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import frc.util.AllianceFlipUtil;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
+import frc.util.logging.WaltLogger.Transform3dLogger;
+
+import static frc.robot.Constants.FieldK.kFieldLayout;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,12 +31,17 @@ public class Vision {
     private final PhotonCamera m_shooterCam = new PhotonCamera("ShooterCam");
 
     private final DoubleLogger log_shooterYaw = WaltLogger.logDouble("Vision", "shooterYaw");
+    private final Transform3dLogger log_speakerTag = WaltLogger.logTransform3d("Vision", "speakerTag");
 
     public Vision() {}
 
-    private int getMiddleSpeakerId() {
+    public static int getMiddleSpeakerId() {
         boolean red = AllianceFlipUtil.shouldFlip();
         return red ? 4 : 7;
+    }
+
+    public static Pose3d getMiddleSpeakerTagPose() {
+        return kFieldLayout.getTagPose(getMiddleSpeakerId()).get();
     }
 
     public Supplier<Optional<List<VisionMeasurement2d>>> shooterDataSupplier() {
@@ -59,6 +68,7 @@ public class Vision {
                 for (var target : result.targets) {
                     if(target.getFiducialId() == getMiddleSpeakerId()) {
                         log_shooterYaw.accept(target.getYaw());
+                        log_speakerTag.accept(target.getBestCameraToTarget());
                         var msmt = new PhotonMeasurement(target, result.getLatencyMillis());
                         return Optional.of(msmt);
                     }

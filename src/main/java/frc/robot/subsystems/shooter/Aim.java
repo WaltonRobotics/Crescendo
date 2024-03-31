@@ -10,8 +10,7 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
-import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
@@ -40,9 +39,10 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Vision;
+import frc.util.logging.LoggedTunableNumber;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
-
+import frc.util.logging.WaltLogger.Pose3dLogger;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.Constants.kCanbus;
 import static frc.robot.Constants.AimK.*;
@@ -59,13 +59,18 @@ public class Aim extends SubsystemBase {
 
     private final Trigger trg_coastSwitch = new Trigger(m_coastSwitch::get);
 
+    private final Vision m_vision;
+
     private final DynamicMotionMagicVoltage m_dynamicRequest = new DynamicMotionMagicVoltage(0, 20, 40, 200);
     private final CoastOut m_coastRequest = new CoastOut();
     private final StaticBrake m_brakeRequest = new StaticBrake();
 
     private final TimeInterpolatableBuffer<Double> m_buffer = TimeInterpolatableBuffer.createDoubleBuffer(0.2);
+    private LoggedTunableNumber log_desiredPitch = new LoggedTunableNumber("desiredPitch", 14.0);
+    private LoggedTunableNumber log_latencyFudgeFactor = new LoggedTunableNumber("latencyFudgeFactor");
     
     private double m_desiredPitch = 14;
+    private double m_latencyFudgeFactor = 0;
 
     private final DCMotor m_aimGearbox = DCMotor.getFalcon500(1);
     private final SingleJointedArmSim m_aimSim = new SingleJointedArmSim(
@@ -83,6 +88,8 @@ public class Aim extends SubsystemBase {
             new Color8Bit(Color.kHotPink)));
 
     private Measure<Angle> m_targetAngle = Rotations.of(0);
+    private Pose3d speakerTarget = new Pose3d();
+
 
     private boolean m_isCoast;
 
@@ -106,9 +113,11 @@ public class Aim extends SubsystemBase {
     private final DoubleLogger log_simTarget = WaltLogger.logDouble(kDbTabName + "/Sim", "targetAngle");
 
     private final DoubleLogger log_pitchErr = WaltLogger.logDouble(kDbTabName, "pitchErr");
-    private final DoubleLogger log_timeSample = WaltLogger.logDouble(kDbTabName, "timeSample");
-    private final DoubleLogger log_latency = WaltLogger.logDouble(kDbTabName, "latency");
-    private final DoubleLogger log_desiredAngle = WaltLogger.logDouble(kDbTabName, "desiredAngle");
+    private final Pose3dLogger log_camLocation = WaltLogger.logPose3d(kDbTabName, "camLocation");
+    private final Pose3dLogger log_camToSpeakerTarget = WaltLogger.logPose3d(kDbTabName, "speakerTarget");
+    // private final DoubleLogger log_timeSample = WaltLogger.logDouble(kDbTabName, "timeSample");
+    // private final DoubleLogger log_latency = WaltLogger.logDouble(kDbTabName, "latency");
+    // private final DoubleLogger log_desiredAngle = WaltLogger.logDouble(kDbTabName, "desiredAngle");
 
     private final GenericEntry nte_isCoast;
 
@@ -118,7 +127,6 @@ public class Aim extends SubsystemBase {
     private final Timer m_targetTimer = new Timer();
 
     private final VoltageOut m_voltage = new VoltageOut(0);
-
     private final SysIdRoutine m_sysId = new SysIdRoutine(
         new SysIdRoutine.Config(
             Volts.of(1).per(Second),
@@ -129,7 +137,8 @@ public class Aim extends SubsystemBase {
             m_motor.setControl(m_voltage.withOutput(volts.in(Volts)));
         }, null, this));
 
-    public Aim() {
+    public Aim(Vision vision) {
+        m_vision = vision;
         m_motor.getConfigurator().apply(motorConfig);
         m_cancoder.getConfigurator().apply(cancoderConfig);
 
@@ -149,13 +158,13 @@ public class Aim extends SubsystemBase {
     }
 
     private void determineMotionMagicValues() {
-        if (m_targetAngle.lt(Rotations.of(m_motor.getPosition().getValueAsDouble())) && m_motor.getPosition().getValueAsDouble() <= 0.1) {
+        if (m_targetAngle.lt(Rotations.of(m_motor.getPosition().getValueAsDouble())) && m_motor.getPosition().getValueAsDouble() <= 0.2) {
             m_dynamicRequest.Velocity = 0.2;
             m_dynamicRequest.Acceleration = 0.3;
             m_dynamicRequest.Jerk = 0;
             m_dynamicRequest.Slot = 0;
         } else {
-            m_dynamicRequest.Velocity = 0.3;
+            m_dynamicRequest.Velocity = 0.3 * 1.25;
             m_dynamicRequest.Acceleration = 1;
             m_dynamicRequest.Jerk = 0;
             m_dynamicRequest.Slot = 0;
@@ -224,38 +233,50 @@ public class Aim extends SubsystemBase {
         return toAngleUntilAt(() -> angle, Degrees.of(0.25)).withName("ToAngleUntilAt"); // TODO unmagify i'm lazy rn
     }
 
-    public Command aim(Vision vision) {
+    public Command aim() {
+        // return runEnd(() -> {
+        //     var curAngle = m_motor.getPosition().getValueAsDouble();
+        //     // adding a sample to the timeinterpolatablebuffer so that i can get the arm's position in the past
+        //     m_buffer.addSample(Timer.getFPGATimestamp(), curAngle);
+        //     var measurementOpt = vision.speakerTargetSupplier().get();
+        //     if (measurementOpt.isPresent()) {
+        //         var measurement = measurementOpt.get();
+        //         var target = measurement.target();
+        //         var pitch = target.getPitch();
+        //         // i want the pitch to the speaker apriltag to be -14 degrees (m_desiredPitch = 14)
+        //         var err = m_desiredPitch + pitch;
+        //         log_pitchErr.accept(err);
+        //         var latency = measurement.latencyMilliseconds() / 1000.0;
+        //         log_latency.accept(latency);
+        //         // time to get the robot arm measurement from (accounting for camera latency)
+        //         var time = Timer.getFPGATimestamp() - (latency + m_latencyFudgeFactor);
+        //         log_timeSample.accept(time);
+        //         // using the a timeinterpolatablebuffer to estimate where arm was at the time i want to get the measurement from
+        //         var bufferAngle = m_buffer.getSample(time);
+        //         if (bufferAngle.isPresent()) {
+        //             // angle i want the arm to be at
+        //             // based on position a certain amt of time ago and the pitch error that long ago
+        //             var angle = bufferAngle.get() + Units.degreesToRotations(err);
+        //             log_desiredAngle.accept(Units.rotationsToDegrees(angle));
+        //             angle = MathUtil.clamp(angle, Units.degreesToRotations(1), Units.degreesToRotations(45));
+        //             m_targetAngle = Rotations.of(angle);
+        //             m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
+        //         }
+        //     } else {
+        //         m_motor.setControl(m_dynamicRequest.withPosition(Units.degreesToRotations(25)));
+        //     }
+        // }, () -> {
+        //     m_motor.setControl(m_brakeRequest);
+        // }).withName("AimWithVision");
         return runEnd(() -> {
             var curAngle = m_motor.getPosition().getValueAsDouble();
-            // adding a sample to the timeinterpolatablebuffer so that i can get the arm's position in the past
-            m_buffer.addSample(Timer.getFPGATimestamp(), curAngle);
-            var measurementOpt = vision.speakerTargetSupplier().get();
-            if (measurementOpt.isPresent()) {
-                var measurement = measurementOpt.get();
-                var target = measurement.target();
-                var pitch = target.getPitch();
-                // i want the pitch to the speaker apriltag to be -14 degrees (m_desiredPitch = 14)
-                var err = m_desiredPitch + pitch;
-                log_pitchErr.accept(err);
-                var latency = measurement.latencyMilliseconds() / 1000.0;
-                log_latency.accept(latency);
-                // time to get the robot arm measurement from (accounting for camera latency)
-                var time = Timer.getFPGATimestamp() - latency;
-                log_timeSample.accept(time);
-                // using the a timeinterpolatablebuffer to estimate where arm was at the time i want to get the measurement from
-                var bufferAngle = m_buffer.getSample(time);
-                if (bufferAngle.isPresent()) {
-                    // angle i want the arm to be at
-                    // based on position a certain amt of time ago and the pitch error that long ago
-                    var angle = bufferAngle.get() + Units.degreesToRotations(err);
-                    log_desiredAngle.accept(Units.rotationsToDegrees(angle));
-                    angle = MathUtil.clamp(angle, Units.degreesToRotations(1), Units.degreesToRotations(45));
-                    m_targetAngle = Rotations.of(angle);
-                    m_motor.setControl(m_dynamicRequest.withPosition(m_targetAngle.in(Rotations)));
-                }
-            } else {
-                m_motor.setControl(m_dynamicRequest.withPosition(Units.degreesToRotations(25)));
-            }
+            var pitchToSpeaker = speakerTarget.getRotation().getY();
+            log_pitchErr.accept(pitchToSpeaker);
+
+            var targetRotation = curAngle - Units.radiansToRotations(pitchToSpeaker);
+
+            m_motor.setControl(m_dynamicRequest.withPosition(targetRotation));
+            
         }, () -> {
             m_motor.setControl(m_brakeRequest);
         }).withName("AimWithVision");
@@ -334,12 +355,24 @@ public class Aim extends SubsystemBase {
 
     @Override
     public void periodic() {
+        var targetOpt = m_vision.speakerTargetSupplier().get();
+
+        if (targetOpt.isPresent()) {
+            var tagFieldPose = Vision.getMiddleSpeakerTagPose();
+            var target = targetOpt.get();
+            var cameraTargetTransform = target.target().getBestCameraToTarget().inverse();
+            // var camFieldPose = new Pose3d().plus(cameraTargetTransform);
+            log_camLocation.accept(new Pose3d().plus(cameraTargetTransform));
+            var tagCamFieldPose = tagFieldPose.plus(cameraTargetTransform);
+            log_camToSpeakerTarget.accept(tagCamFieldPose);
+        }
+
+
         log_motorSpeed.accept(m_motor.get());
         log_motorPos.accept(Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()));
         log_targetAngle.accept(getTargetAngle());
         log_cancoderPos.accept(Units.rotationsToDegrees(m_cancoder.getPosition().getValueAsDouble()));
 
-        // log_error.accept(Units.rotationsToDegrees(m_motor.getClosedLoopError().getValueAsDouble()));
         log_reference.accept(Units.rotationsToDegrees(m_motor.getClosedLoopReference().getValueAsDouble()));
         log_output.accept(m_motor.getClosedLoopOutput().getValueAsDouble());
         log_ff.accept(m_motor.getClosedLoopFeedForward().getValueAsDouble());
@@ -352,6 +385,14 @@ public class Aim extends SubsystemBase {
         if (dashCoast != m_isCoast && !trg_coastSwitch.getAsBoolean()) {
             m_isCoast = dashCoast;
             setCoast(m_isCoast);
+        }
+
+        if (log_desiredPitch.get() != m_desiredPitch) {
+            m_desiredPitch = log_desiredPitch.get();
+        }
+
+        if (log_latencyFudgeFactor.get() != m_latencyFudgeFactor) {
+            m_latencyFudgeFactor = log_latencyFudgeFactor.get();
         }
     }
 

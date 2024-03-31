@@ -34,7 +34,6 @@ public class Superstructure {
     private final Intake m_intake;
     private final Conveyor m_conveyor;
     private final Shooter m_shooter;
-    private final Vision m_vision;
 
     private final DoubleConsumer m_driverRumbler, m_manipRumbler;
 
@@ -149,7 +148,6 @@ public class Superstructure {
         m_intake = intake;
         m_conveyor = conveyor;
         m_shooter = shooter;
-        m_vision = vision;
 
         m_driverRumbler = driverRumbler;
         m_manipRumbler = manipRumbler;
@@ -257,7 +255,7 @@ public class Superstructure {
                 Commands.parallel(m_intake.run(), m_conveyor.startSlow()).withName("AutoIntake")
             );
 
-        // !(intakeReq || idle) => !intakeReq && !idle
+        // !(intakeReq || seenNote) => !intakeReq && !seenNote
         (trg_intakeReq.or(irqTrg_frontSensor)).onFalse(changeStateCmd(IDLE));
 
         irqTrg_frontSensor

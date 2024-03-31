@@ -20,7 +20,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -34,6 +33,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.AimK;
+import frc.robot.Constants.FieldK;
 import frc.robot.Constants.FieldK.SpeakerK;
 import frc.robot.auton.AutonChooser;
 import frc.robot.auton.AutonChooser.AutonOption;
@@ -44,13 +44,14 @@ import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.util.AdvantageScopeUtil;
 import frc.util.AllianceFlipUtil;
 import frc.util.CommandLogger;
+import frc.util.logging.WaltLogger;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
 
 import static frc.robot.Constants.AimK.kAmpAngle;
-import static frc.robot.Constants.AimK.kPodiumAngle;
 import static frc.robot.Constants.RobotK.*;
 
 import java.util.function.Supplier;
@@ -68,7 +69,7 @@ public class Robot extends TimedRobot {
 	private final Swerve swerve = TunerConstants.drivetrain;
 	private final Vision vision = new Vision();
 	private final Shooter shooter = new Shooter();
-	private final Aim aim = new Aim();
+	private final Aim aim = new Aim(vision);
 	private final Intake intake = new Intake();
 	private final Conveyor conveyor = new Conveyor();
 
@@ -76,8 +77,6 @@ public class Robot extends TimedRobot {
 		aim, intake, conveyor, shooter, vision,
 		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()),
 		(intensity) -> driverRumble(intensity), (intensity) -> manipulatorRumble(intensity));
-
-	public static Translation3d speakerPose;
 
 	public static final Field2d field2d = new Field2d();
 
@@ -197,7 +196,7 @@ public class Robot extends TimedRobot {
 		// aim safe angle
 		manipulator.x().whileTrue(aim.hardStop());
 		
-		manipulator.y().whileTrue(aim.aim(vision));
+		manipulator.y().and((manipulator.rightBumper().or(manipulator.leftBumper())).negate()).whileTrue(aim.aim());
 
 		// aim rezero
 		manipulator.b().and(manipulator.povDown()).and(manipulator.x()).onTrue(aim.rezero());
@@ -206,16 +205,16 @@ public class Robot extends TimedRobot {
 		manipulator.leftBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kAmpAngle, Degrees.of(0.25)));
 		
 		// aim subwoofer
-		// manipulator.rightBumper().and(manipulator.y()).onTrue(
-		// 	Commands.either(
-		// 		aim.toAngleUntilAt(() -> AimK.kSubwooferAngle.minus(Degrees.of(0.5)), Degrees.of(2)), 
-		// 		aim.toAngleUntilAt(() -> AimK.kSubwooferAngle, Degrees.of(2)),
-		// 		() -> {
-		// 			var alliance = DriverStation.getAlliance();
-		// 			return alliance.isPresent() && alliance.get() == Alliance.Blue;
-		// 		}
-		// 	)
-		// );
+		manipulator.rightBumper().and(manipulator.y()).onTrue(
+			Commands.either(
+				aim.toAngleUntilAt(() -> AimK.kSubwooferAngle.minus(Degrees.of(0.5)), Degrees.of(2)), 
+				aim.toAngleUntilAt(() -> AimK.kSubwooferAngle, Degrees.of(2)),
+				() -> {
+					var alliance = DriverStation.getAlliance();
+					return alliance.isPresent() && alliance.get() == Alliance.Blue;
+				}
+			)
+		);
 	}
 
 	public void configureTestingBindings() {
@@ -251,7 +250,12 @@ public class Robot extends TimedRobot {
 			superstructure.fastPeriodic();
 		}, 0.00125);
 		SmartDashboard.putData(field2d);
-		speakerPose = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpening);
+		WaltLogger.logPose3d("FieldPoses", "shotLocation").accept(
+			Vision.getMiddleSpeakerTagPose().transformBy(AimK.kTagToSpeaker));
+		WaltLogger.logPose3d("FieldPoses", "tag4Location")
+			.accept(FieldK.kTag4Pose);
+		WaltLogger.logPose3d("FieldPoses", "tag7Location")
+			.accept(FieldK.kTag7Pose);
 		mapAutonCommands();
 		configureBindings();
 		DriverStation.startDataLog(DataLogManager.getLog());

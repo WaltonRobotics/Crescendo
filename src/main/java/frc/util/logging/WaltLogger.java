@@ -2,6 +2,12 @@ package frc.util.logging;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.geometry.struct.*;
 import edu.wpi.first.networktables.*;
 import edu.wpi.first.util.datalog.*;
 import edu.wpi.first.wpilibj.DataLogManager;
@@ -21,6 +27,102 @@ public class WaltLogger {
 
     public static IntLogger logInt(String table, String name, PubSubOption... options) {
         return new IntLogger(table, name, options);
+    }
+
+    public static final class Pose2dLogger implements Consumer<Pose2d> {
+        public final StructPublisher<Pose2d> ntPub;
+        public final StructLogEntry<Pose2d> logEntry;
+
+        public Pose2dLogger(String subTable, String name, PubSubOption... options) {
+            StructTopic<Pose2d> topic = logTable.getSubTable(subTable).getStructTopic(name, new Pose2dStruct());
+            ntPub = topic.publish(options);
+            logEntry = StructLogEntry.create(DataLogManager.getLog(), "Robot/" + subTable + "/" + name, new Pose2dStruct());
+        }
+
+        @Override
+        public void accept(Pose2d value) {
+            if (shouldPublishNt()) {
+                ntPub.set(value);
+            } else {
+                logEntry.append(value);
+            }
+        }
+    }
+
+    public static Pose2dLogger logPose2d(String table, String name, PubSubOption... options) {
+        return new Pose2dLogger(table, name, options);
+    }
+
+    public static final class Pose3dLogger implements Consumer<Pose3d> {
+        public final StructPublisher<Pose3d> ntPub;
+        public final StructLogEntry<Pose3d> logEntry;
+
+        public Pose3dLogger(String subTable, String name, PubSubOption... options) {
+            StructTopic<Pose3d> topic = logTable.getSubTable(subTable).getStructTopic(name, new Pose3dStruct());
+            ntPub = topic.publish(options);
+            logEntry = StructLogEntry.create(DataLogManager.getLog(), "Robot/" + subTable + "/" + name, new Pose3dStruct());
+        }
+
+        @Override
+        public void accept(Pose3d value) {
+            if (shouldPublishNt()) {
+                ntPub.set(value);
+            } else {
+                logEntry.append(value);
+            }
+        }
+    }
+
+    public static Pose3dLogger logPose3d(String name, String table, PubSubOption... options) {
+        return new Pose3dLogger(name, table, options);
+    }
+
+    public static final class Transform3dLogger implements Consumer<Transform3d> {
+        public final StructPublisher<Transform3d> ntPub;
+        public final StructLogEntry<Transform3d> logEntry;
+
+        public Transform3dLogger(String subTable, String name, PubSubOption... options) {
+            StructTopic<Transform3d> topic = logTable.getSubTable(subTable).getStructTopic(name, new Transform3dStruct());
+            ntPub = topic.publish(options);
+            logEntry = StructLogEntry.create(DataLogManager.getLog(), "Robot/" + subTable + "/" + name, new Transform3dStruct());
+        }
+
+        @Override
+        public void accept(Transform3d value) {
+            if (shouldPublishNt()) {
+                ntPub.set(value);
+            } else {
+                logEntry.append(value);
+            }
+        }
+    }
+
+    public static Transform3dLogger logTransform3d(String table, String name, PubSubOption... options) {
+        return new Transform3dLogger(table, name, options);
+    }
+
+    public static final class Translation3dLogger implements Consumer<Translation3d> {
+        public final StructPublisher<Translation3d> ntPub;
+        public final StructLogEntry<Translation3d> logEntry;
+
+        public Translation3dLogger(String subTable, String name, PubSubOption... options) {
+            StructTopic<Translation3d> topic = logTable.getSubTable(subTable).getStructTopic(name, new Translation3dStruct());
+            ntPub = topic.publish(options);
+            logEntry = StructLogEntry.create(DataLogManager.getLog(), "Robot/" + subTable + "/" + name, new Translation3dStruct());
+        }
+
+        @Override
+        public void accept(Translation3d value) {
+            if (shouldPublishNt()) {
+                ntPub.set(value);
+            } else {
+                logEntry.append(value);
+            }
+        }
+    }
+
+    public static Translation3dLogger logTranslation3d(String table, String name, PubSubOption... options) {
+        return new Translation3dLogger(table, name, options);
     }
 
     public static final class IntLogger implements Consumer<Integer> {

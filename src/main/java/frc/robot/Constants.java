@@ -57,6 +57,9 @@ public class Constants {
 
         public static final AprilTagFieldLayout kFieldLayout = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
 
+        public static final Pose3d kTag4Pose = kFieldLayout.getTagPose(4).get();
+        public static final Pose3d kTag7Pose = kFieldLayout.getTagPose(7).get();
+
         // taken from 6328. All in blue alliance origin.
         /* speaker constants */
         public static final class SpeakerK {
@@ -250,6 +253,8 @@ public class Constants {
     }
 
     public static class AimK {
+        public static Transform3d kTagToSpeaker = new Transform3d(Units.inchesToMeters(10), 0.0, Units.inchesToMeters(26), new Rotation3d());
+
         public static final class AimConfigs {
             private static final double kP = 225;
             private static final double kI = 0;
@@ -300,7 +305,7 @@ public class Constants {
                     .withReverseSoftLimitEnable(true);
 
                 cancoderConfig.MagnetSensor = cancoderConfig.MagnetSensor
-                    .withMagnetOffset(-0.19970703125)
+                    .withMagnetOffset(-0.2900390625)
                     .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
                     .withAbsoluteSensorRange(AbsoluteSensorRangeValue.Signed_PlusMinusHalf);
             }
