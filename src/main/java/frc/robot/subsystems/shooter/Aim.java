@@ -369,7 +369,8 @@ public class Aim extends SubsystemBase {
             // } else {
             m_pitchToSpeaker = m_pivotToShotPose.getAngle().getRotations() - Units.degreesToRotations(28);
             // }
-            m_pitchToSpeaker = MathUtil.clamp(m_pitchToSpeaker, Units.rotationsToDegrees(1), Units.rotationsToDegrees(45));
+            m_pitchToSpeaker = MathUtil.clamp(m_pitchToSpeaker, Units.degreesToRotations(0), Units.degreesToRotations(45));
+            log_pitchToSpeaker.accept(m_pitchToSpeaker);
 
             log_pitchErr.accept(Units.rotationsToDegrees(m_pitchToSpeaker - m_motor.getPosition().getValueAsDouble()));
         }
