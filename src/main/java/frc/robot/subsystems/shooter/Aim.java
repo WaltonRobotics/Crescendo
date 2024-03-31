@@ -47,7 +47,6 @@ import frc.robot.Constants.AimK.AimConfigs;
 import frc.robot.Vision;
 import frc.util.GeometryUtil;
 import frc.util.GeometryUtil.Plane;
-import frc.util.logging.LoggedTunableNumber;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.*;
 
@@ -66,6 +65,7 @@ public class Aim extends SubsystemBase {
     private final DigitalInput m_coastSwitch = new DigitalInput(kCoastSwitchId);
 
     private final Trigger trg_coastSwitch = new Trigger(m_coastSwitch::get);
+    private final Trigger trg_atStart = new Trigger(() -> MathUtil.isNear(kSubwooferAngle.in(Rotations), m_motor.getPosition().getValueAsDouble(), Units.degreesToRotations(1)));
 
     private final Vision m_vision;
 
@@ -74,11 +74,6 @@ public class Aim extends SubsystemBase {
     private final StaticBrake m_brakeRequest = new StaticBrake();
 
     private final TimeInterpolatableBuffer<Double> m_buffer = TimeInterpolatableBuffer.createDoubleBuffer(0.2);
-    private LoggedTunableNumber log_desiredPitch = new LoggedTunableNumber("desiredPitch", 14.0);
-    private LoggedTunableNumber log_latencyFudgeFactor = new LoggedTunableNumber("latencyFudgeFactor");
-    
-    private double m_desiredPitch = 14;
-    private double m_latencyFudgeFactor = 0;
 
     private final DCMotor m_aimGearbox = DCMotor.getFalcon500(1);
     private final SingleJointedArmSim m_aimSim = new SingleJointedArmSim(
@@ -170,7 +165,7 @@ public class Aim extends SubsystemBase {
             .withWidget(BuiltInWidgets.kToggleSwitch)
             .getEntry();
 
-        // configureCoastTrigger();
+        configureCoastTrigger();
     }
 
     private void determineMotionMagicValues(boolean vision) {
@@ -309,7 +304,11 @@ public class Aim extends SubsystemBase {
     public Command coastCmd(boolean coast) {
         return runOnce(
             () -> {
-                setCoast(coast);
+                if (coast) {
+                    m_motor.setControl(m_coastRequest);
+                } else {
+                    m_motor.setControl(m_brakeRequest);
+                }
             });
     }
 
@@ -327,12 +326,12 @@ public class Aim extends SubsystemBase {
     }
 
     public void configureCoastTrigger() {
-        trg_coastSwitch.and(RobotModeTriggers.disabled())
+        trg_coastSwitch.and(RobotModeTriggers.disabled()).and(trg_atStart.negate())
             .onTrue(
-                runOnce(() -> setCoast(true)).ignoringDisable(true)
+                coastCmd(true).ignoringDisable(true)
             )
             .onFalse(
-                runOnce(() -> setCoast(false)).ignoringDisable(true)
+                coastCmd(false).ignoringDisable(true)
             );
     }
 
@@ -390,14 +389,6 @@ public class Aim extends SubsystemBase {
         if (dashCoast != m_isCoast && !trg_coastSwitch.getAsBoolean()) {
             m_isCoast = dashCoast;
             setCoast(m_isCoast);
-        }
-
-        if (log_desiredPitch.get() != m_desiredPitch) {
-            m_desiredPitch = log_desiredPitch.get();
-        }
-
-        if (log_latencyFudgeFactor.get() != m_latencyFudgeFactor) {
-            m_latencyFudgeFactor = log_latencyFudgeFactor.get();
         }
     }
 
