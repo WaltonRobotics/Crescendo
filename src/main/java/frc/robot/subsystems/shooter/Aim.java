@@ -174,12 +174,12 @@ public class Aim extends SubsystemBase {
             m_dynamicRequest.Slot = 0;
         } else if (m_targetAngle.lt(Rotations.of(m_motor.getPosition().getValueAsDouble())) && m_motor.getPosition().getValueAsDouble() <= 0.2) {
             m_dynamicRequest.Velocity = 0.2;
-            m_dynamicRequest.Acceleration = 0.3;
+            m_dynamicRequest.Acceleration = 0.5;
             m_dynamicRequest.Jerk = 0;
             m_dynamicRequest.Slot = 0;
         } else {
             m_dynamicRequest.Velocity = 0.3 * 1.25;
-            m_dynamicRequest.Acceleration = 0.3;
+            m_dynamicRequest.Acceleration = 0.85;
             m_dynamicRequest.Jerk = 0;
             m_dynamicRequest.Slot = 0;
         }
