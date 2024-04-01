@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -71,6 +72,10 @@ public class WaltLogger {
             } else {
                 logEntry.append(value);
             }
+        }
+
+        public void accept(Translation3d value) {
+            accept(new Pose3d(value.getX(), value.getY(), value.getZ(), new Rotation3d()));
         }
     }
 

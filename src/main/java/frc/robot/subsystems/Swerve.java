@@ -264,11 +264,8 @@ public void addVisionMeasurement3d(VisionMeasurement3d measurement) {
 
 	public Command resetPoseToSpeaker() {
 		return runOnce(() -> {
-			if (DriverStation.getAlliance().get() == Alliance.Blue) {
-				seedFieldRelative(new Pose2d(1.45, 5.5, Rotation2d.fromRadians(0)));
-			} else {
-				seedFieldRelative(new Pose2d(1.45, kFieldWidth.magnitude() - 5.5, Rotation2d.fromRadians(0)));
-			}
+			var startPose = AllianceFlipUtil.apply(new Pose2d(1.45, 5.5, Rotation2d.fromRadians(0)));
+			seedFieldRelative(startPose);
 		});
 	}
 

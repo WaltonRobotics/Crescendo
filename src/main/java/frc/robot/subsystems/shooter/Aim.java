@@ -11,6 +11,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -43,10 +44,14 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.AimK;
+import frc.robot.Constants.FieldK;
 import frc.robot.Constants.AimK.AimConfigs;
+import frc.robot.Vision.VisionMeasurement3d;
 import frc.robot.Vision;
+import frc.util.AllianceFlipUtil;
 import frc.util.GeometryUtil;
 import frc.util.GeometryUtil.Plane;
+import frc.util.logging.LoggedTunableNumber;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.*;
 
@@ -56,6 +61,7 @@ import static frc.robot.Constants.AimK.*;
 import static frc.robot.Constants.AimK.AimConfigs.*;
 import static frc.robot.Constants.RobotK.kSimInterval;
 
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
@@ -67,13 +73,13 @@ public class Aim extends SubsystemBase {
     private final Trigger trg_coastSwitch = new Trigger(m_coastSwitch::get);
     private final Trigger trg_atStart = new Trigger(() -> MathUtil.isNear(kSubwooferAngle.in(Rotations), m_motor.getPosition().getValueAsDouble(), Units.degreesToRotations(1)));
 
-    private final Vision m_vision;
-
     private final DynamicMotionMagicVoltage m_dynamicRequest = new DynamicMotionMagicVoltage(0, 20, 40, 200);
     private final CoastOut m_coastRequest = new CoastOut();
     private final StaticBrake m_brakeRequest = new StaticBrake();
 
-    private final TimeInterpolatableBuffer<Double> m_buffer = TimeInterpolatableBuffer.createDoubleBuffer(0.2);
+    private final LoggedTunableNumber m_tunableTest = new LoggedTunableNumber("tunableTest");
+    private double m_tunableNumber = 0;
+    private final DoubleLogger log_tunableTest = WaltLogger.logDouble("Test", "tunableTest");
 
     private final DCMotor m_aimGearbox = DCMotor.getFalcon500(1);
     private final SingleJointedArmSim m_aimSim = new SingleJointedArmSim(
@@ -91,12 +97,9 @@ public class Aim extends SubsystemBase {
             new Color8Bit(Color.kHotPink)));
 
     private Measure<Angle> m_targetAngle = Rotations.of(0);
-    private Pose3d speaker = new Pose3d();
 
-    private Translation2d m_cameraTranslation2dXZ = new Translation2d();
-    private Translation2d m_pivotTranslation2dXZ = new Translation2d();
-    private Translation2d m_shotTranslation2dXZ = new Translation2d();
-    private Translation2d m_pivotToShotPose = new Translation2d();
+    private final LinearFilter m_filter = LinearFilter.singlePoleIIR(0.1, 0.02);
+
     private double m_pitchToSpeaker = 0;
 
     private boolean m_isCoast;
@@ -120,13 +123,12 @@ public class Aim extends SubsystemBase {
     private final DoubleLogger log_simAngle = WaltLogger.logDouble(kDbTabName + "/Sim", "curAngle");
     private final DoubleLogger log_simTarget = WaltLogger.logDouble(kDbTabName + "/Sim", "targetAngle");
 
-    private final DoubleLogger log_pitchErr = WaltLogger.logDouble(kDbTabName, "pitchErr");
-    private final DoubleLogger log_pitchToSpeaker = WaltLogger.logDouble(kDbTabName, "pitchToSpeaker");
-    private final Pose3dLogger log_camLocation = WaltLogger.logPose3d(kDbTabName, "camLocation");
-    private final Pose3dLogger log_camToSpeakerTarget = WaltLogger.logPose3d(kDbTabName, "speakerTarget");
+    private final Pose3dLogger log_pivotPos = WaltLogger.logPose3d(kDbTabName, "pivotPos");
+    private final Pose3dLogger log_speakerPos = WaltLogger.logPose3d(kDbTabName, "speakerPos");
+    private final DoubleLogger log_desiredPitch = WaltLogger.logDouble(kDbTabName, "desiredPitch");
 
-    private final Pose2dLogger log_pivotPos = WaltLogger.logPose2d(kDbTabName, "pivotPos");
-    private final Pose2dLogger log_speakerPos = WaltLogger.logPose2d(kDbTabName, "speakerPos");
+    private final DoubleLogger log_zDist = WaltLogger.logDouble(kDbTabName, "zDist");
+    private final DoubleLogger log_xDist = WaltLogger.logDouble(kDbTabName, "xDist");
 
     private final GenericEntry nte_isCoast;
 
@@ -146,10 +148,7 @@ public class Aim extends SubsystemBase {
             m_motor.setControl(m_voltage.withOutput(volts.in(Volts)));
         }, null, this));
 
-    public Aim(Vision vision) {
-        m_vision = vision;
-        speaker = Vision.getMiddleSpeakerTagPose().transformBy(AimK.kTagToSpeaker);
-
+    public Aim() {
         m_motor.getConfigurator().apply(motorConfig);
         m_cancoder.getConfigurator().apply(cancoderConfig);
 
@@ -166,6 +165,8 @@ public class Aim extends SubsystemBase {
             .getEntry();
 
         configureCoastTrigger();
+
+        log_tunableTest.accept(0.0);
     }
 
     private void determineMotionMagicValues(boolean vision) {
@@ -173,7 +174,7 @@ public class Aim extends SubsystemBase {
             m_dynamicRequest.Velocity = 0.1;
             m_dynamicRequest.Acceleration = 0.5;
             m_dynamicRequest.Jerk = 0;
-            m_dynamicRequest.Slot = 1;
+            m_dynamicRequest.Slot = 0;
         } else if (m_targetAngle.lt(Rotations.of(m_motor.getPosition().getValueAsDouble())) && m_motor.getPosition().getValueAsDouble() <= 0.2) {
             m_dynamicRequest.Velocity = 0.2;
             m_dynamicRequest.Acceleration = 0.3;
@@ -258,7 +259,7 @@ public class Aim extends SubsystemBase {
 
     public Command aim() {
         return runEnd(() -> {
-            m_targetAngle = Rotations.of(m_pitchToSpeaker);
+            m_targetAngle = Radians.of(m_pitchToSpeaker);
             sendAngleRequestToMotor(true);
         }, () -> {
             m_motor.setControl(m_brakeRequest);
@@ -335,39 +336,60 @@ public class Aim extends SubsystemBase {
             );
     }
 
+    public void getPitchToSpeaker(Optional<VisionMeasurement3d> measOpt) {
+        if (measOpt.isPresent()) {
+            var meas = measOpt.get();
+            var pose = meas.estimate().estimatedPose;
+
+            var pivotPose = pose.transformBy(kOriginToPivot);
+            var pivotTrans = pivotPose.getTranslation();
+
+            var speakerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kBlueCenterOpening);
+            var distance = speakerPos.minus(pivotTrans);
+            log_speakerPos.accept(speakerPos);
+            log_pivotPos.accept(pivotPose);
+
+            log_zDist.accept(Units.metersToInches(distance.getZ()));
+            log_xDist.accept(Units.metersToInches(distance.getX()));
+
+            m_pitchToSpeaker = m_filter.calculate(Math.atan(distance.getZ() / Math.hypot(distance.getX(), distance.getY())) - Units.degreesToRadians(28));
+            log_desiredPitch.accept(Units.radiansToDegrees(m_pitchToSpeaker));
+        }
+    }
+
     @Override
     public void periodic() {
-        var targetOpt = m_vision.speakerTargetSupplier().get();
+        // var targetOpt = m_vision.speakerTargetSupplier().get();
         
-        if (targetOpt.isPresent()) {
-            m_buffer.addSample(Timer.getFPGATimestamp(), m_motor.getPosition().getValueAsDouble());
-            var tagFieldPose = Vision.getMiddleSpeakerTagPose();
-            var target = targetOpt.get();
+        // if (targetOpt.isPresent()) {
+        //     m_buffer.addSample(Timer.getFPGATimestamp(), m_motor.getPosition().getValueAsDouble());
+        //     var tagFieldPose = Vision.getMiddleSpeakerTagPose();
+        //     var target = targetOpt.get();
 
-            var cameraTargetTransform = target.target().getBestCameraToTarget().inverse();
-            log_camLocation.accept(new Pose3d().plus(cameraTargetTransform));
+        //     var cameraTargetTransform = target.target().getBestCameraToTarget().inverse();
+        //     log_camLocation.accept(new Pose3d().plus(cameraTargetTransform));
 
-            var tagCamFieldPose = tagFieldPose.plus(cameraTargetTransform);
-            log_camToSpeakerTarget.accept(tagCamFieldPose);
+        //     var tagCamFieldPose = tagFieldPose.plus(cameraTargetTransform);
+        //     log_camToSpeakerTarget.accept(tagCamFieldPose);
 
-            m_cameraTranslation2dXZ = GeometryUtil.pose2dOnPlane(tagCamFieldPose, Plane.XZ).getTranslation();
+        //     m_cameraTranslation2dXZ = GeometryUtil.pose2dOnPlane(tagCamFieldPose, Plane.XZ).getTranslation();
 
-            m_pivotTranslation2dXZ = new Translation2d(
-                m_cameraTranslation2dXZ.getX() - (kLength.baseUnitMagnitude() * Math.asin(Units.degreesToRadians(getDegrees()))), 
-                m_cameraTranslation2dXZ.getY() - (kLength.baseUnitMagnitude() * Math.acos(Units.degreesToRadians(getDegrees()))));
-            log_pivotPos.accept(new Pose2d(m_pivotTranslation2dXZ, new Rotation2d()));
+        //     m_pivotTranslation2dXZ = new Translation2d(
+        //         m_cameraTranslation2dXZ.getX() - (kLength.baseUnitMagnitude() * Math.asin(Units.degreesToRadians(getDegrees()))), 
+        //         m_cameraTranslation2dXZ.getY() - (kLength.baseUnitMagnitude() * Math.acos(Units.degreesToRadians(getDegrees()))));
+        //     log_pivotPos.accept(new Pose2d(m_pivotTranslation2dXZ, new Rotation2d()));
 
-            m_shotTranslation2dXZ = GeometryUtil.pose2dOnPlane(speaker, Plane.XZ).getTranslation();
-            log_speakerPos.accept(new Pose2d(m_shotTranslation2dXZ, new Rotation2d()));
+        //     m_shotTranslation2dXZ = GeometryUtil.pose2dOnPlane(speaker, Plane.XZ).getTranslation();
+        //     log_speakerPos.accept(new Pose2d(m_shotTranslation2dXZ, new Rotation2d()));
 
-            m_pivotToShotPose = m_shotTranslation2dXZ.minus(m_pivotTranslation2dXZ);
+        //     m_pivotToShotPose = m_shotTranslation2dXZ.minus(m_pivotTranslation2dXZ);
 
-            m_pitchToSpeaker = m_pivotToShotPose.getAngle().getRotations() - Units.degreesToRotations(28);
-            m_pitchToSpeaker = MathUtil.clamp(m_pitchToSpeaker, Units.degreesToRotations(0), kSubwooferAngle.in(Rotations));
-            log_pitchToSpeaker.accept(m_pitchToSpeaker);
+        //     m_pitchToSpeaker = m_pivotToShotPose.getAngle().getRotations() - Units.degreesToRotations(28);
+        //     m_pitchToSpeaker = MathUtil.clamp(m_pitchToSpeaker, Units.degreesToRotations(0), kSubwooferAngle.in(Rotations));
+        //     log_pitchToSpeaker.accept(m_pitchToSpeaker);
 
-            log_pitchErr.accept(Units.rotationsToDegrees(m_pitchToSpeaker - m_motor.getPosition().getValueAsDouble()));
-        }
+        //     log_pitchErr.accept(Units.rotationsToDegrees(m_pitchToSpeaker - m_motor.getPosition().getValueAsDouble()));
+        // }
 
         // m_pitchToSpeaker = atan((robot to speaker z)/(robot to speaker x));
         // robot to speaker = cam to speaker + robot to cam
@@ -389,6 +411,11 @@ public class Aim extends SubsystemBase {
         if (dashCoast != m_isCoast && !trg_coastSwitch.getAsBoolean()) {
             m_isCoast = dashCoast;
             setCoast(m_isCoast);
+        }
+
+        if (m_tunableNumber != m_tunableTest.get()) {
+            m_tunableNumber = m_tunableTest.get();
+            log_tunableTest.accept(m_tunableNumber);
         }
     }
 

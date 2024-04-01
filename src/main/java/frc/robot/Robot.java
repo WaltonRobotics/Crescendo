@@ -68,7 +68,7 @@ public class Robot extends TimedRobot {
 	private final Swerve swerve = TunerConstants.drivetrain;
 	private final Vision vision = new Vision();
 	private final Shooter shooter = new Shooter();
-	private final Aim aim = new Aim(vision);
+	private final Aim aim = new Aim();
 	private final Intake intake = new Intake();
 	private final Conveyor conveyor = new Conveyor();
 
@@ -100,7 +100,7 @@ public class Robot extends TimedRobot {
 		addPeriodic(() -> {
 			var frontCamEstOpt = vision.getFrontCamPoseEst();
 			if (frontCamEstOpt.isPresent()) {
-				
+				aim.getPitchToSpeaker(frontCamEstOpt);
 				// swerve.addVisionMeasurement3d(frontCamEstOpt.get());
 			}
 		}, 0.02);
@@ -243,6 +243,8 @@ public class Robot extends TimedRobot {
 
 		// wheel pointy straight for pit
 		driver.povUp().and(driver.start()).whileTrue(swerve.applyRequest(() -> robotCentric.withVelocityX(0.5)));
+
+		driver.back().onTrue(swerve.resetPoseToSpeaker());
 	}
 
 	private Command getAutonomousCommand() {

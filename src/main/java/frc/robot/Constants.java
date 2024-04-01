@@ -260,6 +260,7 @@ public class Constants {
 
     public static class AimK {
         public static Transform3d kTagToSpeaker = new Transform3d(Units.inchesToMeters(10), 0.0, Units.inchesToMeters(24), new Rotation3d());
+        public static final Transform3d kOriginToPivot = new Transform3d(Units.inchesToMeters(-5.24999996), Units.inchesToMeters(0), Units.inchesToMeters(7.5075), new Rotation3d());
 
         public static final class AimConfigs {
             private static final double kP = 200;

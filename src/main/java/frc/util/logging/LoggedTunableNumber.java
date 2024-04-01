@@ -35,10 +35,12 @@ public class LoggedTunableNumber {
         if (!m_hasDefault) {
             return 0.0;
         }
-        if (!DriverStation.isFMSAttached()) {
-            return m_value;
+
+        if (DriverStation.isFMSAttached()) {
+            return m_defaultVal;
         }
-        return m_defaultVal;
+        
+        return m_value;
     }
 
     public void periodic() {
