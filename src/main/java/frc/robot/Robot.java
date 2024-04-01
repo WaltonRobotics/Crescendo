@@ -47,7 +47,6 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.util.AllianceFlipUtil;
 import frc.util.CommandLogger;
 import frc.util.logging.WaltLogger;
-import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
 
@@ -72,7 +71,7 @@ public class Robot extends TimedRobot {
 	private final Aim aim = new Aim();
 	private final Intake intake = new Intake();
 	private final Conveyor conveyor = new Conveyor();
-	private final Climber climber = new Climber();
+	// private final Climber climber = new Climber();
 
 	public final Superstructure superstructure = new Superstructure(
 		aim, intake, conveyor, shooter, vision,
@@ -213,10 +212,10 @@ public class Robot extends TimedRobot {
 		manipulator.leftBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kAmpAngle, Degrees.of(0.25)));
 
 		// climber controls	
-		manipulator.a().and(manipulator.povDown()).whileTrue(climber.climb());
-		manipulator.a().and(manipulator.povUp()).whileTrue(climber.release());
-		manipulator.a().and(manipulator.povLeft()).whileTrue(climber.moveLeft());
-		manipulator.a().and(manipulator.povRight()).whileTrue(climber.moveRight());
+		// manipulator.a().and(manipulator.povDown()).whileTrue(climber.climb());
+		// manipulator.a().and(manipulator.povUp()).whileTrue(climber.release());
+		// manipulator.a().and(manipulator.povLeft()).whileTrue(climber.moveLeft());
+		// manipulator.a().and(manipulator.povRight()).whileTrue(climber.moveRight());
 	}
 
 	public void configureTestingBindings() {
