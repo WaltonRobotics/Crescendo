@@ -98,7 +98,7 @@ public class Aim extends SubsystemBase {
 
     private Measure<Angle> m_targetAngle = Rotations.of(0);
 
-    private final LinearFilter m_filter = LinearFilter.singlePoleIIR(0.1, 0.02);
+    private final LinearFilter m_filter = LinearFilter.singlePoleIIR(0.1, 0.06);
 
     private double m_pitchToSpeaker = 0;
 

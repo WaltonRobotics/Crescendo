@@ -322,7 +322,7 @@ public class Superstructure {
         
         // if note in shooter sensor and state shooting
         // state -> LEFT_BEAM_BREAK, timothy says bye :D
-        (irqTrg_shooterBeamBreak.and(stateTrg_shooting).and(trg_driverAmpReq.negate()))
+        (irqTrg_shooterBeamBreak.and(stateTrg_shooting).and(trg_driverAmpReq.negate()).or(stateTrg_shooting.debounce(0.4)))
             .onTrue(changeStateCmd(LEFT_BEAM_BREAK));  
 
         (irqTrg_shooterBeamBreak.and(irqTrg_conveyorBeamBreak.negate()).and(stateTrg_shooting).and(trg_driverAmpReq))
