@@ -267,8 +267,8 @@ public class Constants {
             private static final double kPVision = 40;
             private static final double kI = 0;
             private static final double kS = 0.9 * 1.25;
-            private static final double kV = 37.44 * 1.25;
-            private static final double kA = 2 * 1.25;
+            private static final double kV = 37.44 / 1.25;
+            private static final double kA = 2 / 1.25;
             public static final double kG = 0.16 * 1.25;
 
             public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
