@@ -95,6 +95,7 @@ public class Aim extends SubsystemBase {
     private double m_pitchToSpeaker = 0;
 
     private boolean m_isCoast;
+    private boolean m_vision = false;
 
     private Translation3d m_centerPos;
 
@@ -161,15 +162,13 @@ public class Aim extends SubsystemBase {
         // configureCoastTrigger();
 
         log_tunableTest.accept(0.0);
-
-        m_centerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kBlueCenterOpening);
     }
 
     private void determineMotionMagicValues(boolean vision) {
-        if (vision) {
+        if (vision && MathUtil.isNear(m_targetAngle.in(Rotations), m_motor.getPosition().getValueAsDouble(), Units.degreesToRotations(2))) {
             m_dynamicRequest.Velocity = 0.1;
             m_dynamicRequest.Acceleration = 0.5;
-            m_dynamicRequest.Jerk = 0;
+            m_dynamicRequest.Jerk = 0.05;
             m_dynamicRequest.Slot = 0;
         } else if (m_targetAngle.lt(Rotations.of(m_motor.getPosition().getValueAsDouble())) && m_motor.getPosition().getValueAsDouble() <= 0.2) {
             m_dynamicRequest.Velocity = 0.2;
@@ -212,8 +211,6 @@ public class Aim extends SubsystemBase {
         var target = m_targetAngle.in(Degrees);
         var safeAngle = MathUtil.clamp(target, 0, vision ? kSubwooferAngle.in(Degrees) : 120);
         m_targetAngle = Degrees.of(safeAngle);
-
-        determineMotionMagicValues(vision);
         var ff = Math.cos(Units.degreesToRadians(getDegrees())) * kG;
         m_motor.setControl(m_dynamicRequest
             .withPosition(m_targetAngle.in(Rotations))
@@ -255,9 +252,11 @@ public class Aim extends SubsystemBase {
 
     public Command aim() {
         return runEnd(() -> {
+            m_vision = true;
             m_targetAngle = Radians.of(m_pitchToSpeaker);
             sendAngleRequestToMotor(true);
         }, () -> {
+            m_vision = false;
             m_motor.setControl(m_brakeRequest);
         }).withName("AimWithVision");
     }
@@ -341,6 +340,7 @@ public class Aim extends SubsystemBase {
             var pivotTrans = pivotPose.getTranslation();
 
             Translation3d speakerPos;
+            m_centerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kBlueCenterOpening);
             
             if (MathUtil.isNear(m_centerPos.getY(), pose.getY(), 1)) {
                 speakerPos = m_centerPos;
@@ -357,13 +357,14 @@ public class Aim extends SubsystemBase {
             log_zDist.accept(Units.metersToInches(distance.getZ()));
             log_xDist.accept(Units.metersToInches(distance.getX()));
 
-            m_pitchToSpeaker = m_filter.calculate(Math.atan(distance.getZ() / Math.hypot(distance.getX(), distance.getY())) - Units.degreesToRadians(28));
+            m_pitchToSpeaker = m_filter.calculate(Math.atan(distance.getZ() / Math.hypot(distance.getX(), distance.getY()))) - Units.degreesToRadians(28);
             log_desiredPitch.accept(Units.radiansToDegrees(m_pitchToSpeaker));
         }
     }
 
     @Override
     public void periodic() {
+        determineMotionMagicValues(m_vision);
         log_motorSpeed.accept(m_motor.get());
         log_motorPos.accept(Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()));
         log_targetAngle.accept(getTargetAngle());

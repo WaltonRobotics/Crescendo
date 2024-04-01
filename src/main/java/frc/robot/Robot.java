@@ -102,7 +102,6 @@ public class Robot extends TimedRobot {
 			var frontCamEstOpt = vision.getFrontCamPoseEst();
 			if (frontCamEstOpt.isPresent()) {
 				aim.getPitchToSpeaker(frontCamEstOpt);
-				// swerve.addVisionMeasurement3d(frontCamEstOpt.get());
 			}
 		}, 0.02);
 	}
