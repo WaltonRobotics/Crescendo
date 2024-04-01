@@ -131,8 +131,6 @@ public class Aim extends SubsystemBase {
 
     private final Timer m_targetTimer = new Timer();
 
-    private boolean m_vision = false;
-
     private final VoltageOut m_voltage = new VoltageOut(0);
     private final SysIdRoutine m_sysId = new SysIdRoutine(
         new SysIdRoutine.Config(
@@ -168,7 +166,7 @@ public class Aim extends SubsystemBase {
     }
 
     private void determineMotionMagicValues(boolean vision) {
-        if (vision && MathUtil.isNear(m_targetAngle.in(Rotations), m_motor.getPosition().getValueAsDouble(), Units.degreesToRotations(1))) {
+        if (vision) {
             m_dynamicRequest.Velocity = 0.1;
             m_dynamicRequest.Acceleration = 0.5;
             m_dynamicRequest.Jerk = 0;
@@ -215,6 +213,7 @@ public class Aim extends SubsystemBase {
         var safeAngle = MathUtil.clamp(target, 0, vision ? kSubwooferAngle.in(Degrees) : 120);
         m_targetAngle = Degrees.of(safeAngle);
 
+        determineMotionMagicValues(vision);
         var ff = Math.cos(Units.degreesToRadians(getDegrees())) * kG;
         m_motor.setControl(m_dynamicRequest
             .withPosition(m_targetAngle.in(Rotations))
@@ -256,11 +255,9 @@ public class Aim extends SubsystemBase {
 
     public Command aim() {
         return runEnd(() -> {
-            m_vision = true;
             m_targetAngle = Radians.of(m_pitchToSpeaker);
             sendAngleRequestToMotor(true);
         }, () -> {
-            m_vision = false;
             m_motor.setControl(m_brakeRequest);
         }).withName("AimWithVision");
     }
@@ -367,8 +364,6 @@ public class Aim extends SubsystemBase {
 
     @Override
     public void periodic() {
-        determineMotionMagicValues(m_vision);
-
         log_motorSpeed.accept(m_motor.get());
         log_motorPos.accept(Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()));
         log_targetAngle.accept(getTargetAngle());
