@@ -131,6 +131,8 @@ public class Aim extends SubsystemBase {
 
     private final Timer m_targetTimer = new Timer();
 
+    private boolean m_vision = false;
+
     private final VoltageOut m_voltage = new VoltageOut(0);
     private final SysIdRoutine m_sysId = new SysIdRoutine(
         new SysIdRoutine.Config(
@@ -158,7 +160,7 @@ public class Aim extends SubsystemBase {
             .withWidget(BuiltInWidgets.kToggleSwitch)
             .getEntry();
 
-        configureCoastTrigger();
+        // configureCoastTrigger();
 
         log_tunableTest.accept(0.0);
 
@@ -166,7 +168,7 @@ public class Aim extends SubsystemBase {
     }
 
     private void determineMotionMagicValues(boolean vision) {
-        if (vision) {
+        if (vision && MathUtil.isNear(m_targetAngle.in(Rotations), m_motor.getPosition().getValueAsDouble(), Units.degreesToRotations(1))) {
             m_dynamicRequest.Velocity = 0.1;
             m_dynamicRequest.Acceleration = 0.5;
             m_dynamicRequest.Jerk = 0;
@@ -212,7 +214,6 @@ public class Aim extends SubsystemBase {
         var target = m_targetAngle.in(Degrees);
         var safeAngle = MathUtil.clamp(target, 0, vision ? kSubwooferAngle.in(Degrees) : 120);
         m_targetAngle = Degrees.of(safeAngle);
-        determineMotionMagicValues(vision);
 
         var ff = Math.cos(Units.degreesToRadians(getDegrees())) * kG;
         m_motor.setControl(m_dynamicRequest
@@ -255,9 +256,11 @@ public class Aim extends SubsystemBase {
 
     public Command aim() {
         return runEnd(() -> {
+            m_vision = true;
             m_targetAngle = Radians.of(m_pitchToSpeaker);
             sendAngleRequestToMotor(true);
         }, () -> {
+            m_vision = false;
             m_motor.setControl(m_brakeRequest);
         }).withName("AimWithVision");
     }
@@ -364,40 +367,7 @@ public class Aim extends SubsystemBase {
 
     @Override
     public void periodic() {
-        // var targetOpt = m_vision.speakerTargetSupplier().get();
-        
-        // if (targetOpt.isPresent()) {
-        //     m_buffer.addSample(Timer.getFPGATimestamp(), m_motor.getPosition().getValueAsDouble());
-        //     var tagFieldPose = Vision.getMiddleSpeakerTagPose();
-        //     var target = targetOpt.get();
-
-        //     var cameraTargetTransform = target.target().getBestCameraToTarget().inverse();
-        //     log_camLocation.accept(new Pose3d().plus(cameraTargetTransform));
-
-        //     var tagCamFieldPose = tagFieldPose.plus(cameraTargetTransform);
-        //     log_camToSpeakerTarget.accept(tagCamFieldPose);
-
-        //     m_cameraTranslation2dXZ = GeometryUtil.pose2dOnPlane(tagCamFieldPose, Plane.XZ).getTranslation();
-
-        //     m_pivotTranslation2dXZ = new Translation2d(
-        //         m_cameraTranslation2dXZ.getX() - (kLength.baseUnitMagnitude() * Math.asin(Units.degreesToRadians(getDegrees()))), 
-        //         m_cameraTranslation2dXZ.getY() - (kLength.baseUnitMagnitude() * Math.acos(Units.degreesToRadians(getDegrees()))));
-        //     log_pivotPos.accept(new Pose2d(m_pivotTranslation2dXZ, new Rotation2d()));
-
-        //     m_shotTranslation2dXZ = GeometryUtil.pose2dOnPlane(speaker, Plane.XZ).getTranslation();
-        //     log_speakerPos.accept(new Pose2d(m_shotTranslation2dXZ, new Rotation2d()));
-
-        //     m_pivotToShotPose = m_shotTranslation2dXZ.minus(m_pivotTranslation2dXZ);
-
-        //     m_pitchToSpeaker = m_pivotToShotPose.getAngle().getRotations() - Units.degreesToRotations(28);
-        //     m_pitchToSpeaker = MathUtil.clamp(m_pitchToSpeaker, Units.degreesToRotations(0), kSubwooferAngle.in(Rotations));
-        //     log_pitchToSpeaker.accept(m_pitchToSpeaker);
-
-        //     log_pitchErr.accept(Units.rotationsToDegrees(m_pitchToSpeaker - m_motor.getPosition().getValueAsDouble()));
-        // }
-
-        // m_pitchToSpeaker = atan((robot to speaker z)/(robot to speaker x));
-        // robot to speaker = cam to speaker + robot to cam
+        determineMotionMagicValues(m_vision);
 
         log_motorSpeed.accept(m_motor.get());
         log_motorPos.accept(Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()));
