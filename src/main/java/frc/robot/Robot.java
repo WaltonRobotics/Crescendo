@@ -51,6 +51,7 @@ import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
 
 import static frc.robot.Constants.AimK.kAmpAngle;
+import static frc.robot.Constants.AimK.kSubwooferAngle;
 import static frc.robot.Constants.RobotK.*;
 
 import java.util.function.Supplier;
@@ -199,10 +200,13 @@ public class Robot extends TimedRobot {
 		manipulator.b().and(manipulator.leftTrigger()).onTrue(superstructure.forceStateToIntake());
 
 		// aim safe angle
-		manipulator.x().whileTrue(aim.hardStop());
+		manipulator.x().and(manipulator.rightBumper().negate()).onTrue(aim.hardStop());
 		
 		// vision aiming
-		manipulator.y().whileTrue(aim.aim());
+		manipulator.y().and(manipulator.leftBumper().negate()).whileTrue(aim.aim());
+
+		// subwoofer if vision breaky
+		manipulator.x().and(manipulator.rightBumper()).onTrue(aim.toAngleUntilAt(kSubwooferAngle));
 
 		// aim rezero
 		manipulator.b().and(manipulator.povDown()).and(manipulator.x()).onTrue(aim.rezero());
