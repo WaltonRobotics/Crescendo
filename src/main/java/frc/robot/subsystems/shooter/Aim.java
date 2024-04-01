@@ -96,6 +96,8 @@ public class Aim extends SubsystemBase {
 
     private boolean m_isCoast;
 
+    private Translation3d m_centerPos;
+
     private final DoubleLogger log_targetAngle = WaltLogger.logDouble(kDbTabName, "targetAngle");
     private final DoubleLogger log_motorSpeed = WaltLogger.logDouble(kDbTabName, "motorSpeed");
     private final DoubleLogger log_motorPos = WaltLogger.logDouble(kDbTabName, "motorPos");
@@ -159,6 +161,8 @@ public class Aim extends SubsystemBase {
         configureCoastTrigger();
 
         log_tunableTest.accept(0.0);
+
+        m_centerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kBlueCenterOpening);
     }
 
     private void determineMotionMagicValues(boolean vision) {
@@ -336,7 +340,16 @@ public class Aim extends SubsystemBase {
             var pivotPose = pose.transformBy(kOriginToPivot);
             var pivotTrans = pivotPose.getTranslation();
 
-            var speakerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kBlueCenterOpening);
+            Translation3d speakerPos;
+            
+            if (MathUtil.isNear(m_centerPos.getY(), pose.getY(), 1)) {
+                speakerPos = m_centerPos;
+            } else if (pose.getY() < m_centerPos.getY()) {
+                speakerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kTopRight);
+            } else {
+                speakerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kTopLeft);
+            }
+
             var distance = speakerPos.minus(pivotTrans);
             log_speakerPos.accept(speakerPos);
             log_pivotPos.accept(pivotPose);
