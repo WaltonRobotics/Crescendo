@@ -11,6 +11,8 @@ import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.IntLogger;
+import frc.robot.Vision;
+import frc.robot.Constants.AimK;
 import frc.robot.subsystems.Superstructure;
 
 import static edu.wpi.first.units.Units.*;
@@ -47,12 +49,14 @@ public final class VisionAutonFactory {
 		}, Set.of());
 	}
 
-	private static Command preloadShot(Superstructure superstructure) {
+	private static Command preloadShot(Superstructure superstructure, Aim aim) {
 		var noteReady = superstructure.forceStateToNoteReady();
+		var setTarget = aim.setTarget(AimK.kSubwooferAngle);
 		var shoot = superstructure.autonShootReq();
 
 		return sequence(
 			noteReady,
+			setTarget,
 			parallel(
 				print("aim and spin up"),
 				shoot.andThen(print("shoot done"))
@@ -77,8 +81,9 @@ public final class VisionAutonFactory {
 	private static Command ampTwoInternal(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var resetPose = swerve.resetPose(Paths.ampSide1);
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide1).withName("PathFollow");
-		var preloadShot = preloadShot(superstructure);
+		var preloadShot = preloadShot(superstructure, aim);
 		var intake = superstructure.autonIntakeReq();
+		var aimTarget = aim.setTarget(Degrees.of(2.25));
 		var secondShotReq = superstructure.autonShootReq();
 
 		return sequence(
@@ -94,7 +99,8 @@ public final class VisionAutonFactory {
 			parallel(
 				print("should be intaking"),
 				intake,
-				pathFollow
+				pathFollow,
+				either(aimTarget, Commands.none(), () -> Vision.m_timer.hasElapsed(0.1))
 			),
 			logSeqIncr(),
 			secondShotReq,
@@ -113,6 +119,7 @@ public final class VisionAutonFactory {
 		/* everything from 3 piece */
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide2);
 		var intake = superstructure.autonIntakeReq();
+		var aimTarget = aim.setTarget(Degrees.of(0));
 		var thirdShotReq = superstructure.autonShootReq();
 		
 		return sequence(
@@ -124,6 +131,7 @@ public final class VisionAutonFactory {
 					waitSeconds(0.1),
 					intake
 				),
+				either(aimTarget, Commands.none(), () -> Vision.m_timer.hasElapsed(0.1)),
 				pathFollow
 			),
 			thirdShotReq,
@@ -140,6 +148,7 @@ public final class VisionAutonFactory {
 		var three = ampThreeInternal(superstructure, shooter, swerve, aim);
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide3);
 		var intake = superstructure.autonIntakeReq();
+		var aimTarget = aim.setTarget(Degrees.of(1));
 		var fourthShotReq = superstructure.autonShootReq();
 
 		return sequence( // 3pc then (path and (wait then intake))
@@ -150,6 +159,7 @@ public final class VisionAutonFactory {
 					waitSeconds(0.8),
 					intake
 				),
+				either(aimTarget, Commands.none(), () -> Vision.m_timer.hasElapsed(0.1)),
 				pathFollow
 			),
             fourthShotReq,
@@ -166,6 +176,7 @@ public final class VisionAutonFactory {
 		var four = ampFourInternal(superstructure, shooter, swerve, aim);
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide4);
 		var intake = superstructure.autonIntakeReq();
+		var aimTarget = aim.setTarget(Degrees.of(1));
 		var fifthShotReq = superstructure.autonShootReq();
 
 		var auton = sequence( // 3pc then (path and (wait then intake))
@@ -176,6 +187,7 @@ public final class VisionAutonFactory {
 					waitSeconds(0.8),
 					intake
 				),
+				either(aimTarget, Commands.none(), () -> Vision.m_timer.hasElapsed(0.1)),
 				pathFollow
 			),
             fifthShotReq,
@@ -188,7 +200,7 @@ public final class VisionAutonFactory {
 	public static Command sourceTwoInternal(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var resetPose = swerve.resetPose(Paths.sourceSide1);
 		var pathFollow = AutoBuilder.followPath(Paths.sourceSide1).withName("PathFollow");
-		var preloadShot = preloadShot(superstructure);
+		var preloadShot = preloadShot(superstructure, aim);
 		var intake = superstructure.autonIntakeReq();
 		var secondShotReq = superstructure.autonShootReq();
 
@@ -227,7 +239,6 @@ public final class VisionAutonFactory {
 		var two = sourceTwoInternal(superstructure, shooter, swerve, aim);
 		var pathFollow = AutoBuilder.followPath(Paths.sourceSide2);
 		var intake = superstructure.autonIntakeReq();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
 		var thirdShotReq = superstructure.autonShootReq();
 		
 		return sequence(
@@ -239,8 +250,7 @@ public final class VisionAutonFactory {
 					waitSeconds(0.8),
 					intake
 				),
-				pathFollow,
-				aimCmd.until(superstructure.trg_atAngle)
+				pathFollow
 			),
 			thirdShotReq,
 			waitUntil(superstructure.stateTrg_idle)
@@ -292,7 +302,7 @@ public final class VisionAutonFactory {
 	public static Command g28Counter(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var resetPose = swerve.resetPose(Paths.g28Counter1);
 		var pathFollow = AutoBuilder.followPath(Paths.g28Counter1).withName("PathFollow");
-		var preloadShot = preloadShot(superstructure);
+		var preloadShot = preloadShot(superstructure, aim);
 		var intake = superstructure.autonIntakeReq();
 		var secondShotReq = superstructure.autonShootReq();
 		var pathFollow2 = AutoBuilder.followPath(Paths.g28Counter2).withName("PathFollow2");

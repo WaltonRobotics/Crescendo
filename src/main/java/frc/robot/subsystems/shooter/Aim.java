@@ -43,6 +43,7 @@ import frc.robot.Constants.FieldK;
 import frc.robot.Constants.AimK.AimConfigs;
 import frc.robot.Vision.VisionMeasurement3d;
 import frc.util.AllianceFlipUtil;
+import frc.util.WaltRangeChecker;
 import frc.util.logging.LoggedTunableNumber;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.*;
@@ -52,7 +53,6 @@ import static frc.robot.Constants.kCanbus;
 import static frc.robot.Constants.AimK.*;
 import static frc.robot.Constants.AimK.AimConfigs.*;
 import static frc.robot.Constants.RobotK.kSimInterval;
-
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -162,6 +162,8 @@ public class Aim extends SubsystemBase {
         // configureCoastTrigger();
 
         log_tunableTest.accept(0.0);
+
+        WaltRangeChecker.addDoubleChecker("DesiredPitch", () -> m_pitchToSpeaker, 0, kSubwooferAngle.in(Radians), 1, false);
     }
 
     private void determineMotionMagicValues(boolean vision) {
@@ -329,6 +331,12 @@ public class Aim extends SubsystemBase {
             .onFalse(
                 coastCmd(false).ignoringDisable(true)
             );
+    }
+
+    public Command setTarget(Measure<Angle> target) {
+        return Commands.runOnce(() -> {
+            m_targetAngle = target;
+        });
     }
 
     public void getPitchToSpeaker(Optional<VisionMeasurement3d> measOpt) {
