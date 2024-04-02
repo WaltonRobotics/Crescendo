@@ -247,9 +247,9 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			var pose = measOpt.get().estimate().estimatedPose;
 			var speakerTrans = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpening);
 			var dist = speakerTrans.minus(pose.getTranslation());
-			var desiredYaw = Math.atan(dist.getY() / dist.getX());
+			var desiredYaw = Math.atan2(dist.getY(), dist.getX());
 			var curYaw = pose.getRotation().getZ();
-			var yawErr = desiredYaw - curYaw;
+			var yawErr = ((desiredYaw - curYaw) * Math.PI) % (2 * Math.PI) - Math.PI;
 			log_yawErrOpt.accept(Units.radiansToDegrees(yawErr));
 			m_hasVisionYaw = true;
 			m_visYawTimer.restart();

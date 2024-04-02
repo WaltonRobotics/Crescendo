@@ -349,16 +349,10 @@ public class Constants {
         public static final Measure<Angle> kTolerance = Degrees.of(2);
     }
 
-    // public class ClimberK {
-    // public static final int kLeftId = 20;
-    // public static final int kRightId = 21;
-    // public static final int kLimitSwitchId = 2;
-
-    // public static final Measure<Distance> kMetersPerRotation = Meters.of(0.3);
-    // public static final Measure<Distance> kMaxHeight = Inches.of(56);
-
-    // public static final double kP = 3.25;
-    // }
+    public class ClimberK {
+        public static final int kLeftId = 32;
+        public static final int kRightId = 31;
+    }
 
     public class RobotK {
         public static final String kDbTabName = "Superstructure";

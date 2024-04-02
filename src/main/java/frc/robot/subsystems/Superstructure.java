@@ -186,7 +186,6 @@ public class Superstructure {
         irqTrg_shooterBeamBreak.negate().debounce(0.1)
             .onTrue(Commands.runOnce(() -> log_shooterBeamBreakExtended.accept(false)).ignoringDisable(true));
 
-
         trg_spunUp = new Trigger(m_shooter::spinUpFinished).debounce(0.05);
         trg_atAngle = new Trigger(m_aim.aimFinished());
 
@@ -273,7 +272,7 @@ public class Superstructure {
             );
 
         // note in shooter and not shooting
-        (irqTrg_conveyorBeamBreak.and(irqTrg_frontSensor)).and(RobotModeTriggers.autonomous().negate())
+        (irqTrg_conveyorBeamBreak.and(irqTrg_frontSensor).and(extStateTrg_shooting.negate())).and(RobotModeTriggers.autonomous().negate())
             .onTrue(
                 Commands.parallel(
                     changeStateCmd(ROLLER_BEAM_RETRACT),
@@ -455,19 +454,20 @@ public class Superstructure {
         evaluateConveyorIrq();
         evaluateShooterIrq();
 
+        log_driverIntakeReq.accept(trg_driverIntakeReq);
+        log_driverShootReq.accept(trg_driverShootReq);
+        log_autonIntakeReq.accept(autonIntake);
+        log_autonShootReq.accept(autonShoot);
+        log_aimReady.accept(trg_atAngle);
+        
+        sensorEventLoop.poll();
         log_frontVisiSight.accept(bs_frontVisiSight);
         log_conveyorBeamBreak.accept(bs_conveyorBeamBreak);
         log_shooterBeamBreak.accept(bs_shooterBeamBreak);
         log_frontVisiSightIrq.accept(frontVisiSightSeenNote);
         log_conveyorBeamBreakIrq.accept(conveyorBeamBreakIrq);
         log_shooterBeamBreakIrq.accept(irqTrg_shooterBeamBreak.getAsBoolean());
-        log_driverIntakeReq.accept(trg_driverIntakeReq);
-        log_driverShootReq.accept(trg_driverShootReq);
-        log_autonIntakeReq.accept(autonIntake);
-        log_autonShootReq.accept(autonShoot);
-        log_aimReady.accept(trg_atAngle);
 
-        sensorEventLoop.poll();
         stateEventLoop.poll();
 
         // log state after, so it represents the event loop changes
