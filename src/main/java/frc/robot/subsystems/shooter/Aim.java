@@ -89,7 +89,7 @@ public class Aim extends SubsystemBase {
 
     private Measure<Angle> m_targetAngle = Rotations.of(0);
 
-    private final LinearFilter m_filter = LinearFilter.singlePoleIIR(0.1, 0.06);
+    private final LinearFilter m_filter = LinearFilter.singlePoleIIR(0.06, 0.02);
 
     private double m_pitchToSpeaker = 0;
 
@@ -169,16 +169,16 @@ public class Aim extends SubsystemBase {
         if (vision && MathUtil.isNear(m_targetAngle.in(Rotations), m_motor.getPosition().getValueAsDouble(), Units.degreesToRotations(2))) {
             m_dynamicRequest.Velocity = 0.1;
             m_dynamicRequest.Acceleration = 0.5;
-            m_dynamicRequest.Jerk = 0.05;
+            m_dynamicRequest.Jerk = 7.5;
             m_dynamicRequest.Slot = 0;
         } else if (m_targetAngle.lt(Rotations.of(m_motor.getPosition().getValueAsDouble())) && m_motor.getPosition().getValueAsDouble() <= 0.2) {
-            m_dynamicRequest.Velocity = 0.2;
-            m_dynamicRequest.Acceleration = 0.5;
+            m_dynamicRequest.Velocity = 0.3;
+            m_dynamicRequest.Acceleration = 0.75;
             m_dynamicRequest.Jerk = 0;
             m_dynamicRequest.Slot = 0;
         } else {
             m_dynamicRequest.Velocity = 0.3 * 1.25;
-            m_dynamicRequest.Acceleration = 0.85;
+            m_dynamicRequest.Acceleration = 1;
             m_dynamicRequest.Jerk = 0;
             m_dynamicRequest.Slot = 0;
         }

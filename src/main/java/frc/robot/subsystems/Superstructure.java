@@ -122,12 +122,15 @@ public class Superstructure {
     private double conveyorBeamBreakIrqLastRising = 0;
     private double conveyorBeamBreakIrqLastFalling = 0;
     private final SynchronousInterrupt irq_conveyorBeamBreak = new SynchronousInterrupt(conveyorBeamBreak);
+    private final BooleanLogger log_conveyorBeamBreakExtended = 
+        WaltLogger.logBoolean(kDbTabName, "conveyorBeamBreakExtended", PubSubOption.sendAll(true));
     
     private boolean shooterBeamBreakIrq = false;
     private double shooterBeamBreakIrqLastRising = 0;
     private double shooterBeamBreakIrqLastFalling = 0;
     private final SynchronousInterrupt irq_shooterBeamBreak = new SynchronousInterrupt(shooterBeamBreak);
-    private int shooterBeamBreakVal = 0;
+    private final BooleanLogger log_shooterBeamBreakExtended =
+        WaltLogger.logBoolean(kDbTabName, "shooterBeamBreakExtended", PubSubOption.sendAll(true));
 
     private final Trigger irqTrg_conveyorBeamBreak;
     private final Trigger irqTrg_shooterBeamBreak;
@@ -167,8 +170,20 @@ public class Superstructure {
 
         irqTrg_frontSensor = new Trigger(sensorEventLoop, () -> frontVisiSightSeenNote);
         
+        // initialize (inverted)
+        shooterBeamBreakIrq = !shooterBeamBreak.get();
+
         irqTrg_conveyorBeamBreak = new Trigger(sensorEventLoop, () -> conveyorBeamBreakIrq);
+        irqTrg_conveyorBeamBreak
+            .onTrue(Commands.runOnce(()-> log_conveyorBeamBreakExtended.accept(true)).ignoringDisable(true));
+        irqTrg_conveyorBeamBreak.negate().debounce(0.1)
+            .onTrue(Commands.runOnce(() -> log_conveyorBeamBreakExtended.accept(false)).ignoringDisable(true));
+
         irqTrg_shooterBeamBreak = new Trigger(sensorEventLoop, () -> shooterBeamBreakIrq);
+        irqTrg_shooterBeamBreak
+            .onTrue(Commands.runOnce(()-> log_shooterBeamBreakExtended.accept(true)).ignoringDisable(true));
+        irqTrg_shooterBeamBreak.negate().debounce(0.1)
+            .onTrue(Commands.runOnce(() -> log_shooterBeamBreakExtended.accept(false)).ignoringDisable(true));
 
 
         trg_spunUp = new Trigger(m_shooter::spinUpFinished).debounce(0.05);
@@ -177,19 +192,9 @@ public class Superstructure {
         m_state = IDLE;
 
         configureStateTriggers();
+        WaltRangeChecker.addIntegerChecker("ShooterBeamBreak", () -> shooterBeamBreakIrq ? 1 : 0, -1, 1, 1, true);
 
-        // can't cast boolean to int :sob:
-        irqTrg_shooterBeamBreak
-            .onTrue(
-                Commands.runOnce(() -> shooterBeamBreakVal = 1)
-            )
-            .onFalse(
-                Commands.runOnce(() -> shooterBeamBreakVal = 0)
-            );
-        
-        WaltRangeChecker.addIntegerChecker("ShooterBeamBreak", () -> shooterBeamBreakVal, -1, 1, 5, true);
-
-        shootTimer();
+        configureShootTimer();
     }
 
    private Command cmdDriverRumble(double intensity, double seconds) {
@@ -223,7 +228,7 @@ public class Superstructure {
         }).withName("SuperStateChange_To" + state);
     }
 
-    private void shootTimer() {
+    private void configureShootTimer() {
         trg_driverShootReq
             .onTrue(Commands.runOnce(() -> timer.restart()))
             .onFalse(Commands.runOnce(() -> timer.reset()));
@@ -298,7 +303,7 @@ public class Superstructure {
                     changeStateCmd(NOTE_READY),
                     m_conveyor.stop()).withName("NoteReady_StopConveyor"));
         
-        stateTrg_noteReady.and(irqTrg_conveyorBeamBreak).and(RobotModeTriggers.teleop())
+        (stateTrg_noteReady.and(irqTrg_conveyorBeamBreak)).debounce(0.2).and(RobotModeTriggers.teleop())
             .onTrue(changeStateCmd(ROLLER_BEAM_RETRACT));
 
         // added back shoot ok
@@ -310,7 +315,7 @@ public class Superstructure {
                 )
             );
 
-        stateTrg_shootOk.and(extStateTrg_shooting.negate()).and((trg_spunUp.and(trg_atAngle).negate()))
+        stateTrg_shootOk.and(extStateTrg_shooting.negate()).and((trg_spunUp.and(trg_atAngle).negate())).and(trg_shootReq.negate())
             .onTrue(changeStateCmd(NOTE_READY));
 
         // if shooter spun up and asked to shoot
@@ -454,7 +459,7 @@ public class Superstructure {
         log_shooterBeamBreak.accept(bs_shooterBeamBreak);
         log_frontVisiSightIrq.accept(frontVisiSightSeenNote);
         log_conveyorBeamBreakIrq.accept(conveyorBeamBreakIrq);
-        log_shooterBeamBreakIrq.accept(shooterBeamBreakIrq);
+        log_shooterBeamBreakIrq.accept(irqTrg_shooterBeamBreak.getAsBoolean());
         log_driverIntakeReq.accept(trg_driverIntakeReq);
         log_driverShootReq.accept(trg_driverShootReq);
         log_autonIntakeReq.accept(autonIntake);
