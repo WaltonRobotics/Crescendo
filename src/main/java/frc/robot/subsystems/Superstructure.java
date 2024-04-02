@@ -103,7 +103,7 @@ public class Superstructure {
     private final Trigger stateTrg_leftBeamBreak = new Trigger(stateEventLoop,
         () -> m_state == LEFT_BEAM_BREAK);
         private final Trigger extStateTrg_noteIn = new Trigger(stateEventLoop, () -> m_state.idx > ROLLER_BEAM_RETRACT.idx);
-    private final Trigger extStateTrg_shooting = new Trigger(stateEventLoop, () -> m_state.idx > SHOOT_OK.idx);
+    public final Trigger extStateTrg_shooting = new Trigger(stateEventLoop, () -> m_state.idx > SHOOT_OK.idx);
     public final Trigger stateTrg_noteReady = new Trigger(stateEventLoop,
         () -> m_state == NOTE_READY);
 
@@ -319,7 +319,10 @@ public class Superstructure {
                 )
             );
 
-        stateTrg_shootOk.and(extStateTrg_shooting.negate()).and((trg_spunUp.and(trg_atAngle).negate())).and(trg_shootReq.negate())
+        stateTrg_shootOk
+        .and(extStateTrg_shooting.negate())
+        .and((trg_spunUp.and(trg_atAngle).negate().debounce(0.5)))
+        .and(trg_shootReq.negate()).and(RobotModeTriggers.autonomous().negate())
             .onTrue(changeStateCmd(NOTE_READY));
 
         // if shooter spun up and asked to shoot

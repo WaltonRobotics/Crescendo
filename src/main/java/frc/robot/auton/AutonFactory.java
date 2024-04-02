@@ -164,7 +164,7 @@ public final class AutonFactory {
 					waitSeconds(0.5),
 					superstructure.forceStateToShooting()
 				),
-				waitUntil(superstructure.stateTrg_shooting)
+				waitUntil(superstructure.extStateTrg_shooting)
 			),
 			waitUntil(superstructure.stateTrg_idle)
 		).withName("ThreePcSequence");

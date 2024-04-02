@@ -362,7 +362,7 @@ public class Aim extends SubsystemBase {
         log_zDist.accept(Units.metersToInches(distance.getZ()));
         log_xDist.accept(Units.metersToInches(distance.getX()));
 
-        m_pitchToSpeaker = ((int) ((m_filter.calculate(Math.atan2(distance.getZ(), Math.hypot(distance.getX(), distance.getY()))) - Units.degreesToRadians(28)) * 10)) / 10.0;
+        m_pitchToSpeaker = (m_filter.calculate(Math.atan2(distance.getZ(), Math.hypot(distance.getX(), distance.getY()))) - Units.degreesToRadians(28));
         log_desiredPitch.accept(Units.radiansToDegrees(m_pitchToSpeaker));
     }
 

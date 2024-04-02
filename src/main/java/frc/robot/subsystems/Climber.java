@@ -23,8 +23,8 @@ public class Climber extends SubsystemBase {
     
     public Command climb() {
         return runEnd(() -> {
-            m_right.set(0.5);
-            m_left.set(0.5);
+            m_right.set(1);
+            m_left.set(1);
         }, 
         () -> {
             m_right.set(0);
@@ -70,8 +70,8 @@ public class Climber extends SubsystemBase {
 
     public Command release() {
         return runEnd(() -> {
-            m_right.set(-0.5);
-            m_left.set(-0.5);
+            m_right.set(-1);
+            m_left.set(-1);
         }, 
         () -> {
             m_right.set(0);
