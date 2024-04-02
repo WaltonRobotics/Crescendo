@@ -232,7 +232,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 				return rqSup.get();
 			}
 
-			var yawEffort = m_visionYaw.in(Radians) * 0.75;
+			var yawEffort = m_visionYaw.in(Radians) * 1.2;
 			log_yawEffort.accept(yawEffort);
 
 			return rqSup.get()
@@ -249,7 +249,10 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			var dist = speakerTrans.minus(pose.getTranslation());
 			var desiredYaw = Math.atan2(dist.getY(), dist.getX());
 			var curYaw = pose.getRotation().getZ();
-			var yawErr = ((desiredYaw - curYaw) * Math.PI) % (2 * Math.PI) - Math.PI;
+			var yawErr = ((desiredYaw - curYaw) * Math.PI) % (2 * Math.PI);
+			if (yawErr > 2 * Math.PI - Math.PI / 4) {
+				yawErr -= 2 * Math.PI;
+			}
 			log_yawErrOpt.accept(Units.radiansToDegrees(yawErr));
 			m_hasVisionYaw = true;
 			m_visYawTimer.restart();
