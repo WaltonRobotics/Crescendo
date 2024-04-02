@@ -289,7 +289,6 @@ public class Superstructure {
                 )
             );
 
-
         stateTrg_noteRetracting.onTrue(
             Commands.parallel(
                 m_intake.stop(),
@@ -304,7 +303,12 @@ public class Superstructure {
                     m_conveyor.stop()).withName("NoteReady_StopConveyor"));
         
         (stateTrg_noteReady.and(irqTrg_conveyorBeamBreak)).debounce(0.2).and(RobotModeTriggers.teleop())
-            .onTrue(changeStateCmd(ROLLER_BEAM_RETRACT));
+            .onTrue(
+                Commands.parallel(
+                    changeStateCmd(ROLLER_BEAM_RETRACT),
+                    Commands.runOnce(() -> driverRumbled = false)
+                )
+            );
 
         // added back shoot ok
         (trg_spunUp.and(trg_atAngle).and(stateTrg_noteReady))
