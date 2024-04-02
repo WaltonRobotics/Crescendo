@@ -71,6 +71,7 @@ public class Superstructure {
     private boolean manipulatorRumbled = false;
 
     public final EventLoop sensorEventLoop = new EventLoop();
+    public final EventLoop stateEventLoop = new EventLoop();
 
     /** true = driver wants to intake */
     private final Trigger trg_driverIntakeReq;
@@ -90,33 +91,33 @@ public class Superstructure {
     private final Trigger trg_intakeReq;
     private final Trigger trg_shootReq;
 
-    public final Trigger stateTrg_idle = new Trigger(sensorEventLoop,
+    public final Trigger stateTrg_idle = new Trigger(stateEventLoop,
         () -> m_state == IDLE);
-    private final Trigger stateTrg_intake = new Trigger(sensorEventLoop,
+    private final Trigger stateTrg_intake = new Trigger(stateEventLoop,
         () -> m_state == INTAKE);
-    private final Trigger stateTrg_noteRetracting = new Trigger(sensorEventLoop,
+    private final Trigger stateTrg_noteRetracting = new Trigger(stateEventLoop,
         () -> m_state == ROLLER_BEAM_RETRACT);
-    public final Trigger stateTrg_shootOk = new Trigger(sensorEventLoop, () -> m_state == SHOOT_OK);
-    public final Trigger stateTrg_shooting = new Trigger(sensorEventLoop,
+    public final Trigger stateTrg_shootOk = new Trigger(stateEventLoop, () -> m_state == SHOOT_OK);
+    public final Trigger stateTrg_shooting = new Trigger(stateEventLoop,
         () -> m_state == SHOOTING);
-    private final Trigger stateTrg_leftBeamBreak = new Trigger(sensorEventLoop,
+    private final Trigger stateTrg_leftBeamBreak = new Trigger(stateEventLoop,
         () -> m_state == LEFT_BEAM_BREAK);
-        private final Trigger extStateTrg_noteIn = new Trigger(sensorEventLoop, () -> m_state.idx > ROLLER_BEAM_RETRACT.idx);
-    private final Trigger extStateTrg_shooting = new Trigger(sensorEventLoop, () -> m_state.idx > SHOOT_OK.idx);
-    public final Trigger stateTrg_noteReady = new Trigger(sensorEventLoop,
+        private final Trigger extStateTrg_noteIn = new Trigger(stateEventLoop, () -> m_state.idx > ROLLER_BEAM_RETRACT.idx);
+    private final Trigger extStateTrg_shooting = new Trigger(stateEventLoop, () -> m_state.idx > SHOOT_OK.idx);
+    public final Trigger stateTrg_noteReady = new Trigger(stateEventLoop,
         () -> m_state == NOTE_READY);
 
         
-        /** To be set on any edge from the AsyncIrq callback  */
-        // TODO: move to SynchronousInterrupt and handle in fastPeriodic()
-        private boolean frontVisiSightSeenNote = false;
-        private final AsynchronousInterrupt ai_frontVisiSight = new AsynchronousInterrupt(frontVisiSight,
-        (Boolean rising, Boolean falling) -> {
-            if ((rising || falling) && !frontVisiSightSeenNote && stateTrg_intake.getAsBoolean()) {
-                frontVisiSightSeenNote = true;
-                log_frontVisiSightIrq.accept(true);
-            }
-        });
+    /** To be set on any edge from the AsyncIrq callback  */
+    // TODO: move to SynchronousInterrupt and handle in fastPeriodic()
+    private boolean frontVisiSightSeenNote = false;
+    private final AsynchronousInterrupt ai_frontVisiSight = new AsynchronousInterrupt(frontVisiSight,
+    (Boolean rising, Boolean falling) -> {
+        if ((rising || falling) && !frontVisiSightSeenNote && stateTrg_intake.getAsBoolean()) {
+            frontVisiSightSeenNote = true;
+            log_frontVisiSightIrq.accept(true);
+        }
+    });
         
     private boolean conveyorBeamBreakIrq = false;
     private double conveyorBeamBreakIrqLastRising = 0;
@@ -467,6 +468,7 @@ public class Superstructure {
         log_aimReady.accept(trg_atAngle);
 
         sensorEventLoop.poll();
+        stateEventLoop.poll();
 
         // log state after, so it represents the event loop changes
         log_state.accept(m_state.idx);
