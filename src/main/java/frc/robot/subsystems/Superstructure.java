@@ -97,7 +97,7 @@ public class Superstructure {
     private final Trigger stateTrg_noteRetracting = new Trigger(sensorEventLoop,
         () -> m_state == ROLLER_BEAM_RETRACT);
     public final Trigger stateTrg_shootOk = new Trigger(sensorEventLoop, () -> m_state == SHOOT_OK);
-    private final Trigger stateTrg_shooting = new Trigger(sensorEventLoop,
+    public final Trigger stateTrg_shooting = new Trigger(sensorEventLoop,
         () -> m_state == SHOOTING);
     private final Trigger stateTrg_leftBeamBreak = new Trigger(sensorEventLoop,
         () -> m_state == LEFT_BEAM_BREAK);
@@ -267,7 +267,7 @@ public class Superstructure {
             );
 
         // note in shooter and not shooting
-        (irqTrg_conveyorBeamBreak.and(irqTrg_frontSensor).and((extStateTrg_noteIn).negate())).and(RobotModeTriggers.autonomous().negate())
+        (irqTrg_conveyorBeamBreak.and(irqTrg_frontSensor)).and(RobotModeTriggers.autonomous().negate())
             .onTrue(
                 Commands.parallel(
                     changeStateCmd(ROLLER_BEAM_RETRACT),
@@ -297,6 +297,9 @@ public class Superstructure {
                 Commands.sequence(
                     changeStateCmd(NOTE_READY),
                     m_conveyor.stop()).withName("NoteReady_StopConveyor"));
+        
+        stateTrg_noteReady.and(irqTrg_conveyorBeamBreak).and(RobotModeTriggers.teleop())
+            .onTrue(changeStateCmd(ROLLER_BEAM_RETRACT));
 
         // added back shoot ok
         (trg_spunUp.and(trg_atAngle).and(stateTrg_noteReady))
@@ -306,6 +309,9 @@ public class Superstructure {
                     changeStateCmd(SHOOT_OK)
                 )
             );
+
+        stateTrg_shootOk.and(extStateTrg_shooting.negate()).and((trg_spunUp.and(trg_atAngle).negate()))
+            .onTrue(changeStateCmd(NOTE_READY));
 
         // if shooter spun up and asked to shoot
         // state -> SHOOTING
@@ -363,6 +369,15 @@ public class Superstructure {
                 manipulatorRumbled = false;
             }
         ).withName("SuperStateResetFlags");
+    }
+
+    public void resetAutonFlags() {
+        autonIntake = false;
+        autonShoot = false;
+    }
+
+    public boolean noteReadyOrGreater() {
+        return extStateTrg_noteIn.getAsBoolean();
     }
 
     public Command autonStop() {
@@ -462,6 +477,7 @@ public class Superstructure {
         );
     }
 
+
     public Command autonShootReq() {
         return Commands.runOnce(() -> {
             autonIntake = false;
@@ -496,11 +512,13 @@ public class Superstructure {
         var aimCmd = m_aim.toAngleUntilAt(() -> target.plus(Degrees.of(10)), Degrees.of(0));
 
         return Commands.parallel(
+            Commands.print("shoot"),
             shoot,
             Commands.sequence(
             waitForNoteReady.andThen(Commands.print("AimAndSpinUp_NOTERD_DONE")),
                 Commands.sequence(
                     Commands.waitUntil(irqTrg_conveyorBeamBreak),
+                    Commands.print("going to aim"),
                     aimCmd.asProxy().andThen(Commands.print("aim"))
             )
         ));

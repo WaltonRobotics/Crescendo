@@ -31,6 +31,8 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.PubSubOption;
+import edu.wpi.first.units.Angle;
+import edu.wpi.first.units.Measure;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
@@ -41,18 +43,21 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.Vision;
 import frc.robot.Vision.VisionMeasurement3d;
 import frc.robot.auton.AutonChooser;
 import frc.util.AdvantageScopeUtil;
 import frc.util.AllianceFlipUtil;
 import frc.util.logging.WaltLogger;
+import frc.util.logging.WaltLogger.BooleanLogger;
 import frc.util.logging.WaltLogger.DoubleArrayLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 
 import static frc.robot.Constants.FieldK.*;
 import static frc.robot.generated.TunerConstants.kDriveRadius;
 import static frc.robot.generated.TunerConstants.kDriveRotationsPerMeter;
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.Constants.AutoK.*;
 
@@ -86,6 +91,11 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	private double[] startWheelPositions = new double[4];
 	private double currentEffectiveWheelRadius = 0;
+
+	// vision yaw align
+	boolean m_hasVisionYaw = false;
+	Measure<Angle> m_visionYaw = Rotations.of(0);
+	Timer m_visYawTimer = new Timer();
 
 	private final SysIdSwerveTranslation characterization = new SysIdSwerveTranslation();
 	// private final SysIdSwerveRotation characterization = new
@@ -123,7 +133,12 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final DoubleArrayLogger log_wheelVeloTargets = WaltLogger.logDoubleArray("Swerve", "wheelVeloTargets");
 	private double[] m_wheelVeloTargets = new double[4];
 
-public void addVisionMeasurement3d(VisionMeasurement3d measurement) {
+	private final DoubleLogger log_yawErr = WaltLogger.logDouble("Swerve", "yawError");
+	private final DoubleLogger log_yawEffort = WaltLogger.logDouble("Swerve", "yawEffort");
+	private final DoubleLogger log_yawErrOpt = WaltLogger.logDouble("Swerve", "yawErrorOpt");
+	private final BooleanLogger log_hasYaw = WaltLogger.logBoolean("Swerve", "hasYaw");
+
+	public void addVisionMeasurement3d(VisionMeasurement3d measurement) {
 		// sadge!
 		var now = Timer.getFPGATimestamp();
 		var timestamp = measurement.estimate().timestampSeconds;
@@ -160,6 +175,7 @@ public void addVisionMeasurement3d(VisionMeasurement3d measurement) {
 		}
 		m_gyroYawRadsSupplier = () -> Units.degreesToRadians(getPigeon2().getAngle());
 		m_thetaController.enableContinuousInput(0, 2 * Math.PI);
+		m_visYawTimer.reset();
 	}
 
 	public Command wheelRadiusCharacterisation(double omegaDirection) {
@@ -209,20 +225,38 @@ public void addVisionMeasurement3d(VisionMeasurement3d measurement) {
 			initialize, executeEnd);
 	}
 
-	public Command faceSpeakerTag(Supplier<SwerveRequest.FieldCentric> rqSup, Vision vision) {
+	public Command faceSpeakerTag(Supplier<SwerveRequest.FieldCentric> rqSup) {
 		return applyRequest(() -> {
-			var speakerMeasurementOpt = vision.speakerTargetSupplier().get();
-			if (speakerMeasurementOpt.isEmpty()) {
+			// var speakerMeasurementOpt = vision.speakerTargetSupplier().get();
+			if (!m_hasVisionYaw) {
 				return rqSup.get();
 			}
 
-			var yawEffort = -speakerMeasurementOpt.get().target().getYaw() * 0.3;
+			var yawEffort = m_visionYaw.in(Radians) * 0.75;
+			log_yawEffort.accept(yawEffort);
 
 			return rqSup.get()
 				.withRotationalDeadband(0)
 				.withRotationalRate(yawEffort);
 			}
 		);
+	}
+
+	public void calculateYawErr(Optional<VisionMeasurement3d> measOpt, boolean tagsPresent) {
+		if (measOpt.isPresent()) {
+			var pose = measOpt.get().estimate().estimatedPose;
+			var speakerTrans = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpening);
+			var dist = speakerTrans.minus(pose.getTranslation());
+			var desiredYaw = Math.atan(dist.getY() / dist.getX());
+			var curYaw = pose.getRotation().getZ();
+			var yawErr = desiredYaw - curYaw;
+			log_yawErrOpt.accept(Units.radiansToDegrees(yawErr));
+			m_hasVisionYaw = true;
+			m_visYawTimer.restart();
+			m_visionYaw = Radians.of(yawErr);
+		}
+		m_hasVisionYaw = tagsPresent && !m_visYawTimer.hasElapsed(0.1);
+		log_yawErr.accept(m_visionYaw.in(Degrees));
 	}
 
 	public Command applyRequest(Supplier<SwerveRequest> requestSupplier) {
@@ -387,5 +421,6 @@ public void addVisionMeasurement3d(VisionMeasurement3d measurement) {
 		log_wheelVelos.accept(m_wheelVelos);
 		log_wheelVeloTargets.accept(m_wheelVeloTargets);
 		log_wheelVeloErrors.accept(m_wheelVeloErrs);
+		log_hasYaw.accept(m_hasVisionYaw);
 	}
 }

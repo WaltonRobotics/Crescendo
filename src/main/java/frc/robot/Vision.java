@@ -51,6 +51,7 @@ public class Vision {
     public static final record PhotonMeasurement (PhotonTrackedTarget target, double latencyMilliseconds) {}
     public static final record VisionMeasurement2d (Integer id, Double yaw, Double pitch, Double area) {}
     public static final record VisionMeasurement3d (EstimatedRobotPose estimate, Matrix<N3, N1> stdDevs) {}
+    public static final record VisMeas3dEx (boolean hasTarget, Optional<VisionMeasurement3d> measOpt) {}
     
     // private final Matrix<N3, N1> kDefaultStdDevs = VecBuilder.fill(0.9, 0.9, 0.9);
 
@@ -133,20 +134,20 @@ public class Vision {
         // return Optional.empty();
     }
 
-    public Optional<VisionMeasurement3d> getFrontCamPoseEst() {
+    public VisMeas3dEx getFrontCamPoseEst() {
         var result = m_frontCam.getLatestResult();
         var estimateOpt = m_frontCam_poseEstimator.update();
-        if (estimateOpt.isEmpty()) return Optional.empty();
+        if (estimateOpt.isEmpty()) return new VisMeas3dEx(result.hasTargets(), Optional.empty());
         m_timer.restart();
         var filteredEstimate = filterEstimation(estimateOpt.get());
         if (filteredEstimate.isPresent()) {
             var filtered = filteredEstimate.get();
             var stdDevs = getEstimationStdDevs(filtered.estimatedPose.toPose2d(), result);
             log_frontCamEstimate.accept(filtered.estimatedPose);
-            return Optional.of(new VisionMeasurement3d(filtered, stdDevs));
+            return new VisMeas3dEx(true, Optional.of(new VisionMeasurement3d(filtered, stdDevs)));
         }
 
-        return Optional.empty();
+        return new VisMeas3dEx(false, Optional.empty());
     }
 
     public Supplier<Optional<List<VisionMeasurement2d>>> shooterDataSupplier() {

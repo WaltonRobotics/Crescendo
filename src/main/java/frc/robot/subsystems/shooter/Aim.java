@@ -53,7 +53,6 @@ import static frc.robot.Constants.kCanbus;
 import static frc.robot.Constants.AimK.*;
 import static frc.robot.Constants.AimK.AimConfigs.*;
 import static frc.robot.Constants.RobotK.kSimInterval;
-import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
@@ -339,35 +338,32 @@ public class Aim extends SubsystemBase {
         });
     }
 
-    public void getPitchToSpeaker(Optional<VisionMeasurement3d> measOpt) {
-        if (measOpt.isPresent()) {
-            var meas = measOpt.get();
-            var pose = meas.estimate().estimatedPose;
+    public void calculatePitchToSpeaker(VisionMeasurement3d meas) {
+        var pose = meas.estimate().estimatedPose;
 
-            var pivotPose = pose.transformBy(kOriginToPivot);
-            var pivotTrans = pivotPose.getTranslation();
+        var pivotPose = pose.transformBy(kOriginToPivot);
+        var pivotTrans = pivotPose.getTranslation();
 
-            Translation3d speakerPos;
-            m_centerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kBlueCenterOpening);
-            
-            if (MathUtil.isNear(m_centerPos.getY(), pose.getY(), 1)) {
-                speakerPos = m_centerPos;
-            } else if (pose.getY() < m_centerPos.getY()) {
-                speakerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kTopRight);
-            } else {
-                speakerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kTopLeft);
-            }
-
-            var distance = speakerPos.minus(pivotTrans);
-            log_speakerPos.accept(speakerPos);
-            log_pivotPos.accept(pivotPose);
-
-            log_zDist.accept(Units.metersToInches(distance.getZ()));
-            log_xDist.accept(Units.metersToInches(distance.getX()));
-
-            m_pitchToSpeaker = m_filter.calculate(Math.atan(distance.getZ() / Math.hypot(distance.getX(), distance.getY()))) - Units.degreesToRadians(28);
-            log_desiredPitch.accept(Units.radiansToDegrees(m_pitchToSpeaker));
+        Translation3d speakerPos;
+        m_centerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kBlueCenterOpening);
+        
+        if (MathUtil.isNear(m_centerPos.getY(), pose.getY(), 1)) {
+            speakerPos = m_centerPos;
+        } else if (pose.getY() < m_centerPos.getY()) {
+            speakerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kTopRight);
+        } else {
+            speakerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kTopLeft);
         }
+
+        var distance = speakerPos.minus(pivotTrans);
+        log_speakerPos.accept(speakerPos);
+        log_pivotPos.accept(pivotPose);
+
+        log_zDist.accept(Units.metersToInches(distance.getZ()));
+        log_xDist.accept(Units.metersToInches(distance.getX()));
+
+        m_pitchToSpeaker = m_filter.calculate(Math.atan(distance.getZ() / Math.hypot(distance.getX(), distance.getY()))) - Units.degreesToRadians(28);
+        log_desiredPitch.accept(Units.radiansToDegrees(m_pitchToSpeaker));
     }
 
     @Override

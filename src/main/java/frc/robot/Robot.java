@@ -47,6 +47,7 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.util.AllianceFlipUtil;
 import frc.util.CommandLogger;
 import frc.util.logging.WaltLogger;
+import frc.util.logging.WaltLogger.BooleanLogger;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
 
@@ -87,8 +88,9 @@ public class Robot extends TimedRobot {
 	private final SwerveRequest.RobotCentric robotCentric = new SwerveRequest.RobotCentric()
 		.withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 	private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
-	private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 	private final Telemetry logger = new Telemetry(kMaxSpeed);
+
+	private final BooleanLogger log_frontCamEstPresent = WaltLogger.logBoolean("Swerve", "frontCamEstPresent");
 
 	private Command m_autonomousCommand;
 
@@ -101,15 +103,22 @@ public class Robot extends TimedRobot {
 		}
 		addPeriodic(() -> {
 			var frontCamEstOpt = vision.getFrontCamPoseEst();
-			if (frontCamEstOpt.isPresent()) {
-				aim.getPitchToSpeaker(frontCamEstOpt);
-			}
+			boolean frontCamTagsPresent = frontCamEstOpt.hasTarget();
+			boolean frontCamEstPresent = frontCamEstOpt.measOpt().isPresent();
+			log_frontCamEstPresent.accept(frontCamEstPresent);
+			swerve.calculateYawErr(frontCamEstOpt.measOpt(), frontCamTagsPresent);
+			if (frontCamEstPresent) {
+				var frontEst = frontCamEstOpt.measOpt().get();
+				aim.calculatePitchToSpeaker(frontEst);
+			};
 		}, 0.02);
 	}
 
 	private void mapAutonCommands() {
 		AutonChooser.setDefaultAuton(AutonOption.DO_NOTHING);
 		AutonChooser.assignAutonCommand(AutonOption.DO_NOTHING, Commands.none());
+		AutonChooser.assignAutonCommand(AutonOption.AMP_POINT_FIVE, AutonFactory.ampPointFive(superstructure, shooter, swerve, aim),
+			Trajectories.ampSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.AMP_TWO, AutonFactory.ampTwo(superstructure, shooter, swerve, aim),
 			Trajectories.ampSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.AMP_THREE, AutonFactory.ampThree(superstructure, shooter, swerve, aim), 
@@ -167,12 +176,6 @@ public class Robot extends TimedRobot {
 		// swerve brake
 		driver.a().whileTrue(swerve.applyRequest(() -> brake));
 
-		// TODO: nikki rember
-		driver.b().and(driver.rightTrigger().negate()).whileTrue(swerve
-			.applyRequest(
-				() -> point.withModuleDirection(new Rotation2d(-driver.getLeftY(),
-					-driver.getLeftX()))));
-
 		// force shot
 		driver.b().and(driver.rightTrigger()).onTrue(superstructure.forceStateToShooting());
 
@@ -180,7 +183,7 @@ public class Robot extends TimedRobot {
 		driver.leftBumper().onTrue(swerve.runOnce(() -> swerve.seedFieldRelative()));
 
 		// face speaker tag
-		driver.leftTrigger().whileTrue(swerve.faceSpeakerTag(getTeleSwerveReq(), vision));
+		driver.leftTrigger().whileTrue(swerve.faceSpeakerTag(getTeleSwerveReq()));
 
 		/* manipulator controls */
 		// eject note
@@ -324,6 +327,8 @@ public class Robot extends TimedRobot {
 		if (m_autonomousCommand != null) {
 			m_autonomousCommand.cancel();
 		}
+
+		superstructure.resetAutonFlags();
 	}
 
 	@Override

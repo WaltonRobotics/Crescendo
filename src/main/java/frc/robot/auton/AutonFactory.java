@@ -78,6 +78,22 @@ public final class AutonFactory {
 		).withName("TheAutonWrapper");
 	}
 
+	public static Command ampPointFive(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
+		var resetPose = swerve.resetPose(Paths.ampSide1);
+		var pathFollow = AutoBuilder.followPath(Paths.ampSide1).withName("PathFollow");
+		var intake = superstructure.autonIntakeReq();
+
+		var auton = sequence(
+			resetPose,
+			parallel(
+				print("should be intaking"),
+				intake,
+				pathFollow
+			)).withName("PointFivePcSequence");
+
+		return theWrapper(auton, shooter).withName("PointFiveFullAuton");
+	}
+
 	private static Command ampTwoInternal(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var resetPose = swerve.resetPose(Paths.ampSide1);
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide1).withName("PathFollow");
@@ -104,6 +120,13 @@ public final class AutonFactory {
 			),
 			logSeqIncr(),
 			secondShotReq,
+			race(
+				sequence(
+					waitSeconds(0.5),
+					superstructure.forceStateToShooting()
+				),
+				waitUntil(superstructure.stateTrg_shooting)
+			),
 			logSeqIncr(),
 			waitUntil(superstructure.stateTrg_idle)
 		).withName("TwoPcSequence");
@@ -136,6 +159,13 @@ public final class AutonFactory {
 				aimCmd
 			),
 			thirdShotReq,
+			race(
+				sequence(
+					waitSeconds(0.5),
+					superstructure.forceStateToShooting()
+				),
+				waitUntil(superstructure.stateTrg_shooting)
+			),
 			waitUntil(superstructure.stateTrg_idle)
 		).withName("ThreePcSequence");
 	}
@@ -173,6 +203,13 @@ public final class AutonFactory {
 					}
 				),
 				fourthShotReq
+			),
+			race(
+				sequence(
+					waitSeconds(0.5),
+					superstructure.forceStateToShooting()
+				),
+				waitUntil(superstructure.stateTrg_shooting)
 			),
 			waitUntil(superstructure.stateTrg_idle)
 		);
@@ -212,6 +249,13 @@ public final class AutonFactory {
 				),
 				fifthShotReq
 			),
+			race(
+				sequence(
+					waitSeconds(0.5),
+					superstructure.forceStateToShooting()
+				),
+				waitUntil(superstructure.stateTrg_shooting)
+			),
 			waitUntil(superstructure.stateTrg_idle)
 		);
 
@@ -248,6 +292,13 @@ public final class AutonFactory {
 			print("aim finished, path follow finished, should be shooting"),
 			logSeqIncr(),
 			secondShotReq,
+			race(
+				sequence(
+					waitSeconds(0.5),
+					superstructure.forceStateToShooting()
+				),
+				waitUntil(superstructure.stateTrg_shooting)
+			),
 			logSeqIncr(),
 			waitUntil(superstructure.stateTrg_idle)
 		).withName("SourceTwoPcSequence");
@@ -279,6 +330,13 @@ public final class AutonFactory {
 				aimCmd.until(superstructure.trg_atAngle)
 			),
 			thirdShotReq,
+			race(
+				sequence(
+					waitSeconds(0.5),
+					superstructure.forceStateToShooting()
+				),
+				waitUntil(superstructure.stateTrg_shooting)
+			),
 			waitUntil(superstructure.stateTrg_idle)
 		).withName("ThreePcSequence");
 	}
@@ -321,6 +379,13 @@ public final class AutonFactory {
 				intake,
 				aimCmd
 			),
+			race(
+				sequence(
+					waitSeconds(0.5),
+					superstructure.forceStateToShooting()
+				),
+				waitUntil(superstructure.stateTrg_shooting)
+			),
 			fourthShotReq
 		).withName("SourceFourSequence");
 
@@ -361,6 +426,13 @@ public final class AutonFactory {
 			print("aim finished, path follow finished, should be shooting"),
 			logSeqIncr(),
 			secondShotReq,
+			race(
+				sequence(
+					waitSeconds(0.5),
+					superstructure.forceStateToShooting()
+				),
+				waitUntil(superstructure.stateTrg_shooting)
+			),
 			logSeqIncr(),
 			waitUntil(superstructure.stateTrg_idle),
 			parallel(
@@ -372,6 +444,13 @@ public final class AutonFactory {
 				aimCmd2.until(superstructure.trg_atAngle)
 			),
 			thirdShotReq,
+			race(
+				sequence(
+					waitSeconds(0.5),
+					superstructure.forceStateToShooting()
+				),
+				waitUntil(superstructure.stateTrg_shooting)
+			),
 			waitUntil(superstructure.stateTrg_idle)
 		).withName("G28Counter");
 
