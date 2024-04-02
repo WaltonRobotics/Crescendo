@@ -22,6 +22,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
@@ -39,6 +40,7 @@ import frc.robot.auton.AutonChooser;
 import frc.robot.auton.AutonFactory;
 import frc.robot.auton.AutonChooser.AutonOption;
 import frc.robot.auton.Trajectories;
+import frc.robot.auton.VisionAutonFactory;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.shooter.Aim;
@@ -46,8 +48,10 @@ import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.util.AllianceFlipUtil;
 import frc.util.CommandLogger;
+import frc.util.WaltRangeChecker;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.BooleanLogger;
+import frc.util.logging.WaltLogger.DoubleLogger;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
@@ -75,6 +79,11 @@ public class Robot extends TimedRobot {
 	private final Intake intake = new Intake();
 	private final Conveyor conveyor = new Conveyor();
 	private final Climber climber = new Climber();
+
+	private final PowerDistribution pdp = new PowerDistribution();
+	private final DoubleLogger log_miniPcPower = WaltLogger.logDouble("MiniPc", "power");
+	private final BooleanLogger log_powerAbove10 = WaltLogger.logBoolean("MiniPc", "powerGreaterThan10");
+	private double miniPcPower;
 
 	public final Superstructure superstructure = new Superstructure(
 		aim, intake, conveyor, shooter, vision,
@@ -113,6 +122,8 @@ public class Robot extends TimedRobot {
 				aim.calculatePitchToSpeaker(frontEst);
 			};
 		}, 0.02);
+		miniPcPower = pdp.getCurrent(17) * pdp.getVoltage();
+		WaltRangeChecker.addDoubleChecker("MiniPc", () -> miniPcPower, 10, 70, 1, false);
 	}
 
 	private void mapAutonCommands() {
@@ -126,7 +137,7 @@ public class Robot extends TimedRobot {
 			Trajectories.ampSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.AMP_FOUR, AutonFactory.ampFour(superstructure, shooter, swerve, aim), 
 			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.AMP_FIVE, AutonFactory.ampFive(superstructure, shooter, swerve, aim), 
+		AutonChooser.assignAutonCommand(AutonOption.AMP_FIVE, VisionAutonFactory.ampFive(superstructure, shooter, swerve, aim), 
 			Trajectories.ampSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.SOURCE_TWO, AutonFactory.sourceTwo(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());
@@ -135,6 +146,8 @@ public class Robot extends TimedRobot {
 		AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE_POINT_FIVE, AutonFactory.sourceThreePointFive(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.SOURCE_FOUR, AutonFactory.sourceFour(superstructure, shooter, swerve, aim),
+			Trajectories.sourceSide.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.VERY_AMP_THREE_POINT_FIVE, AutonFactory.veryAmpThreePointFive(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.G28_COUNTER, AutonFactory.g28Counter(superstructure, shooter, swerve, aim),
 			Trajectories.g28Counter.getInitialPose());
@@ -290,6 +303,9 @@ public class Robot extends TimedRobot {
 		if (kTestMode) {
 			swerve.logModulePositions();
 		}
+		miniPcPower = pdp.getCurrent(17) * pdp.getVoltage();
+		log_miniPcPower.accept(miniPcPower);
+		log_powerAbove10.accept(miniPcPower > 10);
 	}
 
 	@Override

@@ -16,4 +16,8 @@ public class Paths {
 
     public static final PathPlannerPath g28Counter1 = PathPlannerPath.fromChoreoTrajectory("9500_counter.1");
     public static final PathPlannerPath g28Counter2 = PathPlannerPath.fromChoreoTrajectory("9500_counter.2");
+
+    public static final PathPlannerPath veryAmp1 = PathPlannerPath.fromChoreoTrajectory("very_amp.1");
+    public static final PathPlannerPath veryAmp2 = PathPlannerPath.fromChoreoTrajectory("very_amp.2");
+    public static final PathPlannerPath veryAmp3 = PathPlannerPath.fromChoreoTrajectory("very_amp.3");
 }
