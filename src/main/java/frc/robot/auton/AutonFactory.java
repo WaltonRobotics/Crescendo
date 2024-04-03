@@ -467,9 +467,8 @@ public final class AutonFactory {
 		var resetPose = swerve.resetPose(Paths.veryAmp1);
 		var pathFollow = AutoBuilder.followPath(Paths.veryAmp1).withName("PathFollow");
 		var preloadShot = preloadShot(superstructure, aim);
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(0)).asProxy();
 		var intake = superstructure.autonIntakeReq();
-		var aimCmd2 = aim.toAngleUntilAt(Degrees.of(0)).asProxy(); // superstructure requires Aim so this brokey stuff
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(0)).asProxy(); // superstructure requires Aim so this brokey stuff
 		var secondShotReq = superstructure.autonShootReq();
 
 		return sequence(
@@ -478,31 +477,18 @@ public final class AutonFactory {
 				resetPose,
 				preloadShot
 			),
-			waitUntil(superstructure.irqTrg_shooterBeamBreak),
-			parallel(
-				superstructure.runEverything().asProxy(),
-				print("resetPose and preloadShot done"),
-				logSeqIncr(),
-				parallel(
-					sequence(
-						print("waiting for idle"),
-						waitUntil(superstructure.stateTrg_idle),
-						print("idle"),
-						parallel(
-							aimCmd,
-							pathFollow.andThen(print("path follow finished"))
-						)
-					)
-				)
-			),
+			print("resetPose and preloadShot done"),
+			logSeqIncr(),
+			waitUntil(superstructure.stateTrg_idle),
 			logSeqIncr(),
 			parallel(
 				print("should be intaking"),
 				sequence(
-					waitSeconds(0.8), 
+					waitSeconds(1.5),
 					intake
 				),
-				aimCmd2.until(superstructure.trg_atAngle)
+				pathFollow.andThen(print("path follow finished")),
+				aimCmd.until(superstructure.trg_atAngle)
 			),
 			print("aim finished, path follow finished, should be shooting"),
 			logSeqIncr(),
@@ -516,8 +502,7 @@ public final class AutonFactory {
 			),
 			logSeqIncr(),
 			waitUntil(superstructure.stateTrg_idle)
-			)
-		.withName("TwoPcSequence");
+		).withName("TwoPcSequence");
 	}
 
 	public static Command veryAmpTwo(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
@@ -581,5 +566,15 @@ public final class AutonFactory {
 		).withName("VeryAmpThreePointFiveSequence");
 
 		return theWrapper(auton, shooter).withName("VeryAmpThreePointFiveFullAuton"); // what a silly and goofy long name
+	}
+
+	public static Command followAmpSide(Swerve swerve) {
+		var resetPose = swerve.resetPose(Paths.veryAmp1);
+		var pathFollow = AutoBuilder.followPath(Paths.veryAmp1);
+
+		return sequence(
+			resetPose,
+			pathFollow
+		);
 	}
 }
