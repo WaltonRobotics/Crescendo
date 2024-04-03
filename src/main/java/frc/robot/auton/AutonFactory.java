@@ -131,7 +131,7 @@ public final class AutonFactory {
 					waitSeconds(0.5),
 					superstructure.forceStateToShooting()
 				),
-				waitUntil(superstructure.stateTrg_shooting)
+				waitUntil(superstructure.extStateTrg_shooting.or(superstructure.stateTrg_idle))
 			),
 			logSeqIncr(),
 			waitUntil(superstructure.stateTrg_idle)
@@ -170,7 +170,7 @@ public final class AutonFactory {
 					waitSeconds(0.5),
 					superstructure.forceStateToShooting()
 				),
-				waitUntil(superstructure.extStateTrg_shooting)
+				waitUntil(superstructure.extStateTrg_shooting.or(superstructure.stateTrg_idle))
 			),
 			waitUntil(superstructure.stateTrg_idle)
 		).withName("ThreePcSequence");
@@ -200,14 +200,7 @@ public final class AutonFactory {
 				pathFollow
 			),
 			parallel(
-				either(
-					blueAim,
-					redAim,
-					() -> {
-						var alliance = DriverStation.getAlliance();
-						return alliance.isPresent() && alliance.get() == Alliance.Blue;
-					}
-				),
+				redAim,
 				fourthShotReq
 			),
 			race(
@@ -215,7 +208,7 @@ public final class AutonFactory {
 					waitSeconds(0.5),
 					superstructure.forceStateToShooting()
 				),
-				waitUntil(superstructure.stateTrg_shooting)
+				waitUntil(superstructure.extStateTrg_shooting.or(superstructure.stateTrg_idle))
 			),
 			waitUntil(superstructure.stateTrg_idle)
 		);
@@ -245,14 +238,7 @@ public final class AutonFactory {
 				pathFollow
 			),
 			parallel(
-				either(
-					blueAim,
-					redAim,
-					() -> {
-						var alliance = DriverStation.getAlliance();
-						return alliance.isPresent() && alliance.get() == Alliance.Blue;
-					}
-				),
+				redAim,
 				fifthShotReq
 			),
 			race(
@@ -260,7 +246,7 @@ public final class AutonFactory {
 					waitSeconds(0.5),
 					superstructure.forceStateToShooting()
 				),
-				waitUntil(superstructure.stateTrg_shooting)
+				waitUntil(superstructure.extStateTrg_shooting.or(superstructure.stateTrg_idle))
 			),
 			waitUntil(superstructure.stateTrg_idle)
 		);
@@ -356,10 +342,12 @@ public final class AutonFactory {
 		var three = sourceThreeInternal(superstructure, shooter, swerve, aim);
 		var pathFollow = AutoBuilder.followPath(Paths.sourceSideAlt1);
 		var intake = superstructure.autonIntakeReq();
+		var hardStop = aim.hardStop().asProxy();
 		
 		var auton = sequence(
 			three,
 			parallel(
+				hardStop,
 				pathFollow,
 				sequence(
 					waitSeconds(0.8),
