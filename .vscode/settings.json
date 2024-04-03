@@ -1,7 +1,8 @@
 {
-    "java.debug.settings.onBuildFailureProceed": true,
-    "java.format.settings.url": "eclipse-formatter.xml",
-    "[markdown]": {
-        "editor.wordWrap": "off"
-    }
+	"java.debug.settings.onBuildFailureProceed": true,
+	"java.format.settings.url": "eclipse-formatter.xml",
+	"[markdown]": {
+		"editor.wordWrap": "off"
+	},
+	"java.configuration.updateBuildConfiguration": "interactive"
 }

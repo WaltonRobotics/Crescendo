@@ -55,7 +55,16 @@ public class Constants {
         public static final Measure<Distance> kFieldLength = Meters.of(16.54);
         public static final Measure<Distance> kFieldWidth = Meters.of(8.21);
 
-        public static final AprilTagFieldLayout kFieldLayout = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
+        public static boolean inField(Pose3d pose) {
+            return (pose.getX() > 0
+                && pose.getX() < kFieldLength.in(Meters)
+                && pose.getY() > 0
+                && pose.getY() < kFieldWidth.in(Meters));
+          }
+
+        public static final AprilTagFieldLayout kTagLayout = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
+        public static final Pose3d kTag4Pose = kTagLayout.getTagPose(4).get();
+        public static final Pose3d kTag7Pose = kTagLayout.getTagPose(7).get();
 
         // taken from 6328. All in blue alliance origin.
         /* speaker constants */
@@ -70,7 +79,7 @@ public class Constants {
             private static final Measure<Distance> kBotX = Inches.of(0);
             private static final Measure<Distance> kBotZ = Inches.of(78.324);
             // private static final Translation3d kBotRight = new Translation3d(
-            // kBotX, Inches.of(238.815), kBotZ);
+            //     kBotX, Inches.of(238.815), kBotZ);
             public static final Translation3d kBotLeft = new Translation3d(
                 kBotX, Inches.of(197.765), kBotZ);
 
@@ -250,13 +259,17 @@ public class Constants {
     }
 
     public static class AimK {
+        public static Transform3d kTagToSpeaker = new Transform3d(Units.inchesToMeters(10), 0.0, Units.inchesToMeters(24), new Rotation3d());
+        public static final Transform3d kOriginToPivot = new Transform3d(Units.inchesToMeters(-5.24999996), Units.inchesToMeters(0), Units.inchesToMeters(7.5075), new Rotation3d());
+
         public static final class AimConfigs {
-            private static final double kP = 225;
+            private static final double kP = 200;
+            private static final double kPVision = 40;
             private static final double kI = 0;
-            private static final double kS = 0.9;
-            private static final double kV = 37.44;
-            private static final double kA = 2;
-            public static final double kG = 0.16;
+            private static final double kS = 0.9 * 1.25;
+            private static final double kV = 37.44 / 1.25;
+            private static final double kA = 2 / 1.25;
+            public static final double kG = 0.16 * 1.25;
 
             public static final TalonFXConfiguration motorConfig = new TalonFXConfiguration();
             public static final CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
@@ -266,10 +279,15 @@ public class Constants {
                     .withKP(kP)
                     .withKI(kI)
                     .withKS(kS)
-                    // .withKG(kG)
                     .withKV(kV)
                     .withKA(kA);
-                    // .withGravityType(GravityTypeValue.Arm_Cosine);
+
+                motorConfig.Slot1 = motorConfig.Slot1
+                    .withKP(kPVision)
+                    .withKI(kI)
+                    .withKS(kS)
+                    .withKV(kV)
+                    .withKA(kA);
 
                 motorConfig.Feedback = motorConfig.Feedback
                     .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
@@ -300,7 +318,7 @@ public class Constants {
                     .withReverseSoftLimitEnable(true);
 
                 cancoderConfig.MagnetSensor = cancoderConfig.MagnetSensor
-                    .withMagnetOffset(-0.157470703125)
+                    .withMagnetOffset(-0.4619140625)
                     .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
                     .withAbsoluteSensorRange(AbsoluteSensorRangeValue.Signed_PlusMinusHalf);
             }
@@ -313,10 +331,11 @@ public class Constants {
         public static final int kAimId = 20;
         public static final int kHomeSwitch = 1;
 
-        // 125:1 MaxPlanetary, 24:60 belt drive, 312.5:1 total
-        public static final double kGearRatio = (125 * (60.0 / 24));
+        // 5 * 5 * 4 : 1 gearbox, 24:61 belt drive, 254.167 : 1 total
+        // omg! poofs number!
+        public static final double kGearRatio = ((5.0 * 5.0 * 4.0) * (61.0 / 24.0));
 
-        public static final Measure<Distance> kLength = Inches.of(19.75);
+        public static final Measure<Distance> kLength = Inches.of(18);
         // asin((22 - kHeightTilShooter) / kLength)
         public static final Measure<Angle> kStageClearance = Degrees.of(47.097);
         public static final Measure<Angle> kMinAngle = Rotations.of(0);
@@ -330,16 +349,10 @@ public class Constants {
         public static final Measure<Angle> kTolerance = Degrees.of(2);
     }
 
-    // public class ClimberK {
-    // public static final int kLeftId = 20;
-    // public static final int kRightId = 21;
-    // public static final int kLimitSwitchId = 2;
-
-    // public static final Measure<Distance> kMetersPerRotation = Meters.of(0.3);
-    // public static final Measure<Distance> kMaxHeight = Inches.of(56);
-
-    // public static final double kP = 3.25;
-    // }
+    public class ClimberK {
+        public static final int kLeftId = 32;
+        public static final int kRightId = 31;
+    }
 
     public class RobotK {
         public static final String kDbTabName = "Superstructure";

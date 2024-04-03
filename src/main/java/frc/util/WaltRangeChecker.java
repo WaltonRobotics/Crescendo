@@ -31,26 +31,26 @@ public class WaltRangeChecker {
                 System.out.println(name + " (" + val.getAsDouble() + ") has been below range for " + secondsToFail + " seconds");
                 lowLogger.accept(true);
                 oorTimer.restart();
-            }))
+            }).ignoringDisable(true))
             .onFalse(Commands.runOnce(() -> {
                 lowLogger.accept(false);
                 oorTimer.stop();
-                System.out.println(name + " (" + val.getAsDouble() + ") re-entered safe range fro₼ low after " + oorTimer.get() + " seconds");
+                System.out.println(name + " (" + val.getAsDouble() + ") re-entered safe range from low after " + oorTimer.get() + " seconds");
                 oorTimer.reset();
-            }));
+            }).ignoringDisable(true));
 
         trg_outOfRangeHigh.debounce(secondsToFail)
             .onTrue(Commands.runOnce(() -> {
                 System.out.println(name + " (" + val.getAsDouble() + ") has been above range for " + secondsToFail + " seconds");
                 highLogger.accept(true);
                 oorTimer.restart();
-            }))
+            }).ignoringDisable(true))
             .onFalse(Commands.runOnce(() -> {
                 highLogger.accept(false);
                 oorTimer.stop();
-                System.out.println(name + " (" + val.getAsDouble() + ") re-entered safe range fro₼ high after " + oorTimer.get() + " seconds");
+                System.out.println(name + " (" + val.getAsDouble() + ") re-entered safe range from high after " + oorTimer.get() + " seconds");
                 oorTimer.reset();
-            }));
+            }).ignoringDisable(true));
     }
 
     public static void addIntegerChecker(String name, IntSupplier val, double min, double max, double secondsToFail, boolean eqTo) {
@@ -73,25 +73,25 @@ public class WaltRangeChecker {
                 System.out.println(name + " (" + val.getAsInt() + ") has been below range for " + secondsToFail + " seconds");
                 lowLogger.accept(true);
                 oorTimer.restart();
-            }))
+            }).ignoringDisable(true))
             .onFalse(Commands.runOnce(() -> {
                 lowLogger.accept(false);
                 oorTimer.stop();
-                System.out.println(name + " (" + val.getAsInt() + ") re-entered safe range fro₼ low after " + oorTimer.get() + " seconds");
+                System.out.println(name + " (" + val.getAsInt() + ") re-entered safe range from low after " + oorTimer.get() + " seconds");
                 oorTimer.reset();
-            }));
+            }).ignoringDisable(true));
 
         trg_outOfRangeHigh.debounce(secondsToFail)
             .onTrue(Commands.runOnce(() -> {
                 System.out.println(name + " (" + val.getAsInt() + ") has been above range for " + secondsToFail + " seconds");
                 highLogger.accept(true);
                 oorTimer.restart();
-            }))
+            }).ignoringDisable(true))
             .onFalse(Commands.runOnce(() -> {
                 highLogger.accept(false);
                 oorTimer.stop();
-                System.out.println(name + " (" + val.getAsInt() + ") re-entered safe range fro₼ high after " + oorTimer.get() + " seconds");
+                System.out.println(name + " (" + val.getAsInt() + ") re-entered safe range from high after " + oorTimer.get() + " seconds");
                 oorTimer.reset();
-            }));
+            }).ignoringDisable(true));
     }
 }

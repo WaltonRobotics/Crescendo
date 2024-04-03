@@ -20,9 +20,9 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
@@ -34,10 +34,11 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.AimK;
+import frc.robot.Constants.FieldK;
 import frc.robot.Constants.FieldK.SpeakerK;
 import frc.robot.auton.AutonChooser;
-import frc.robot.auton.AutonChooser.AutonOption;
 import frc.robot.auton.AutonFactory;
+import frc.robot.auton.AutonChooser.AutonOption;
 import frc.robot.auton.Trajectories;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Swerve;
@@ -46,12 +47,19 @@ import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.util.AllianceFlipUtil;
 import frc.util.CommandLogger;
+import frc.util.WaltRangeChecker;
+import frc.util.logging.WaltLogger;
+import frc.util.logging.WaltLogger.BooleanLogger;
+import frc.util.logging.WaltLogger.DoubleLogger;
+import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
 
 import static frc.robot.Constants.AimK.kAmpAngle;
-import static frc.robot.Constants.AimK.kPodiumAngle;
+import static frc.robot.Constants.AimK.kSubwooferAngle;
 import static frc.robot.Constants.RobotK.*;
+
+import java.util.function.Supplier;
 
 public class Robot extends TimedRobot {
 	/** 5.21 meters per second desired top speed */
@@ -63,30 +71,35 @@ public class Robot extends TimedRobot {
 	private final CommandXboxController driver = new CommandXboxController(0); // My joystick
 	private final CommandXboxController manipulator = new CommandXboxController(1);
 
-	public final Swerve swerve = TunerConstants.drivetrain;
-	public final Vision vision = new Vision(swerve::addVisionMeasurement);
-	public final Shooter shooter = new Shooter();
-	public final Aim aim = new Aim();
-	public final Intake intake = new Intake();
-	public final Conveyor conveyor = new Conveyor();
+	private final Swerve swerve = TunerConstants.drivetrain;
+	private final Vision vision = new Vision();
+	private final Shooter shooter = new Shooter();
+	private final Aim aim = new Aim();
+	private final Intake intake = new Intake();
+	private final Conveyor conveyor = new Conveyor();
+	private final Climber climber = new Climber();
+
+	private final PowerDistribution pdp = new PowerDistribution();
+	private final DoubleLogger log_miniPcPower = WaltLogger.logDouble("MiniPc", "power");
+	private final BooleanLogger log_powerAbove10 = WaltLogger.logBoolean("MiniPc", "powerGreaterThan10");
+	private double miniPcPower;
 
 	public final Superstructure superstructure = new Superstructure(
-		aim, intake, conveyor, shooter,
-		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()),
+		aim, intake, conveyor, shooter, vision,
+		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()), manipulator.leftBumper().and(manipulator.a()),
 		(intensity) -> driverRumble(intensity), (intensity) -> manipulatorRumble(intensity));
-
-	public static Translation3d speakerPose;
 
 	public static final Field2d field2d = new Field2d();
 
 	private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-		.withDeadband(kMaxSpeed * 0.1).withRotationalDeadband(kMaxAngularRate * 0.1) // Add a 5% deadband
+		.withDeadband(kMaxSpeed * 0.1) // Add a 5% deadband
 		.withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 	private final SwerveRequest.RobotCentric robotCentric = new SwerveRequest.RobotCentric()
 		.withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 	private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
-	private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 	private final Telemetry logger = new Telemetry(kMaxSpeed);
+
+	private final BooleanLogger log_frontCamEstPresent = WaltLogger.logBoolean("Swerve", "frontCamEstPresent");
 
 	private Command m_autonomousCommand;
 
@@ -97,12 +110,26 @@ public class Robot extends TimedRobot {
 		if (Robot.isSimulation()) {
 			DriverStation.silenceJoystickConnectionWarning(true);
 		}
-		addPeriodic(vision::run, 0.01);
+		addPeriodic(() -> {
+			var frontCamEstOpt = vision.getFrontCamPoseEst();
+			boolean frontCamTagsPresent = frontCamEstOpt.hasTarget();
+			boolean frontCamEstPresent = frontCamEstOpt.measOpt().isPresent();
+			log_frontCamEstPresent.accept(frontCamEstPresent);
+			swerve.calculateYawErr(frontCamEstOpt.measOpt(), frontCamTagsPresent);
+			if (frontCamEstPresent) {
+				var frontEst = frontCamEstOpt.measOpt().get();
+				aim.calculatePitchToSpeaker(frontEst);
+			};
+		}, 0.02);
+		miniPcPower = pdp.getCurrent(17) * pdp.getVoltage();
+		WaltRangeChecker.addDoubleChecker("MiniPc", () -> miniPcPower, 10, 70, 1, false);
 	}
 
 	private void mapAutonCommands() {
 		AutonChooser.setDefaultAuton(AutonOption.DO_NOTHING);
 		AutonChooser.assignAutonCommand(AutonOption.DO_NOTHING, Commands.none());
+		AutonChooser.assignAutonCommand(AutonOption.AMP_POINT_FIVE, AutonFactory.ampPointFive(superstructure, shooter, swerve, aim),
+			Trajectories.ampSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.AMP_TWO, AutonFactory.ampTwo(superstructure, shooter, swerve, aim),
 			Trajectories.ampSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.AMP_THREE, AutonFactory.ampThree(superstructure, shooter, swerve, aim), 
@@ -118,6 +145,8 @@ public class Robot extends TimedRobot {
 		AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE_POINT_FIVE, AutonFactory.sourceThreePointFive(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.SOURCE_FOUR, AutonFactory.sourceFour(superstructure, shooter, swerve, aim),
+			Trajectories.sourceSide.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.VERY_AMP_THREE_POINT_FIVE, AutonFactory.veryAmpThreePointFive(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.G28_COUNTER, AutonFactory.g28Counter(superstructure, shooter, swerve, aim),
 			Trajectories.g28Counter.getInitialPose());
@@ -135,6 +164,18 @@ public class Robot extends TimedRobot {
 		}
 	}
 
+	private Supplier<SwerveRequest.FieldCentric> getTeleSwerveReq() {
+		return () -> {
+			double leftY = -driver.getLeftY();
+			double leftX = -driver.getLeftX();
+			return drive
+				.withVelocityX(leftY * kMaxSpeed)
+				.withVelocityY(leftX * kMaxSpeed)
+				.withRotationalRate(-driver.getRightX() * kMaxAngularRate)
+				.withRotationalDeadband(kMaxAngularRate * 0.1);
+		};
+	}
+
 	private void configureBindings() {
 		/* drivetrain */
 		if (Utils.isSimulation()) {
@@ -143,23 +184,10 @@ public class Robot extends TimedRobot {
 		swerve.registerTelemetry(logger::telemeterize);
 
 		/* driver controls */
-		swerve.setDefaultCommand(swerve.applyRequest(() -> {
-			double leftY = -driver.getLeftY();
-			double leftX = -driver.getLeftX();
-			return drive
-				.withVelocityX(leftY * kMaxSpeed)
-				.withVelocityY(leftX * kMaxSpeed)
-				.withRotationalRate(-driver.getRightX() * kMaxAngularRate);
-		}));
+		swerve.setDefaultCommand(swerve.applyFcRequest(getTeleSwerveReq()));
 
 		// swerve brake
 		driver.a().whileTrue(swerve.applyRequest(() -> brake));
-
-		// TODO: nikki rember
-		driver.b().and(driver.rightTrigger().negate()).whileTrue(swerve
-			.applyRequest(
-				() -> point.withModuleDirection(new Rotation2d(-driver.getLeftY(),
-					-driver.getLeftX()))));
 
 		// force shot
 		driver.b().and(driver.rightTrigger()).onTrue(superstructure.forceStateToShooting());
@@ -167,8 +195,8 @@ public class Robot extends TimedRobot {
 		// rezero
 		driver.leftBumper().onTrue(swerve.runOnce(() -> swerve.seedFieldRelative()));
 
-		// podium shot
-		driver.leftTrigger().whileTrue(aim.toAngleUntilAt(kPodiumAngle, Degrees.of(1)));
+		// face speaker tag
+		driver.leftTrigger().whileTrue(swerve.faceSpeakerTag(getTeleSwerveReq()));
 
 		/* manipulator controls */
 		// eject note
@@ -178,7 +206,7 @@ public class Robot extends TimedRobot {
 		manipulator.rightBumper().whileTrue(shooter.subwoofer());
 
 		// amp shot prep
-		manipulator.leftBumper().whileTrue(superstructure.ampShot(kAmpAngle));
+		manipulator.leftBumper().and(manipulator.a().negate()).whileTrue(superstructure.ampShot(kAmpAngle));
 
 		// manip force shot
 		manipulator.b().and(manipulator.povUp())
@@ -188,25 +216,23 @@ public class Robot extends TimedRobot {
 		manipulator.b().and(manipulator.leftTrigger()).onTrue(superstructure.forceStateToIntake());
 
 		// aim safe angle
-		manipulator.x().whileTrue(aim.hardStop());
+		manipulator.x().and(manipulator.rightBumper().negate()).onTrue(aim.hardStop());
+		
+		// vision aiming
+		manipulator.y().and(manipulator.leftBumper().negate()).whileTrue(aim.aim());
+
+		// subwoofer if vision breaky
+		manipulator.x().and(manipulator.rightBumper()).onTrue(aim.toAngleUntilAt(kSubwooferAngle));
 
 		// aim rezero
 		manipulator.b().and(manipulator.povDown()).and(manipulator.x()).onTrue(aim.rezero());
 
 		// aim amp
 		manipulator.leftBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kAmpAngle, Degrees.of(0.25)));
-		
-		// aim subwoofer
-		manipulator.rightBumper().and(manipulator.y()).onTrue(
-			Commands.either(
-				aim.toAngleUntilAt(() -> AimK.kSubwooferAngle.minus(Degrees.of(0.5)), Degrees.of(2)), 
-				aim.toAngleUntilAt(() -> AimK.kSubwooferAngle, Degrees.of(2)),
-				() -> {
-					var alliance = DriverStation.getAlliance();
-					return alliance.isPresent() && alliance.get() == Alliance.Blue;
-				}
-			)
-		);
+
+		// climber controls	
+		manipulator.a().and(manipulator.povDown()).whileTrue(climber.climb());
+		manipulator.a().and(manipulator.povUp()).whileTrue(climber.release());
 	}
 
 	public void configureTestingBindings() {
@@ -227,6 +253,16 @@ public class Robot extends TimedRobot {
 
 		// wheel pointy straight for pit
 		driver.povUp().and(driver.start()).whileTrue(swerve.applyRequest(() -> robotCentric.withVelocityX(0.5)));
+
+		driver.back().onTrue(swerve.resetPoseToSpeaker());
+
+		// individual climber controls
+		manipulator.a().and(manipulator.povLeft()).whileTrue(climber.moveLeft());
+		manipulator.a().and(manipulator.povRight()).whileTrue(climber.moveRight());
+		// manipulator.a().and(manipulator.povDownLeft()).whileTrue(climber.moveLeft());
+		// manipulator.a().and(manipulator.povDownRight()).whileTrue(climber.moveRight());
+
+		driver.povUp().whileTrue(AutonFactory.followAmpSide(swerve));
 	}
 
 	private Command getAutonomousCommand() {
@@ -239,7 +275,12 @@ public class Robot extends TimedRobot {
 			superstructure.fastPeriodic();
 		}, 0.00125);
 		SmartDashboard.putData(field2d);
-		speakerPose = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpening);
+		WaltLogger.logPose3d("FieldPoses", "shotLocation").accept(
+			Vision.getMiddleSpeakerTagPose().transformBy(AimK.kTagToSpeaker));
+		WaltLogger.logPose3d("FieldPoses", "tag4Location")
+			.accept(FieldK.kTag4Pose);
+		WaltLogger.logPose3d("FieldPoses", "tag7Location")
+			.accept(FieldK.kTag7Pose);
 		mapAutonCommands();
 		configureBindings();
 		DriverStation.startDataLog(DataLogManager.getLog());
@@ -263,6 +304,9 @@ public class Robot extends TimedRobot {
 		if (kTestMode) {
 			swerve.logModulePositions();
 		}
+		miniPcPower = pdp.getCurrent(17) * pdp.getVoltage();
+		log_miniPcPower.accept(miniPcPower);
+		log_powerAbove10.accept(miniPcPower > 10);
 	}
 
 	@Override
@@ -302,6 +346,8 @@ public class Robot extends TimedRobot {
 		if (m_autonomousCommand != null) {
 			m_autonomousCommand.cancel();
 		}
+
+		superstructure.resetAutonFlags();
 	}
 
 	@Override

@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 public class AutonChooser {
     public enum AutonOption {
         DO_NOTHING("0 - do nothing", new ChoreoTrajectory()),
+        AMP_POINT_FIVE("0.5 - center", Trajectories.ampSide),
         AMP_TWO("2 - center -> amp side", Trajectories.ampSide),
         AMP_THREE("3 - center -> amp side", Trajectories.ampSide),
         AMP_FOUR("4 - center -> amp side", Trajectories.ampSide),
@@ -22,6 +23,7 @@ public class AutonChooser {
         SOURCE_THREE("3 - source side", Trajectories.sourceSide),
         SOURCE_THREE_POINT_FIVE("3.5 - source side", Trajectories.sourceSide),
         SOURCE_FOUR("4 - source side", Trajectories.sourceSide),
+        VERY_AMP_THREE_POINT_FIVE("3.5 - amp side", Trajectories.veryAmp),
         G28_COUNTER("3 - g28 counter", Trajectories.g28Counter);
 
         public final String m_description;

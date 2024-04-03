@@ -1,9 +1,7 @@
 package frc.robot.auton;
 
 import edu.wpi.first.networktables.PubSubOption;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
@@ -13,10 +11,10 @@ import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.IntLogger;
+import frc.robot.Constants.AimK;
 import frc.robot.subsystems.Superstructure;
 
 import static edu.wpi.first.units.Units.*;
-import static frc.robot.Constants.AimK.kSubwooferAngle;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -24,7 +22,7 @@ import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 
-public final class AutonFactory {
+public final class VisionAutonFactory {
 	private static IntLogger log_autonSeqInt = WaltLogger.logInt("Auton", "SequenceNum", PubSubOption.sendAll(true));
 	private static int m_seqVal = 0;
 	private static Command logSeqIncr() {
@@ -51,31 +49,26 @@ public final class AutonFactory {
 	}
 
 	private static Command preloadShot(Superstructure superstructure, Aim aim) {
-		var aimCmd = aim.toAngleUntilAt(kSubwooferAngle, kSubwooferAngle.times(0.4)).withTimeout(1).asProxy();
 		var noteReady = superstructure.forceStateToNoteReady();
+		var setTarget = aim.setTarget(AimK.kSubwooferAngle);
 		var shoot = superstructure.autonShootReq();
 
 		return sequence(
 			noteReady,
+			setTarget,
 			parallel(
 				print("aim and spin up"),
-				aimCmd.andThen(print("aim done")),
-				race(
-					sequence(
-						waitSeconds(0.75),
-						superstructure.forceStateToShooting()
-					),
-					shoot.andThen(print("shoot done"))
-				)
+				shoot.andThen(print("shoot done"))
 			),
 			print("finished")
 		);
 	}
 
-	private static Command theWrapper(Command auton, Shooter shooter) {
+	private static Command theWrapper(Command auton, Shooter shooter, Aim aim) {
 		return sequence(
 			runOnce(() -> m_autonTimer.restart()),
 			race(
+                aim.aim(),
 				shooter.subwoofer(notAuton()),
 				auton
 			),
@@ -84,28 +77,12 @@ public final class AutonFactory {
 		).withName("TheAutonWrapper");
 	}
 
-	public static Command ampPointFive(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
-		var resetPose = swerve.resetPose(Paths.ampSide1);
-		var pathFollow = AutoBuilder.followPath(Paths.ampSide1).withName("PathFollow");
-		var intake = superstructure.autonIntakeReq();
-
-		var auton = sequence(
-			resetPose,
-			parallel(
-				print("should be intaking"),
-				intake,
-				pathFollow
-			)).withName("PointFivePcSequence");
-
-		return theWrapper(auton, shooter).withName("PointFiveFullAuton");
-	}
-
 	private static Command ampTwoInternal(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var resetPose = swerve.resetPose(Paths.ampSide1);
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide1).withName("PathFollow");
 		var preloadShot = preloadShot(superstructure, aim);
 		var intake = superstructure.autonIntakeReq();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(2.25)).asProxy(); // superstructure requires Aim so this brokey stuff
+		var aimTarget = aim.setTarget(Degrees.of(2.25));
 		var secondShotReq = superstructure.autonShootReq();
 
 		return sequence(
@@ -121,18 +98,11 @@ public final class AutonFactory {
 			parallel(
 				print("should be intaking"),
 				intake,
-				aimCmd,
 				pathFollow
 			),
 			logSeqIncr(),
+			either(aimTarget, Commands.none(), () -> aim.m_measurementTimer.hasElapsed(0.1)),
 			secondShotReq,
-			race(
-				sequence(
-					waitSeconds(0.5),
-					superstructure.forceStateToShooting()
-				),
-				waitUntil(superstructure.extStateTrg_shooting.or(superstructure.stateTrg_idle))
-			),
 			logSeqIncr(),
 			waitUntil(superstructure.stateTrg_idle)
 		).withName("TwoPcSequence");
@@ -140,7 +110,7 @@ public final class AutonFactory {
 
 	public static Command ampTwo(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var auton = ampTwoInternal(superstructure, shooter, swerve, aim);
-		return theWrapper(auton, shooter).withName("AmpTwoFullAuton");
+		return theWrapper(auton, shooter, aim).withName("AmpTwoFullAuton");
 	}
 
 	private static Command ampThreeInternal(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
@@ -148,8 +118,7 @@ public final class AutonFactory {
 		/* everything from 3 piece */
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide2);
 		var intake = superstructure.autonIntakeReq();
-		// var swerveAim = swerve.aim(0.4);
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(0)).asProxy();
+		var aimTarget = aim.setTarget(Degrees.of(0));
 		var thirdShotReq = superstructure.autonShootReq();
 		
 		return sequence(
@@ -161,32 +130,24 @@ public final class AutonFactory {
 					waitSeconds(0.1),
 					intake
 				),
-				pathFollow,
-				aimCmd
+				pathFollow
 			),
+			either(aimTarget, Commands.none(), () -> aim.m_measurementTimer.hasElapsed(0.1)),
 			thirdShotReq,
-			race(
-				sequence(
-					waitSeconds(0.5),
-					superstructure.forceStateToShooting()
-				),
-				waitUntil(superstructure.extStateTrg_shooting.or(superstructure.stateTrg_idle))
-			),
 			waitUntil(superstructure.stateTrg_idle)
 		).withName("ThreePcSequence");
 	}
 
 	public static Command ampThree(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var auton = ampThreeInternal(superstructure, shooter, swerve, aim);
-		return theWrapper(auton, shooter).withName("AmpThreeFullAuton");
+		return theWrapper(auton, shooter, aim).withName("AmpThreeFullAuton");
 	}
 
 	private static Command ampFourInternal(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var three = ampThreeInternal(superstructure, shooter, swerve, aim);
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide3);
 		var intake = superstructure.autonIntakeReq();
-		var redAim = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
-		var blueAim = aim.toAngleUntilAt(Degrees.of(0.5)).asProxy();
+		var aimTarget = aim.setTarget(Degrees.of(1));
 		var fourthShotReq = superstructure.autonShootReq();
 
 		return sequence( // 3pc then (path and (wait then intake))
@@ -199,32 +160,22 @@ public final class AutonFactory {
 				),
 				pathFollow
 			),
-			parallel(
-				redAim,
-				fourthShotReq
-			),
-			race(
-				sequence(
-					waitSeconds(0.5),
-					superstructure.forceStateToShooting()
-				),
-				waitUntil(superstructure.extStateTrg_shooting.or(superstructure.stateTrg_idle))
-			),
+			either(aimTarget, Commands.none(), () -> aim.m_measurementTimer.hasElapsed(0.1)),
+            fourthShotReq,
 			waitUntil(superstructure.stateTrg_idle)
 		);
 	}
 
 	public static Command ampFour(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var auton = ampFourInternal(superstructure, shooter, swerve, aim);
-		return theWrapper(auton, shooter).withName("AmpFourFullAuton");
+		return theWrapper(auton, shooter, aim).withName("AmpFourFullAuton");
 	}
 
 	public static Command ampFive(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var four = ampFourInternal(superstructure, shooter, swerve, aim);
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide4);
 		var intake = superstructure.autonIntakeReq();
-		var redAim = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
-		var blueAim = aim.toAngleUntilAt(Degrees.of(0.5)).asProxy();
+		var aimTarget = aim.setTarget(Degrees.of(1));
 		var fifthShotReq = superstructure.autonShootReq();
 
 		var auton = sequence( // 3pc then (path and (wait then intake))
@@ -237,21 +188,12 @@ public final class AutonFactory {
 				),
 				pathFollow
 			),
-			parallel(
-				redAim,
-				fifthShotReq
-			),
-			race(
-				sequence(
-					waitSeconds(0.5),
-					superstructure.forceStateToShooting()
-				),
-				waitUntil(superstructure.extStateTrg_shooting.or(superstructure.stateTrg_idle))
-			),
+			either(aimTarget, Commands.none(), () -> aim.m_measurementTimer.hasElapsed(0.1)),
+            fifthShotReq,
 			waitUntil(superstructure.stateTrg_idle)
 		);
 
-		return theWrapper(auton, shooter).withName("FivePcFullAuton");
+		return theWrapper(auton, shooter, aim).withName("FivePcFullAuton");
 	}
 
 	public static Command sourceTwoInternal(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
@@ -259,7 +201,6 @@ public final class AutonFactory {
 		var pathFollow = AutoBuilder.followPath(Paths.sourceSide1).withName("PathFollow");
 		var preloadShot = preloadShot(superstructure, aim);
 		var intake = superstructure.autonIntakeReq();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(0)).asProxy(); // superstructure requires Aim so this brokey stuff
 		var secondShotReq = superstructure.autonShootReq();
 
 		return sequence(
@@ -278,19 +219,11 @@ public final class AutonFactory {
 					waitSeconds(1.5),
 					intake
 				),
-				pathFollow.andThen(print("path follow finished")),
-				aimCmd.until(superstructure.trg_atAngle)
+				pathFollow.andThen(print("path follow finished"))
 			),
 			print("aim finished, path follow finished, should be shooting"),
 			logSeqIncr(),
 			secondShotReq,
-			race(
-				sequence(
-					waitSeconds(0.5),
-					superstructure.forceStateToShooting()
-				),
-				waitUntil(superstructure.stateTrg_shooting)
-			),
 			logSeqIncr(),
 			waitUntil(superstructure.stateTrg_idle)
 		).withName("SourceTwoPcSequence");
@@ -298,15 +231,13 @@ public final class AutonFactory {
 
 	public static Command sourceTwo(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var auton = sourceTwoInternal(superstructure, shooter, swerve, aim);
-		return theWrapper(auton, shooter).withName("SourceTwoFullAuton");
+		return theWrapper(auton, shooter, aim).withName("SourceTwoFullAuton");
 	}
 
 	public static Command sourceThreeInternal(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var two = sourceTwoInternal(superstructure, shooter, swerve, aim);
 		var pathFollow = AutoBuilder.followPath(Paths.sourceSide2);
 		var intake = superstructure.autonIntakeReq();
-		// var swerveAim = swerve.aim(0.4);
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
 		var thirdShotReq = superstructure.autonShootReq();
 		
 		return sequence(
@@ -318,36 +249,26 @@ public final class AutonFactory {
 					waitSeconds(0.8),
 					intake
 				),
-				pathFollow,
-				aimCmd.until(superstructure.trg_atAngle)
+				pathFollow
 			),
 			thirdShotReq,
-			race(
-				sequence(
-					waitSeconds(0.5),
-					superstructure.forceStateToShooting()
-				),
-				waitUntil(superstructure.stateTrg_shooting)
-			),
 			waitUntil(superstructure.stateTrg_idle)
 		).withName("ThreePcSequence");
 	}
 
 	public static Command sourceThree(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var auton = sourceThreeInternal(superstructure, shooter, swerve, aim);
-		return theWrapper(auton, shooter).withName("SourceThreeFullAuton");
+		return theWrapper(auton, shooter, aim).withName("SourceThreeFullAuton");
 	}
 
 	public static Command sourceThreePointFive(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var three = sourceThreeInternal(superstructure, shooter, swerve, aim);
 		var pathFollow = AutoBuilder.followPath(Paths.sourceSideAlt1);
 		var intake = superstructure.autonIntakeReq();
-		var hardStop = aim.hardStop().asProxy();
 		
 		var auton = sequence(
 			three,
 			parallel(
-				hardStop,
 				pathFollow,
 				sequence(
 					waitSeconds(0.8),
@@ -356,34 +277,25 @@ public final class AutonFactory {
 			)
 		).withName("SourceThreePointFiveSequence");
 
-		return theWrapper(auton, shooter).withName("SourceThreePointFiveFullAuton"); // what a silly and goofy long name
+		return theWrapper(auton, shooter, aim).withName("SourceThreePointFiveFullAuton"); // what a silly and goofy long name
 	}
 
 	public static Command sourceFour(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var three = sourceThreeInternal(superstructure, shooter, swerve, aim);
 		var pathFollow = AutoBuilder.followPath(Paths.sourceSide3);
 		var intake = superstructure.autonIntakeReq();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(20)).asProxy();
 		var fourthShotReq = superstructure.autonShootReq();
 		
 		var auton = sequence(
 			three,
 			parallel(
 				pathFollow,
-				intake,
-				aimCmd
-			),
-			race(
-				sequence(
-					waitSeconds(0.5),
-					superstructure.forceStateToShooting()
-				),
-				waitUntil(superstructure.stateTrg_shooting)
+				intake
 			),
 			fourthShotReq
 		).withName("SourceFourSequence");
 
-		return theWrapper(auton, shooter).withName("SourceFourFullAuton"); // what a silly and goofy long name
+		return theWrapper(auton, shooter, aim).withName("SourceFourFullAuton");
 	}
 
 	public static Command g28Counter(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
@@ -391,11 +303,9 @@ public final class AutonFactory {
 		var pathFollow = AutoBuilder.followPath(Paths.g28Counter1).withName("PathFollow");
 		var preloadShot = preloadShot(superstructure, aim);
 		var intake = superstructure.autonIntakeReq();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(1)).asProxy(); // superstructure requires Aim so this brokey stuff
 		var secondShotReq = superstructure.autonShootReq();
 		var pathFollow2 = AutoBuilder.followPath(Paths.g28Counter2).withName("PathFollow2");
 		var intake2 = superstructure.autonIntakeReq();
-		var aimCmd2 = aim.toAngleUntilAt(Degrees.of(1)).asProxy(); // superstructure requires Aim so this brokey stuff
 		var thirdShotReq = superstructure.autonShootReq();
 
 		var auton = sequence(
@@ -414,19 +324,11 @@ public final class AutonFactory {
 					waitSeconds(1.5),
 					intake
 				),
-				pathFollow.andThen(print("path follow finished")),
-				aimCmd.until(superstructure.trg_atAngle)
+				pathFollow.andThen(print("path follow finished"))
 			),
 			print("aim finished, path follow finished, should be shooting"),
 			logSeqIncr(),
 			secondShotReq,
-			race(
-				sequence(
-					waitSeconds(0.5),
-					superstructure.forceStateToShooting()
-				),
-				waitUntil(superstructure.stateTrg_shooting)
-			),
 			logSeqIncr(),
 			waitUntil(superstructure.stateTrg_idle),
 			parallel(
@@ -434,135 +336,12 @@ public final class AutonFactory {
 					waitSeconds(1.5),
 					intake2
 				),
-				pathFollow2.andThen(print("path follow finished")),
-				aimCmd2.until(superstructure.trg_atAngle)
+				pathFollow2.andThen(print("path follow finished"))
 			),
 			thirdShotReq,
-			race(
-				sequence(
-					waitSeconds(0.5),
-					superstructure.forceStateToShooting()
-				),
-				waitUntil(superstructure.stateTrg_shooting)
-			),
 			waitUntil(superstructure.stateTrg_idle)
 		).withName("G28Counter");
 
-		return theWrapper(auton, shooter).withName("G28CounterFull");
-	}
-
-	private static Command veryAmpTwoInternal(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
-		var resetPose = swerve.resetPose(Paths.veryAmp1);
-		var pathFollow = AutoBuilder.followPath(Paths.veryAmp1).withName("PathFollow");
-		var preloadShot = preloadShot(superstructure, aim);
-		var intake = superstructure.autonIntakeReq();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(0)).asProxy(); // superstructure requires Aim so this brokey stuff
-		var secondShotReq = superstructure.autonShootReq();
-
-		return sequence(
-			logSeqIncr(),
-			parallel(
-				resetPose,
-				preloadShot
-			),
-			print("resetPose and preloadShot done"),
-			logSeqIncr(),
-			waitUntil(superstructure.stateTrg_idle),
-			logSeqIncr(),
-			parallel(
-				print("should be intaking"),
-				sequence(
-					waitSeconds(1.5),
-					intake
-				),
-				pathFollow.andThen(print("path follow finished")),
-				aimCmd.until(superstructure.trg_atAngle)
-			),
-			print("aim finished, path follow finished, should be shooting"),
-			logSeqIncr(),
-			secondShotReq,
-			race(
-				sequence(
-					waitSeconds(0.5),
-					superstructure.forceStateToShooting()
-				),
-				waitUntil(superstructure.stateTrg_shooting)
-			),
-			logSeqIncr(),
-			waitUntil(superstructure.stateTrg_idle)
-		).withName("TwoPcSequence");
-	}
-
-	public static Command veryAmpTwo(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
-		var auton = veryAmpTwoInternal(superstructure, shooter, swerve, aim);
-
-		return theWrapper(auton, shooter).withName("VeryAmpTwoFullAuton");
-	}
-
-	private static Command veryAmpThreeInternal(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
-		var two = veryAmpTwoInternal(superstructure, shooter, swerve, aim);
-		var pathFollow = AutoBuilder.followPath(Paths.veryAmp2);
-		var intake = superstructure.autonIntakeReq();
-		// var swerveAim = swerve.aim(0.4);
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
-		var thirdShotReq = superstructure.autonShootReq();
-		
-		return sequence(
-			/* 2 piece */
-			two,
-			/* 3 piece */
-			parallel(
-				sequence(
-					waitSeconds(0.8),
-					intake
-				),
-				pathFollow,
-				aimCmd.until(superstructure.trg_atAngle)
-			),
-			thirdShotReq,
-			race(
-				sequence(
-					waitSeconds(0.5),
-					superstructure.forceStateToShooting()
-				),
-				waitUntil(superstructure.stateTrg_shooting)
-			),
-			waitUntil(superstructure.stateTrg_idle)
-		).withName("ThreePcSequence");
-	}
-
-	public Command veryAmpThree(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
-		var auton = veryAmpThreeInternal(superstructure, shooter, swerve, aim);
-
-		return theWrapper(auton, shooter).withName("VeryAmpThreeFullAuton");
-	}
-
-	public static Command veryAmpThreePointFive(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
-		var three = veryAmpThreeInternal(superstructure, shooter, swerve, aim);
-		var pathFollow = AutoBuilder.followPath(Paths.veryAmp3);
-		var intake = superstructure.autonIntakeReq();
-		
-		var auton = sequence(
-			three,
-			parallel(
-				pathFollow,
-				sequence(
-					waitSeconds(0.8),
-					intake
-				)
-			)
-		).withName("VeryAmpThreePointFiveSequence");
-
-		return theWrapper(auton, shooter).withName("VeryAmpThreePointFiveFullAuton"); // what a silly and goofy long name
-	}
-
-	public static Command followAmpSide(Swerve swerve) {
-		var resetPose = swerve.resetPose(Paths.veryAmp1);
-		var pathFollow = AutoBuilder.followPath(Paths.veryAmp1);
-
-		return sequence(
-			resetPose,
-			pathFollow
-		);
+		return theWrapper(auton, shooter, aim).withName("G28CounterFull");
 	}
 }
