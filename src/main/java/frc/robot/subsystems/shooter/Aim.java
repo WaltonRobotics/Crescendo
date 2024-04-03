@@ -123,6 +123,7 @@ public class Aim extends SubsystemBase {
 
     private final DoubleLogger log_zDist = WaltLogger.logDouble(kDbTabName, "zDist");
     private final DoubleLogger log_xDist = WaltLogger.logDouble(kDbTabName, "xDist");
+    private final DoubleLogger log_measTimer = WaltLogger.logDouble(kDbTabName, "measurementTimer");
 
     private final GenericEntry nte_isCoast;
 
@@ -130,6 +131,7 @@ public class Aim extends SubsystemBase {
     private final Measure<Angle> kAmpAngleAllowedError = Degrees.of(0.75);
 
     private final Timer m_targetTimer = new Timer();
+    public final Timer m_measurementTimer = new Timer();
 
     private final VoltageOut m_voltage = new VoltageOut(0);
     private final SysIdRoutine m_sysId = new SysIdRoutine(
@@ -163,6 +165,8 @@ public class Aim extends SubsystemBase {
         log_tunableTest.accept(0.0);
 
         WaltRangeChecker.addDoubleChecker("DesiredPitch", () -> m_pitchToSpeaker, 0, kSubwooferAngle.in(Radians), 1, false);
+
+        m_measurementTimer.reset();
     }
 
     private void determineMotionMagicValues(boolean vision) {
@@ -339,6 +343,8 @@ public class Aim extends SubsystemBase {
     }
 
     public void calculatePitchToSpeaker(VisionMeasurement3d meas) {
+        m_measurementTimer.restart();
+
         var pose = meas.estimate().estimatedPose;
 
         var pivotPose = pose.transformBy(kOriginToPivot);
@@ -369,6 +375,8 @@ public class Aim extends SubsystemBase {
     @Override
     public void periodic() {
         determineMotionMagicValues(m_vision);
+        log_measTimer.accept(m_measurementTimer.get());
+
         log_motorSpeed.accept(m_motor.get());
         log_motorPos.accept(Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()));
         log_targetAngle.accept(getTargetAngle());

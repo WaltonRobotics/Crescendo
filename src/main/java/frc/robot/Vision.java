@@ -16,7 +16,6 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.Timer;
 import frc.util.AllianceFlipUtil;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
@@ -67,7 +66,6 @@ public class Vision {
     private final DoubleLogger log_shooterYaw = WaltLogger.logDouble("Vision", "shooterYaw");
     private final Transform3dLogger log_speakerTag = WaltLogger.logTransform3d("Vision", "speakerTag");
     private final Pose3dLogger log_frontCamEstimate = WaltLogger.logPose3d("Vision", "frontCamEstimate");
-    public static final Timer m_timer = new Timer();
 
     public Vision() {
         m_frontCam_poseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
@@ -138,7 +136,6 @@ public class Vision {
         var result = m_frontCam.getLatestResult();
         var estimateOpt = m_frontCam_poseEstimator.update();
         if (estimateOpt.isEmpty()) return new VisMeas3dEx(result.hasTargets(), Optional.empty());
-        m_timer.restart();
         var filteredEstimate = filterEstimation(estimateOpt.get());
         if (filteredEstimate.isPresent()) {
             var filtered = filteredEstimate.get();

@@ -11,7 +11,6 @@ import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.IntLogger;
-import frc.robot.Vision;
 import frc.robot.Constants.AimK;
 import frc.robot.subsystems.Superstructure;
 
@@ -99,10 +98,10 @@ public final class VisionAutonFactory {
 			parallel(
 				print("should be intaking"),
 				intake,
-				pathFollow,
-				either(aimTarget, Commands.none(), () -> Vision.m_timer.hasElapsed(0.1))
+				pathFollow
 			),
 			logSeqIncr(),
+			either(aimTarget, Commands.none(), () -> aim.m_measurementTimer.hasElapsed(0.1)),
 			secondShotReq,
 			logSeqIncr(),
 			waitUntil(superstructure.stateTrg_idle)
@@ -131,9 +130,9 @@ public final class VisionAutonFactory {
 					waitSeconds(0.1),
 					intake
 				),
-				either(aimTarget, Commands.none(), () -> Vision.m_timer.hasElapsed(0.1)),
 				pathFollow
 			),
+			either(aimTarget, Commands.none(), () -> aim.m_measurementTimer.hasElapsed(0.1)),
 			thirdShotReq,
 			waitUntil(superstructure.stateTrg_idle)
 		).withName("ThreePcSequence");
@@ -159,9 +158,9 @@ public final class VisionAutonFactory {
 					waitSeconds(0.8),
 					intake
 				),
-				either(aimTarget, Commands.none(), () -> Vision.m_timer.hasElapsed(0.1)),
 				pathFollow
 			),
+			either(aimTarget, Commands.none(), () -> aim.m_measurementTimer.hasElapsed(0.1)),
             fourthShotReq,
 			waitUntil(superstructure.stateTrg_idle)
 		);
@@ -187,9 +186,9 @@ public final class VisionAutonFactory {
 					waitSeconds(0.8),
 					intake
 				),
-				either(aimTarget, Commands.none(), () -> Vision.m_timer.hasElapsed(0.1)),
 				pathFollow
 			),
+			either(aimTarget, Commands.none(), () -> aim.m_measurementTimer.hasElapsed(0.1)),
             fifthShotReq,
 			waitUntil(superstructure.stateTrg_idle)
 		);

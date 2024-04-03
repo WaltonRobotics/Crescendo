@@ -85,6 +85,14 @@ public class Intake extends SubsystemBase {
             }).withName("IntakeRun");
     }
 
+    public Command fullPower() {
+        return runOnce(
+            () -> {
+                runMainRollers(12);
+                m_feeder.set(-1);
+            }).withName("IntakeRun");
+    }
+
     public Command start() {
         return run(() -> {
             runMainRollers(12);

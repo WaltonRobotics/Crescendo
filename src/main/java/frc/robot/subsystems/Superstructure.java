@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.wpilibj2.command.Commands.print;
 import static frc.robot.Constants.IntakeK.kVisiSightId;
 import static frc.robot.Constants.RobotK.kDbTabName;
 
@@ -78,6 +79,7 @@ public class Superstructure {
     /** true = driver wants to shoot */
     private final Trigger trg_driverShootReq;
     private final Trigger trg_driverAmpReq;
+    private final Trigger trg_driverTrapReq;
 
     private final Trigger trg_autonIntakeReq = new Trigger(() -> autonIntake);
     private final Trigger trg_autonShootReq = new Trigger(() -> autonShoot);
@@ -133,8 +135,8 @@ public class Superstructure {
     private final BooleanLogger log_shooterBeamBreakExtended =
         WaltLogger.logBoolean(kDbTabName, "shooterBeamBreakExtended", PubSubOption.sendAll(true));
 
-    private final Trigger irqTrg_conveyorBeamBreak;
-    private final Trigger irqTrg_shooterBeamBreak;
+    public final Trigger irqTrg_conveyorBeamBreak;
+    public final Trigger irqTrg_shooterBeamBreak;
 
     private final IntLogger log_state = WaltLogger.logInt(kDbTabName, "state",
         PubSubOption.sendAll(true));
@@ -146,7 +148,7 @@ public class Superstructure {
         
     public Superstructure(
         Aim aim, Intake intake, Conveyor conveyor, Shooter shooter, Vision vision,
-        Trigger intaking, Trigger shooting, Trigger ampShot,
+        Trigger intaking, Trigger shooting, Trigger ampShot, Trigger trapShot,
         DoubleConsumer driverRumbler, DoubleConsumer manipRumbler) {
         m_aim = aim;
         m_intake = intake;
@@ -159,6 +161,7 @@ public class Superstructure {
         trg_driverIntakeReq = intaking;
         trg_driverShootReq = shooting;
         trg_driverAmpReq = ampShot;
+        trg_driverTrapReq = trapShot;
 
         trg_intakeReq = trg_driverIntakeReq.or(trg_autonIntakeReq);
         trg_shootReq = trg_driverShootReq.or(trg_autonShootReq);
@@ -274,10 +277,7 @@ public class Superstructure {
         // note in shooter and not shooting
         (irqTrg_conveyorBeamBreak.and(irqTrg_frontSensor).and(extStateTrg_shooting.negate())).and(RobotModeTriggers.autonomous().negate())
             .onTrue(
-                Commands.parallel(
-                    changeStateCmd(ROLLER_BEAM_RETRACT),
-                    Commands.runOnce(() -> driverRumbled = false)
-                )
+                changeStateCmd(ROLLER_BEAM_RETRACT)
             );
 
         (irqTrg_conveyorBeamBreak.and((extStateTrg_noteIn).negate())).and(RobotModeTriggers.autonomous())
@@ -304,17 +304,19 @@ public class Superstructure {
         
         (stateTrg_noteReady.and(irqTrg_conveyorBeamBreak)).debounce(0.2).and(RobotModeTriggers.teleop())
             .onTrue(
-                Commands.parallel(
-                    changeStateCmd(ROLLER_BEAM_RETRACT),
-                    Commands.runOnce(() -> driverRumbled = false)
-                )
+                changeStateCmd(ROLLER_BEAM_RETRACT)
             );
+
+        stateTrg_noteReady.onTrue(Commands.runOnce(() -> driverRumbled = false));
 
         // added back shoot ok
         (trg_spunUp.and(trg_atAngle).and(stateTrg_noteReady))
             .onTrue(
                 Commands.parallel(
-                    cmdDriverRumble(1, 0.5), 
+                    Commands.sequence(
+                        Commands.waitSeconds(0.1), 
+                        cmdDriverRumble(1, 0.5)
+                    ),
                     changeStateCmd(SHOOT_OK)
                 )
             );
@@ -362,7 +364,7 @@ public class Superstructure {
                 ).withName("IdleStop")
             );
         
-        (stateTrg_idle.and(RobotModeTriggers.autonomous()))
+        (stateTrg_idle.and(RobotModeTriggers.autonomous().or(trg_driverTrapReq)))
             .onTrue(
                 Commands.parallel(
                     resetFlags(),
@@ -523,7 +525,7 @@ public class Superstructure {
         
         var shoot = m_shooter.ampShot();
 
-        var aimCmd = m_aim.toAngleUntilAt(() -> target.plus(Degrees.of(10)), Degrees.of(0));
+        var aimCmd = m_aim.toAngleUntilAt(() -> target.plus(Degrees.of(15)), Degrees.of(0));
 
         return Commands.parallel(
             Commands.print("shoot"),
@@ -536,6 +538,15 @@ public class Superstructure {
                     aimCmd.asProxy().andThen(Commands.print("aim"))
             )
         ));
+    }
+
+    public Command runEverything() {
+        return Commands.parallel(
+            print("running everything"),
+            // m_shooter.subwoofer(),
+            m_conveyor.runFast().asProxy(),
+            m_intake.fullPower().asProxy()
+        );
     }
 
     public enum NoteState {

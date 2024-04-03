@@ -51,7 +51,7 @@ public final class AutonFactory {
 	}
 
 	private static Command preloadShot(Superstructure superstructure, Aim aim) {
-		var aimCmd = aim.toAngleUntilAt(kSubwooferAngle, kSubwooferAngle.times(0.2)).withTimeout(1).asProxy();
+		var aimCmd = aim.toAngleUntilAt(kSubwooferAngle, kSubwooferAngle.times(0.4)).withTimeout(1).asProxy();
 		var noteReady = superstructure.forceStateToNoteReady();
 		var shoot = superstructure.autonShootReq();
 
@@ -60,7 +60,13 @@ public final class AutonFactory {
 			parallel(
 				print("aim and spin up"),
 				aimCmd.andThen(print("aim done")),
-				shoot.andThen(print("shoot done"))
+				race(
+					sequence(
+						waitSeconds(0.75),
+						superstructure.forceStateToShooting()
+					),
+					shoot.andThen(print("shoot done"))
+				)
 			),
 			print("finished")
 		);
@@ -461,8 +467,9 @@ public final class AutonFactory {
 		var resetPose = swerve.resetPose(Paths.veryAmp1);
 		var pathFollow = AutoBuilder.followPath(Paths.veryAmp1).withName("PathFollow");
 		var preloadShot = preloadShot(superstructure, aim);
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(0)).asProxy();
 		var intake = superstructure.autonIntakeReq();
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(0)).asProxy(); // superstructure requires Aim so this brokey stuff
+		var aimCmd2 = aim.toAngleUntilAt(Degrees.of(0)).asProxy(); // superstructure requires Aim so this brokey stuff
 		var secondShotReq = superstructure.autonShootReq();
 
 		return sequence(
@@ -471,18 +478,31 @@ public final class AutonFactory {
 				resetPose,
 				preloadShot
 			),
-			print("resetPose and preloadShot done"),
-			logSeqIncr(),
-			waitUntil(superstructure.stateTrg_idle),
+			waitUntil(superstructure.irqTrg_shooterBeamBreak),
+			parallel(
+				superstructure.runEverything().asProxy(),
+				print("resetPose and preloadShot done"),
+				logSeqIncr(),
+				parallel(
+					sequence(
+						print("waiting for idle"),
+						waitUntil(superstructure.stateTrg_idle),
+						print("idle"),
+						parallel(
+							aimCmd,
+							pathFollow.andThen(print("path follow finished"))
+						)
+					)
+				)
+			),
 			logSeqIncr(),
 			parallel(
 				print("should be intaking"),
 				sequence(
-					waitSeconds(1.5),
+					waitSeconds(0.8), 
 					intake
 				),
-				pathFollow.andThen(print("path follow finished")),
-				aimCmd.until(superstructure.trg_atAngle)
+				aimCmd2.until(superstructure.trg_atAngle)
 			),
 			print("aim finished, path follow finished, should be shooting"),
 			logSeqIncr(),
@@ -496,7 +516,8 @@ public final class AutonFactory {
 			),
 			logSeqIncr(),
 			waitUntil(superstructure.stateTrg_idle)
-		).withName("TwoPcSequence");
+			)
+		.withName("TwoPcSequence");
 	}
 
 	public static Command veryAmpTwo(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {

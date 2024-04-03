@@ -86,7 +86,7 @@ public class Robot extends TimedRobot {
 
 	public final Superstructure superstructure = new Superstructure(
 		aim, intake, conveyor, shooter, vision,
-		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()),
+		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()), manipulator.leftBumper().and(manipulator.a()),
 		(intensity) -> driverRumble(intensity), (intensity) -> manipulatorRumble(intensity));
 
 	public static final Field2d field2d = new Field2d();
@@ -146,8 +146,8 @@ public class Robot extends TimedRobot {
 			Trajectories.sourceSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.SOURCE_FOUR, AutonFactory.sourceFour(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.VERY_AMP_THREE_POINT_FIVE, AutonFactory.veryAmpThreePointFive(superstructure, shooter, swerve, aim),
-			Trajectories.sourceSide.getInitialPose());
+		// AutonChooser.assignAutonCommand(AutonOption.VERY_AMP_THREE_POINT_FIVE, AutonFactory.veryAmpThreePointFive(superstructure, shooter, swerve, aim),
+		// 	Trajectories.sourceSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.G28_COUNTER, AutonFactory.g28Counter(superstructure, shooter, swerve, aim),
 			Trajectories.g28Counter.getInitialPose());
 	}
@@ -261,6 +261,8 @@ public class Robot extends TimedRobot {
 		manipulator.a().and(manipulator.povRight()).whileTrue(climber.moveRight());
 		// manipulator.a().and(manipulator.povDownLeft()).whileTrue(climber.moveLeft());
 		// manipulator.a().and(manipulator.povDownRight()).whileTrue(climber.moveRight());
+
+		driver.povUp().whileTrue(superstructure.runEverything());
 	}
 
 	private Command getAutonomousCommand() {

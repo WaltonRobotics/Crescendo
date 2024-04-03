@@ -35,7 +35,7 @@ public class WaltRangeChecker {
             .onFalse(Commands.runOnce(() -> {
                 lowLogger.accept(false);
                 oorTimer.stop();
-                System.out.println(name + " (" + val.getAsDouble() + ") re-entered safe range fro₼ low after " + oorTimer.get() + " seconds");
+                System.out.println(name + " (" + val.getAsDouble() + ") re-entered safe range from low after " + oorTimer.get() + " seconds");
                 oorTimer.reset();
             }).ignoringDisable(true));
 
@@ -48,7 +48,7 @@ public class WaltRangeChecker {
             .onFalse(Commands.runOnce(() -> {
                 highLogger.accept(false);
                 oorTimer.stop();
-                System.out.println(name + " (" + val.getAsDouble() + ") re-entered safe range fro₼ high after " + oorTimer.get() + " seconds");
+                System.out.println(name + " (" + val.getAsDouble() + ") re-entered safe range from high after " + oorTimer.get() + " seconds");
                 oorTimer.reset();
             }).ignoringDisable(true));
     }
@@ -77,7 +77,7 @@ public class WaltRangeChecker {
             .onFalse(Commands.runOnce(() -> {
                 lowLogger.accept(false);
                 oorTimer.stop();
-                System.out.println(name + " (" + val.getAsInt() + ") re-entered safe range fro₼ low after " + oorTimer.get() + " seconds");
+                System.out.println(name + " (" + val.getAsInt() + ") re-entered safe range from low after " + oorTimer.get() + " seconds");
                 oorTimer.reset();
             }).ignoringDisable(true));
 
@@ -90,7 +90,7 @@ public class WaltRangeChecker {
             .onFalse(Commands.runOnce(() -> {
                 highLogger.accept(false);
                 oorTimer.stop();
-                System.out.println(name + " (" + val.getAsInt() + ") re-entered safe range fro₼ high after " + oorTimer.get() + " seconds");
+                System.out.println(name + " (" + val.getAsInt() + ") re-entered safe range from high after " + oorTimer.get() + " seconds");
                 oorTimer.reset();
             }).ignoringDisable(true));
     }
