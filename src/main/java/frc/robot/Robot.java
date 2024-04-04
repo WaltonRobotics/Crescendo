@@ -216,7 +216,7 @@ public class Robot extends TimedRobot {
 		manipulator.b().and(manipulator.leftTrigger()).onTrue(superstructure.forceStateToIntake());
 
 		// aim safe angle
-		manipulator.x().and(manipulator.rightBumper().negate()).onTrue(aim.hardStop());
+		manipulator.x().and(manipulator.rightBumper().negate()).and(manipulator.a().negate()).onTrue(aim.hardStop());
 		
 		// vision aiming
 		manipulator.y().and(manipulator.leftBumper().negate()).whileTrue(aim.aim());
@@ -233,6 +233,8 @@ public class Robot extends TimedRobot {
 		// climber controls	
 		manipulator.a().and(manipulator.povDown()).whileTrue(climber.climb());
 		manipulator.a().and(manipulator.povUp()).whileTrue(climber.release());
+		manipulator.a().and(manipulator.x()).and(manipulator.povLeft()).whileTrue(climber.moveLeft());
+		manipulator.a().and(manipulator.x()).and(manipulator.povRight()).whileTrue(climber.moveRight());
 	}
 
 	public void configureTestingBindings() {
@@ -256,13 +258,7 @@ public class Robot extends TimedRobot {
 
 		driver.back().onTrue(swerve.resetPoseToSpeaker());
 
-		// individual climber controls
-		manipulator.a().and(manipulator.povLeft()).whileTrue(climber.moveLeft());
-		manipulator.a().and(manipulator.povRight()).whileTrue(climber.moveRight());
-		// manipulator.a().and(manipulator.povDownLeft()).whileTrue(climber.moveLeft());
-		// manipulator.a().and(manipulator.povDownRight()).whileTrue(climber.moveRight());
-
-		driver.povUp().whileTrue(AutonFactory.followAmpSide(swerve));
+		// driver.povUp().whileTrue(AutonFactory.followAmpSide(swerve));
 	}
 
 	private Command getAutonomousCommand() {
