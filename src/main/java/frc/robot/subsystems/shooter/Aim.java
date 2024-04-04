@@ -351,7 +351,7 @@ public class Aim extends SubsystemBase {
         var pivotTrans = pivotPose.getTranslation();
 
         Translation3d speakerPos;
-        m_centerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kBlueCenterOpening);
+        m_centerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kBlueCenterOpening.minus(new Translation3d(0, 0, Units.inchesToMeters(2))));
         
         if (MathUtil.isNear(m_centerPos.getY(), pose.getY(), 1)) {
             speakerPos = m_centerPos;
