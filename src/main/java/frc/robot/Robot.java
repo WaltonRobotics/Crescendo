@@ -129,8 +129,7 @@ public class Robot extends TimedRobot {
 	private void mapAutonCommands() {
 		AutonChooser.setDefaultAuton(AutonOption.DO_NOTHING);
 		AutonChooser.assignAutonCommand(AutonOption.DO_NOTHING, Commands.none());
-		AutonChooser.assignAutonCommand(AutonOption.AMP_POINT_FIVE, AutonFactory.ampPointFive(superstructure, shooter, swerve, aim),
-			Trajectories.ampSide.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.PRELOAD, AutonFactory.one(superstructure, shooter, aim));
 		AutonChooser.assignAutonCommand(AutonOption.AMP_TWO, AutonFactory.ampTwo(superstructure, shooter, swerve, aim),
 			Trajectories.ampSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.AMP_THREE, AutonFactory.ampThree(superstructure, shooter, swerve, aim), 

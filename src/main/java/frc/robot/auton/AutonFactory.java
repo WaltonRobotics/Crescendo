@@ -84,6 +84,12 @@ public final class AutonFactory {
 		).withName("TheAutonWrapper");
 	}
 
+	public static Command one(Superstructure superstructure, Shooter shooter, Aim aim) {
+		var auton = preloadShot(superstructure, aim);
+
+		return theWrapper(auton, shooter);
+	}
+
 	public static Command ampPointFive(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var resetPose = swerve.resetPose(Paths.ampSide1);
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide1).withName("PathFollow");
