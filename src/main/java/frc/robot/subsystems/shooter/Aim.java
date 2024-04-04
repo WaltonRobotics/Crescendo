@@ -94,7 +94,7 @@ public class Aim extends SubsystemBase {
     private double m_pitchToSpeaker = 0;
 
     private boolean m_isCoast;
-    private boolean m_vision = false;
+    private boolean m_usingVision = false;
 
     private Translation3d m_centerPos;
 
@@ -194,7 +194,7 @@ public class Aim extends SubsystemBase {
 
     public BooleanSupplier aimFinished() {
         return () -> {
-            if ((m_targetAngle.in(Degrees) == 0 || m_targetAngle.in(Degrees) == 4) && !DriverStation.isAutonomous()) {
+            if ((m_targetAngle.in(Degrees) == 0 || m_targetAngle.in(Degrees) == 4) && !DriverStation.isAutonomous() && !m_usingVision) {
                 return false;
             }
             var error = Rotations.of(Math.abs(m_targetAngle.in(Rotations) - m_motor.getPosition().getValueAsDouble()));
@@ -257,11 +257,11 @@ public class Aim extends SubsystemBase {
 
     public Command aim() {
         return runEnd(() -> {
-            m_vision = true;
+            m_usingVision = true;
             m_targetAngle = Radians.of(m_pitchToSpeaker);
             sendAngleRequestToMotor(true);
         }, () -> {
-            m_vision = false;
+            m_usingVision = false;
             m_motor.setControl(m_brakeRequest);
         }).withName("AimWithVision");
     }
@@ -374,7 +374,7 @@ public class Aim extends SubsystemBase {
 
     @Override
     public void periodic() {
-        determineMotionMagicValues(m_vision);
+        determineMotionMagicValues(m_usingVision);
         log_measTimer.accept(m_measurementTimer.get());
 
         log_motorSpeed.accept(m_motor.get());

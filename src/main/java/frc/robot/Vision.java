@@ -16,6 +16,7 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
+import frc.robot.Constants.FieldK;
 import frc.util.AllianceFlipUtil;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
@@ -65,7 +66,8 @@ public class Vision {
     private final Pose3dLogger log_frontCamOnRobot = WaltLogger.logPose3d("Vision", "frontCamOffset");
     private final DoubleLogger log_shooterYaw = WaltLogger.logDouble("Vision", "shooterYaw");
     private final Transform3dLogger log_speakerTag = WaltLogger.logTransform3d("Vision", "speakerTag");
-    private final Pose3dLogger log_frontCamEstimate = WaltLogger.logPose3d("Vision", "frontCamEstimate");
+    private final Pose3dLogger log_frontCamRawEstimate = WaltLogger.logPose3d("Vision", "frontCamRawEstimate");
+    private final Pose3dLogger log_frontCamFilteredEstimate = WaltLogger.logPose3d("Vision", "frontCamFilteredEstimate");
 
     public Vision() {
         m_frontCam_poseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
@@ -136,11 +138,11 @@ public class Vision {
         var result = m_frontCam.getLatestResult();
         var estimateOpt = m_frontCam_poseEstimator.update();
         if (estimateOpt.isEmpty()) return new VisMeas3dEx(result.hasTargets(), Optional.empty());
-        var filteredEstimate = filterEstimation(estimateOpt.get());
-        if (filteredEstimate.isPresent()) {
-            var filtered = filteredEstimate.get();
+        log_frontCamRawEstimate.accept(estimateOpt.get().estimatedPose);
+        if (FieldK.inField(estimateOpt.get().estimatedPose)) {
+            var filtered = estimateOpt.get();
             var stdDevs = getEstimationStdDevs(filtered.estimatedPose.toPose2d(), result);
-            log_frontCamEstimate.accept(filtered.estimatedPose);
+            log_frontCamFilteredEstimate.accept(filtered.estimatedPose);
             return new VisMeas3dEx(true, Optional.of(new VisionMeasurement3d(filtered, stdDevs)));
         }
 
