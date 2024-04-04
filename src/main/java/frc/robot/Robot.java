@@ -287,10 +287,6 @@ public class Robot extends TimedRobot {
 			swerve.setTestMode();
 		}
 
-		CommandScheduler.getInstance().onCommandInterrupt(
-			CommandLogger.commandInterruptLogger()
-		);
-
 		FollowPathCommand.warmupCommand();
 	}
 
