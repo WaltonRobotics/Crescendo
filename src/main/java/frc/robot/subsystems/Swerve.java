@@ -82,7 +82,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	private Rotation2d m_desiredRot = new Rotation2d();
 
-	private final double m_characterisationSpeed = 1;
+	private final double m_characterisationSpeed = 1.5;
 	public final DoubleSupplier m_gyroYawRadsSupplier;
 	private final SlewRateLimiter m_omegaLimiter = new SlewRateLimiter(1);
 
@@ -290,6 +290,14 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			SmartDashboard.putNumber("Module " + i + "/position",
 				getModule(i).getDriveMotor().getPosition().getValueAsDouble());
 		}
+	}
+
+	public Command resetModulePositions() {
+		return Commands.runOnce(() -> {
+			for (int i = 0; i < Modules.length; i++) {
+				getModule(i).getDriveMotor().setPosition(0);
+			}
+		});
 	}
 
 	public void setTestMode() {

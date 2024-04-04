@@ -254,7 +254,10 @@ public class Robot extends TimedRobot {
 		manipulator.start().onTrue(superstructure.forceStateToNoteReady());
 
 		// wheel pointy straight for pit
-		driver.povUp().and(driver.start()).whileTrue(swerve.applyRequest(() -> robotCentric.withVelocityX(0.5)));
+		driver.povUp().and(driver.start())
+			.whileTrue(swerve.applyRequest(() -> robotCentric.withVelocityX(0.5)))
+			.onTrue(swerve.resetModulePositions())
+			.onTrue(Commands.runOnce(() -> swerve.seedFieldRelative(new Pose2d())));
 
 		driver.back().onTrue(swerve.resetPoseToSpeaker());
 
@@ -293,9 +296,7 @@ public class Robot extends TimedRobot {
 	@Override
 	public void robotPeriodic() {
 		CommandScheduler.getInstance().run();
-		if (kTestMode) {
-			swerve.logModulePositions();
-		}
+		swerve.logModulePositions();
 		miniPcPower = pdp.getCurrent(17) * pdp.getVoltage();
 		log_miniPcPower.accept(miniPcPower);
 		log_powerAbove10.accept(miniPcPower > 10);
