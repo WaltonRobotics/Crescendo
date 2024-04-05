@@ -46,7 +46,6 @@ import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.util.AllianceFlipUtil;
-import frc.util.CommandLogger;
 import frc.util.WaltRangeChecker;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.BooleanLogger;
@@ -231,11 +230,11 @@ public class Robot extends TimedRobot {
 		manipulator.leftBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kAmpAngle, Degrees.of(0.25)));
 
 		// climber controls	
-		manipulator.a().and(manipulator.povDown()).whileTrue(climber.retractBoth());
-		manipulator.a().and(manipulator.povUp()).whileTrue(climber.extendBoth());
-		manipulator.a().and(manipulator.x()).and(manipulator.povLeft()).whileTrue(climber.retractLeft());
-		manipulator.a().and(manipulator.x()).and(manipulator.povRight()).whileTrue(climber.retractRight());
-		manipulator.a().and(manipulator.x()).and(manipulator.povUp()).whileTrue(climber.extendBothOverride());
+		// x is override button
+		manipulator.a().and(manipulator.povDown()).whileTrue(climber.retractBoth(manipulator.x()));
+		manipulator.a().and(manipulator.povUp()).whileTrue(climber.extendBoth(manipulator.x()));
+		manipulator.a().and(manipulator.povLeft()).whileTrue(climber.retractLeft(manipulator.x()));
+		manipulator.a().and(manipulator.povRight()).whileTrue(climber.retractRight(manipulator.x()));
 	}
 
 	public void configureTestingBindings() {
