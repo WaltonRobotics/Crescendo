@@ -231,10 +231,11 @@ public class Robot extends TimedRobot {
 		manipulator.leftBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kAmpAngle, Degrees.of(0.25)));
 
 		// climber controls	
-		manipulator.a().and(manipulator.povDown()).whileTrue(climber.climb());
-		manipulator.a().and(manipulator.povUp()).whileTrue(climber.release());
-		manipulator.a().and(manipulator.x()).and(manipulator.povLeft()).whileTrue(climber.moveLeft());
-		manipulator.a().and(manipulator.x()).and(manipulator.povRight()).whileTrue(climber.moveRight());
+		manipulator.a().and(manipulator.povDown()).whileTrue(climber.retractBoth());
+		manipulator.a().and(manipulator.povUp()).whileTrue(climber.extendBoth());
+		manipulator.a().and(manipulator.x()).and(manipulator.povLeft()).whileTrue(climber.retractLeft());
+		manipulator.a().and(manipulator.x()).and(manipulator.povRight()).whileTrue(climber.retractRight());
+		manipulator.a().and(manipulator.x()).and(manipulator.povUp()).whileTrue(climber.extendBothOverride());
 	}
 
 	public void configureTestingBindings() {
@@ -289,7 +290,6 @@ public class Robot extends TimedRobot {
 		if (kTestMode) {
 			swerve.setTestMode();
 		}
-
 		FollowPathCommand.warmupCommand();
 	}
 

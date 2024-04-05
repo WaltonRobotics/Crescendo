@@ -352,6 +352,11 @@ public class Constants {
     public class ClimberK {
         public static final int kLeftId = 32;
         public static final int kRightId = 31;
+
+        public static final double kMaxExtensionPos = -277;
+        public static final double kExtendDutyCycle = -1;
+        public static final double kRetractDutyCycle = 1;
+        public static final double kRetractSingleDutyCycle = 0.5;
     }
 
     public class RobotK {
