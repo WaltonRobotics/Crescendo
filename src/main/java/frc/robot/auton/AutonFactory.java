@@ -312,7 +312,7 @@ public final class AutonFactory {
 		var pathFollow = AutoBuilder.followPath(Paths.sourceSide2);
 		var intake = superstructure.autonIntakeReq();
 		// var swerveAim = swerve.aim(0.4);
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(0)).asProxy();
 		var thirdShotReq = superstructure.autonShootReq();
 		
 		return sequence(
