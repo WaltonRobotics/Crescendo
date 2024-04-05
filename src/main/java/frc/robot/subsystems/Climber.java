@@ -53,7 +53,7 @@ public class Climber extends SubsystemBase {
         return runEnd(() -> {
             boolean override = overrideSup.getAsBoolean();
             boolean atMax = m_left.getEncoder().getPosition() >= 0 && !override;
-            m_left.set(atMax? 0 : kRetractSingleDutyCycle);
+            m_left.set(atMax ? 0 : kRetractSingleDutyCycle);
         }, 
         () -> {
             m_left.set(0);
@@ -64,7 +64,7 @@ public class Climber extends SubsystemBase {
         return runEnd(() -> {
             boolean override = overrideSup.getAsBoolean();
             boolean atMax = m_right.getEncoder().getPosition() >= 0 && !override;
-            m_right.set(atMax? 0 : kRetractSingleDutyCycle);
+            m_right.set(atMax ? 0 : kRetractSingleDutyCycle);
         }, 
         () -> {
             m_right.set(0);
