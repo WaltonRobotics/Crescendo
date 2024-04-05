@@ -167,12 +167,12 @@ public class Constants {
             private static final double kALeftSpeaker = 0.019191;
 
             /* stuff that works for amp */
-            private static final double kPRightAmp = 0.1;
-            private static final double kSRightAmp = 0.25884; // volts
-            private static final double kVRightAmp = 0.063367;
-            private static final double kARightAmp = 0.018238;
+            private static final double kPRightAmp = 0.2;
+            private static final double kSRightAmp = 0.11941; // volts
+            private static final double kVRightAmp = 0.066954;
+            private static final double kARightAmp = 0.025247;
 
-            private static final double kPLeftAmp = 0.1;
+            private static final double kPLeftAmp = 0.2;
             private static final double kSLeftAmp = 0.2612; // volts
             private static final double kVLeftAmp = 0.061983;
             private static final double kALeftAmp = 0.019191;
@@ -245,7 +245,7 @@ public class Constants {
 
         public static final double kSubwooferRpm = 7300;
         public static final double kPodiumRpm = 7600;
-        public static final double kAmpRpm = 600;
+        public static final double kAmpRpm = 750;
 
         public static final double kGearRatio = 18.0 / 36.0;
 

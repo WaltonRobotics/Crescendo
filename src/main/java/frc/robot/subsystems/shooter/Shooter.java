@@ -148,6 +148,9 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command toVelo(Supplier<Measure<Velocity<Angle>>> velo, BooleanSupplier idle, double spinAmt) {
+        int slot;
+        if (spinAmt == 1) slot = 1;
+        else slot = 0;
         Runnable spin = () -> {
             var velMeas = velo.get();
             m_rightTarget = velMeas.times(spinAmt);
@@ -156,8 +159,8 @@ public class Shooter extends SubsystemBase {
             var left = m_leftTarget.in(RotationsPerSecond);
 
             // withSlot(0) to use slot 0 PIDFF gains for powerful shots
-            m_right.setControl(m_request.withVelocity(right).withSlot(0));
-            m_left.setControl(m_request.withVelocity(left).withSlot(0));
+            m_right.setControl(m_request.withVelocity(right).withSlot(slot));
+            m_left.setControl(m_request.withVelocity(left).withSlot(slot));
         };
 
         Consumer<Boolean> stopSpin = (interrupted) -> {
@@ -165,8 +168,8 @@ public class Shooter extends SubsystemBase {
             System.out.println("toVelo STOPPED. int: " + interrupted + ", auton: " + isAuton);
             m_rightTarget = RotationsPerSecond.of(0);
             m_leftTarget = RotationsPerSecond.of(0);
-            m_right.setControl(m_request.withVelocity(0).withSlot(0));
-            m_left.setControl(m_request.withVelocity(0).withSlot(0));
+            m_right.setControl(m_request.withVelocity(0).withSlot(slot));
+            m_left.setControl(m_request.withVelocity(0).withSlot(slot));
             m_right.setControl(m_coast);
             m_left.setControl(m_coast);
         };
