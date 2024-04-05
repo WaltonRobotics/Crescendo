@@ -139,7 +139,7 @@ public class Vision {
         var estimateOpt = m_frontCam_poseEstimator.update();
         if (estimateOpt.isEmpty()) return new VisMeas3dEx(result.hasTargets(), Optional.empty());
         log_frontCamRawEstimate.accept(estimateOpt.get().estimatedPose);
-        if (FieldK.inField(estimateOpt.get().estimatedPose)) {
+        if (FieldK.inField(estimateOpt.get().estimatedPose) && estimateOpt.get().estimatedPose.getZ() >= 0) {
             var filtered = estimateOpt.get();
             var stdDevs = getEstimationStdDevs(filtered.estimatedPose.toPose2d(), result);
             log_frontCamFilteredEstimate.accept(filtered.estimatedPose);
