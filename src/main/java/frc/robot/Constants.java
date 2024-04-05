@@ -245,7 +245,7 @@ public class Constants {
 
         public static final double kSubwooferRpm = 7300;
         public static final double kPodiumRpm = 7600;
-        public static final double kAmpRpm = 750;
+        public static final double kAmpRpm = 700;
 
         public static final double kGearRatio = 18.0 / 36.0;
 
