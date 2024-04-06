@@ -239,8 +239,11 @@ public class Robot extends TimedRobot {
 
 	public void configureTestingBindings() {
 		// spinny buttons
-		driver.back().and(driver.x()).whileTrue(swerve.wheelRadiusCharacterisation(1));
-		driver.back().and(driver.y()).whileTrue(swerve.wheelRadiusCharacterisation(-1));
+		driver.back().and(driver.x()).whileTrue(swerve.sysIdDynamic(Direction.kForward));
+		driver.back().and(driver.y()).whileTrue(swerve.sysIdDynamic(Direction.kReverse));
+		driver.start().and(driver.x()).whileTrue(swerve.sysIdQuasistatic(Direction.kForward));
+		driver.start().and(driver.y()).whileTrue(swerve.sysIdQuasistatic(Direction.kReverse));
+
 
 		// sysid buttons
 		manipulator.back().and(manipulator.x()).whileTrue(shooter.sysIdDynamic(Direction.kForward));
@@ -365,8 +368,8 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void simulationPeriodic() {
-		getTrajLines();
-		simulateAim();
+		// getTrajLines();
+		// simulateAim();
 	}
 
 	private void getTrajLines() {
