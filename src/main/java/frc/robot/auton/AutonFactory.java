@@ -22,9 +22,12 @@ import java.util.function.Supplier;
 
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
+import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 
 public final class AutonFactory {
+	private static SwerveRequest.FieldCentric m_aimReq = new SwerveRequest.FieldCentric().withRotationalDeadband(0);
+
 	private static IntLogger log_autonSeqInt = WaltLogger.logInt("Auton", "SequenceNum", PubSubOption.sendAll(true));
 	private static int m_seqVal = 0;
 	private static Command logSeqIncr() {
@@ -113,6 +116,7 @@ public final class AutonFactory {
 		var intake = superstructure.autonIntakeReq();
 		var aimCmd = aim.toAngleUntilAt(Degrees.of(2.25)).asProxy(); // superstructure requires Aim so this brokey stuff
 		var secondShotReq = superstructure.autonShootReq();
+		var swerveAim = swerve.faceSpeakerTagAuton();
 
 		return sequence(
 			logSeqIncr(),
@@ -130,6 +134,7 @@ public final class AutonFactory {
 				aimCmd,
 				pathFollow
 			),
+			swerveAim,
 			logSeqIncr(),
 			secondShotReq,
 			race(

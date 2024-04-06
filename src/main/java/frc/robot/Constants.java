@@ -51,6 +51,10 @@ public class Constants {
             -0.5, 0.5, 0.25, new Rotation3d(0, 0, Units.degreesToRadians(180)));
     }
 
+    public static final class DriveK {
+        public static final double kDutyCycleOpenLoopRamp = 0.05; // seconds
+    }
+
     public class FieldK {
         public static final Measure<Distance> kFieldLength = Meters.of(16.54);
         public static final Measure<Distance> kFieldWidth = Meters.of(8.21);
