@@ -118,7 +118,7 @@ public class Robot extends TimedRobot {
 			if (frontCamEstPresent) {
 				var frontEst = frontCamEstOpt.measOpt().get();
 				aim.calculatePitchToSpeaker(frontEst);
-				swerve.addVisionMeasurement(frontEst.estimate().estimatedPose.toPose2d(), frontEst.estimate().timestampSeconds);
+				// swerve.addVisionMeasurement(frontEst.estimate().estimatedPose.toPose2d(), frontEst.estimate().timestampSeconds);
 			};
 		}, 0.02);
 		miniPcPower = pdp.getCurrent(17) * pdp.getVoltage();
