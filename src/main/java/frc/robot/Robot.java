@@ -46,7 +46,6 @@ import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.util.AllianceFlipUtil;
-import frc.util.CommandLogger;
 import frc.util.WaltRangeChecker;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.BooleanLogger;
@@ -119,6 +118,7 @@ public class Robot extends TimedRobot {
 			if (frontCamEstPresent) {
 				var frontEst = frontCamEstOpt.measOpt().get();
 				aim.calculatePitchToSpeaker(frontEst);
+				// swerve.addVisionMeasurement(frontEst.estimate().estimatedPose.toPose2d(), frontEst.estimate().timestampSeconds);
 			};
 		}, 0.02);
 		miniPcPower = pdp.getCurrent(17) * pdp.getVoltage();
@@ -128,8 +128,7 @@ public class Robot extends TimedRobot {
 	private void mapAutonCommands() {
 		AutonChooser.setDefaultAuton(AutonOption.DO_NOTHING);
 		AutonChooser.assignAutonCommand(AutonOption.DO_NOTHING, Commands.none());
-		AutonChooser.assignAutonCommand(AutonOption.AMP_POINT_FIVE, AutonFactory.ampPointFive(superstructure, shooter, swerve, aim),
-			Trajectories.ampSide.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.PRELOAD, AutonFactory.one(superstructure, shooter, aim));
 		AutonChooser.assignAutonCommand(AutonOption.AMP_TWO, AutonFactory.ampTwo(superstructure, shooter, swerve, aim),
 			Trajectories.ampSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.AMP_THREE, AutonFactory.ampThree(superstructure, shooter, swerve, aim), 
@@ -216,7 +215,7 @@ public class Robot extends TimedRobot {
 		manipulator.b().and(manipulator.leftTrigger()).onTrue(superstructure.forceStateToIntake());
 
 		// aim safe angle
-		manipulator.x().and(manipulator.rightBumper().negate()).onTrue(aim.hardStop());
+		manipulator.x().and(manipulator.rightBumper().negate()).and(manipulator.a().negate()).onTrue(aim.hardStop());
 		
 		// vision aiming
 		manipulator.y().and(manipulator.leftBumper().negate()).whileTrue(aim.aim());
@@ -231,14 +230,20 @@ public class Robot extends TimedRobot {
 		manipulator.leftBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kAmpAngle, Degrees.of(0.25)));
 
 		// climber controls	
-		manipulator.a().and(manipulator.povDown()).whileTrue(climber.climb());
-		manipulator.a().and(manipulator.povUp()).whileTrue(climber.release());
+		// x is override button
+		manipulator.a().and(manipulator.povDown()).whileTrue(climber.retractBoth(manipulator.x()));
+		manipulator.a().and(manipulator.povUp()).whileTrue(climber.extendBoth(manipulator.x()));
+		manipulator.a().and(manipulator.povLeft()).whileTrue(climber.retractLeft(manipulator.x()));
+		manipulator.a().and(manipulator.povRight()).whileTrue(climber.retractRight(manipulator.x()));
 	}
 
 	public void configureTestingBindings() {
 		// spinny buttons
-		driver.back().and(driver.x()).whileTrue(swerve.wheelRadiusCharacterisation(1));
-		driver.back().and(driver.y()).whileTrue(swerve.wheelRadiusCharacterisation(-1));
+		driver.back().and(driver.x()).whileTrue(swerve.sysIdDynamic(Direction.kForward));
+		driver.back().and(driver.y()).whileTrue(swerve.sysIdDynamic(Direction.kReverse));
+		driver.start().and(driver.x()).whileTrue(swerve.sysIdQuasistatic(Direction.kForward));
+		driver.start().and(driver.y()).whileTrue(swerve.sysIdQuasistatic(Direction.kReverse));
+
 
 		// sysid buttons
 		manipulator.back().and(manipulator.x()).whileTrue(shooter.sysIdDynamic(Direction.kForward));
@@ -252,17 +257,14 @@ public class Robot extends TimedRobot {
 		manipulator.start().onTrue(superstructure.forceStateToNoteReady());
 
 		// wheel pointy straight for pit
-		driver.povUp().and(driver.start()).whileTrue(swerve.applyRequest(() -> robotCentric.withVelocityX(0.5)));
+		driver.povUp().and(driver.start())
+			.whileTrue(swerve.applyRequest(() -> robotCentric.withVelocityX(0.5)))
+			.onTrue(swerve.resetModulePositions())
+			.onTrue(Commands.runOnce(() -> swerve.seedFieldRelative(new Pose2d())));
 
 		driver.back().onTrue(swerve.resetPoseToSpeaker());
 
-		// individual climber controls
-		manipulator.a().and(manipulator.povLeft()).whileTrue(climber.moveLeft());
-		manipulator.a().and(manipulator.povRight()).whileTrue(climber.moveRight());
-		// manipulator.a().and(manipulator.povDownLeft()).whileTrue(climber.moveLeft());
-		// manipulator.a().and(manipulator.povDownRight()).whileTrue(climber.moveRight());
-
-		driver.povUp().whileTrue(AutonFactory.followAmpSide(swerve));
+		// driver.povUp().whileTrue(AutonFactory.followAmpSide(swerve));
 	}
 
 	private Command getAutonomousCommand() {
@@ -290,20 +292,13 @@ public class Robot extends TimedRobot {
 		if (kTestMode) {
 			swerve.setTestMode();
 		}
-
-		CommandScheduler.getInstance().onCommandInterrupt(
-			CommandLogger.commandInterruptLogger()
-		);
-
 		FollowPathCommand.warmupCommand();
 	}
 
 	@Override
 	public void robotPeriodic() {
 		CommandScheduler.getInstance().run();
-		if (kTestMode) {
-			swerve.logModulePositions();
-		}
+		swerve.logModulePositions();
 		miniPcPower = pdp.getCurrent(17) * pdp.getVoltage();
 		log_miniPcPower.accept(miniPcPower);
 		log_powerAbove10.accept(miniPcPower > 10);
@@ -373,8 +368,8 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void simulationPeriodic() {
-		getTrajLines();
-		simulateAim();
+		// getTrajLines();
+		// simulateAim();
 	}
 
 	private void getTrajLines() {

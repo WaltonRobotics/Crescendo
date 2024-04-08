@@ -9,6 +9,7 @@ import com.choreo.lib.Choreo;
 import com.choreo.lib.ChoreoTrajectory;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
+import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveDrivetrain;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.DriveRequestType;
@@ -43,6 +44,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Constants.DriveK;
+import frc.robot.Constants.FieldK.SpeakerK;
 import frc.robot.Vision.VisionMeasurement3d;
 import frc.robot.auton.AutonChooser;
 import frc.util.AdvantageScopeUtil;
@@ -82,7 +85,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	private Rotation2d m_desiredRot = new Rotation2d();
 
-	private final double m_characterisationSpeed = 1;
+	private final double m_characterisationSpeed = 1.5;
 	public final DoubleSupplier m_gyroYawRadsSupplier;
 	private final SlewRateLimiter m_omegaLimiter = new SlewRateLimiter(1);
 
@@ -173,6 +176,12 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		if (Utils.isSimulation()) {
 			startSimThread();
 		}
+
+		var openLoopConfig = new OpenLoopRampsConfigs().withDutyCycleOpenLoopRampPeriod(DriveK.kDutyCycleOpenLoopRamp);
+		for (var module : Modules) {
+			module.getDriveMotor().getConfigurator().apply(openLoopConfig);
+		}
+
 		m_gyroYawRadsSupplier = () -> Units.degreesToRadians(getPigeon2().getAngle());
 		m_thetaController.enableContinuousInput(0, 2 * Math.PI);
 		m_visYawTimer.reset();
@@ -242,6 +251,27 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		);
 	}
 
+	public Command faceSpeakerTagAuton() {
+		final SwerveRequest.FieldCentric m_req = new SwerveRequest.FieldCentric();
+		return applyRequest(() -> {
+			// var speakerMeasurementOpt = vision.speakerTargetSupplier().get();
+			if (!m_hasVisionYaw) {
+				return m_req;
+			}
+
+			var yawEffort = m_visionYaw.in(Radians) * 1.2;
+			log_yawEffort.accept(yawEffort);
+
+			return m_req
+				.withRotationalDeadband(0)
+				.withRotationalRate(yawEffort);
+			}
+		).until(() -> {
+			if (!m_hasVisionYaw) return true;
+			return MathUtil.isNear(0, m_visionYaw.in(Degrees), 0.5);
+		}).withTimeout(0.5);
+	}
+
 	public void calculateYawErr(Optional<VisionMeasurement3d> measOpt, boolean tagsPresent) {
 		if (measOpt.isPresent()) {
 			var pose = measOpt.get().estimate().estimatedPose;
@@ -290,6 +320,14 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			SmartDashboard.putNumber("Module " + i + "/position",
 				getModule(i).getDriveMotor().getPosition().getValueAsDouble());
 		}
+	}
+
+	public Command resetModulePositions() {
+		return Commands.runOnce(() -> {
+			for (int i = 0; i < Modules.length; i++) {
+				getModule(i).getDriveMotor().setPosition(0);
+			}
+		});
 	}
 
 	public void setTestMode() {

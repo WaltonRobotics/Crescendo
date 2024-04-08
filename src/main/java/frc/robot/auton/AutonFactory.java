@@ -22,9 +22,12 @@ import java.util.function.Supplier;
 
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
+import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 
 public final class AutonFactory {
+	private static SwerveRequest.FieldCentric m_aimReq = new SwerveRequest.FieldCentric().withRotationalDeadband(0);
+
 	private static IntLogger log_autonSeqInt = WaltLogger.logInt("Auton", "SequenceNum", PubSubOption.sendAll(true));
 	private static int m_seqVal = 0;
 	private static Command logSeqIncr() {
@@ -84,6 +87,12 @@ public final class AutonFactory {
 		).withName("TheAutonWrapper");
 	}
 
+	public static Command one(Superstructure superstructure, Shooter shooter, Aim aim) {
+		var auton = preloadShot(superstructure, aim);
+
+		return theWrapper(auton, shooter);
+	}
+
 	public static Command ampPointFive(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var resetPose = swerve.resetPose(Paths.ampSide1);
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide1).withName("PathFollow");
@@ -107,6 +116,7 @@ public final class AutonFactory {
 		var intake = superstructure.autonIntakeReq();
 		var aimCmd = aim.toAngleUntilAt(Degrees.of(2.25)).asProxy(); // superstructure requires Aim so this brokey stuff
 		var secondShotReq = superstructure.autonShootReq();
+		var swerveAim = swerve.faceSpeakerTagAuton();
 
 		return sequence(
 			logSeqIncr(),
@@ -124,6 +134,7 @@ public final class AutonFactory {
 				aimCmd,
 				pathFollow
 			),
+			swerveAim,
 			logSeqIncr(),
 			secondShotReq,
 			race(
@@ -306,7 +317,7 @@ public final class AutonFactory {
 		var pathFollow = AutoBuilder.followPath(Paths.sourceSide2);
 		var intake = superstructure.autonIntakeReq();
 		// var swerveAim = swerve.aim(0.4);
-		var aimCmd = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(0)).asProxy();
 		var thirdShotReq = superstructure.autonShootReq();
 		
 		return sequence(

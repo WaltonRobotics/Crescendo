@@ -14,7 +14,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 public class AutonChooser {
     public enum AutonOption {
         DO_NOTHING("0 - do nothing", new ChoreoTrajectory()),
-        AMP_POINT_FIVE("0.5 - center", Trajectories.ampSide),
+        PRELOAD("1 - just preload", new ChoreoTrajectory()),
         AMP_TWO("2 - center -> amp side", Trajectories.ampSide),
         AMP_THREE("3 - center -> amp side", Trajectories.ampSide),
         AMP_FOUR("4 - center -> amp side", Trajectories.ampSide),
