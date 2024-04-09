@@ -250,7 +250,6 @@ public class Constants {
         public static final double kSubwooferRpm = 7300;
         public static final double kPodiumRpm = 7600;
         public static final double kAmpRpm = 700;
-        public static final double kTrapRpm = 1350;
 
         public static final double kGearRatio = 18.0 / 36.0;
 
@@ -349,9 +348,7 @@ public class Constants {
 
         public static final Measure<Angle> kSubwooferAngle = Rotations.of(0.08);
         public static final Measure<Angle> kAmpAngle = Rotations.of(0.195);
-        public static final Measure<Angle> kTrapAngle = Degrees.of(74.2);
         public static final Measure<Angle> kPodiumAngle = Degrees.of(6.5);
-        public static final Measure<Angle> kClimbAngle = Degrees.of(67.7);
 
         public static final Measure<Angle> kTolerance = Degrees.of(2);
     }
@@ -361,7 +358,6 @@ public class Constants {
         public static final int kRightId = 31;
 
         public static final double kMaxExtensionPos = -277;
-        public static final double kClimbPos = -50; // TODO figure out what actual position is
         public static final double kExtendDutyCycle = -1;
         public static final double kRetractDutyCycle = 1;
         public static final double kRetractSingleDutyCycle = 0.5;

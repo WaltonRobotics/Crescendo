@@ -109,9 +109,6 @@ public class Shooter extends SubsystemBase {
         m_right.getConfigurator().apply(ShooterConfigs.kRightConfigs);
         m_left.getConfigurator().apply(ShooterConfigs.kLeftConfigs);
         m_left.setInverted(true);
-
-        m_right.setControl(m_coast);
-        m_left.setControl(m_coast);
     }
 
     public Command stop() {
@@ -227,10 +224,6 @@ public class Shooter extends SubsystemBase {
 
     public Command ampShot() {
         return toVeloNoSpin(() -> Rotations.per(Minute).of(kAmpRpm));
-    }
-
-    public Command trapShot() {
-        return toVeloNoSpin(() -> Rotations.per(Minute).of(kTrapRpm));
     }
 
     public boolean spinUpFinished() {

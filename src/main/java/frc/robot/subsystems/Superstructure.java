@@ -255,7 +255,7 @@ public class Superstructure {
             .onTrue(
             // wait until aim is ±50 degrees to intake mode
             Commands.sequence(
-                // m_aim.intakeAngleNearCmd(),
+                m_aim.intakeAngleNearCmd(),
                 Commands.parallel(m_intake.run(), m_conveyor.startSlow())).withName("TeleIntake"));
 
         (stateTrg_intake.and(RobotModeTriggers.autonomous()))
@@ -275,8 +275,7 @@ public class Superstructure {
             );
 
         // note in shooter and not shooting
-        // TODO add back irqTrg_frontSensor
-        (irqTrg_conveyorBeamBreak.and(extStateTrg_shooting.negate())).and(RobotModeTriggers.autonomous().negate())
+        (irqTrg_conveyorBeamBreak.and(irqTrg_frontSensor).and(extStateTrg_shooting.negate())).and(RobotModeTriggers.autonomous().negate())
             .onTrue(
                 changeStateCmd(ROLLER_BEAM_RETRACT)
             );
@@ -361,7 +360,7 @@ public class Superstructure {
             .onTrue(
                 Commands.parallel(
                     resetFlags(),
-                    autonStop()
+                    idleStop()
                 ).withName("IdleStop")
             );
         

@@ -87,7 +87,7 @@ public class Aim extends SubsystemBase {
             10,
             new Color8Bit(Color.kHotPink)));
 
-    private Measure<Angle> m_targetAngle = kAmpAngle;
+    private Measure<Angle> m_targetAngle = Rotations.of(0);
 
     private final LinearFilter m_filter = LinearFilter.singlePoleIIR(0.06, 0.02);
 
@@ -239,13 +239,6 @@ public class Aim extends SubsystemBase {
     public Command amp() {
         return runOnce(() -> {
             m_targetAngle = kAmpAngle;
-            sendAngleRequestToMotor(false);
-        });
-    }
-
-    public Command trap() {
-        return runOnce(() -> {
-            m_targetAngle = kTrapAngle;
             sendAngleRequestToMotor(false);
         });
     }

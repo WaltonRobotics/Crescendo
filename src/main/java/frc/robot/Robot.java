@@ -215,7 +215,7 @@ public class Robot extends TimedRobot {
 		manipulator.b().and(manipulator.leftTrigger()).onTrue(superstructure.forceStateToIntake());
 
 		// aim safe angle
-		// manipulator.x().and(manipulator.rightBumper().negate()).and(manipulator.a().negate()).onTrue(aim.hardStop());
+		manipulator.x().and(manipulator.rightBumper().negate()).and(manipulator.a().negate()).onTrue(aim.hardStop());
 		
 		// vision aiming
 		manipulator.y().and(manipulator.leftBumper().negate()).whileTrue(aim.aim());
@@ -244,20 +244,15 @@ public class Robot extends TimedRobot {
 		driver.start().and(driver.x()).whileTrue(swerve.sysIdQuasistatic(Direction.kForward));
 		driver.start().and(driver.y()).whileTrue(swerve.sysIdQuasistatic(Direction.kReverse));
 
+
 		// sysid buttons
-		// manipulator.back().and(manipulator.x()).whileTrue(shooter.sysIdDynamic(Direction.kForward));
-		// manipulator.back().and(manipulator.y()).whileTrue(shooter.sysIdDynamic(Direction.kReverse));
-		// manipulator.start().and(manipulator.x()).whileTrue(shooter.sysIdQuasistatic(Direction.kForward));
-		// manipulator.start().and(manipulator.y()).whileTrue(shooter.sysIdQuasistatic(Direction.kReverse));
+		manipulator.back().and(manipulator.x()).whileTrue(shooter.sysIdDynamic(Direction.kForward));
+		manipulator.back().and(manipulator.y()).whileTrue(shooter.sysIdDynamic(Direction.kReverse));
+		manipulator.start().and(manipulator.x()).whileTrue(shooter.sysIdQuasistatic(Direction.kForward));
+		manipulator.start().and(manipulator.y()).whileTrue(shooter.sysIdQuasistatic(Direction.kReverse));
 
 		driver.povUp().onTrue(shooter.moreSpin());
 		driver.povDown().onTrue(shooter.lessSpin());
-
-		manipulator.povUp().and(manipulator.a().negate()).onTrue(aim.increaseAngle());
-		manipulator.povDown().and(manipulator.a().negate()).onTrue(aim.decreaseAngle());
-
-		manipulator.back().whileTrue(shooter.trapShot());
-		manipulator.back().and(manipulator.y()).onTrue(aim.trap());
 
 		manipulator.start().onTrue(superstructure.forceStateToNoteReady());
 
