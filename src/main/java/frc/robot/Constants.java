@@ -3,11 +3,11 @@ package frc.robot;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Minute;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static frc.robot.Robot.kMaxSpeed;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
@@ -46,6 +46,8 @@ public class Constants {
 
     public static final double kStickDeadband = 0.1;
     public static final String kCanbus = "fd";
+
+    public static final Velocity<Angle> RotationsPerMinute = Rotations.per(Minute);
 
     public class VisionK {
         public static final Transform3d kFrontTagCamLocation = new Transform3d(
@@ -256,6 +258,7 @@ public class Constants {
         public static final double kSpinAmt = 0.7;
 
         public static final double kSubwooferRpm = 7300;
+        public static final double kLobRpm = kSubwooferRpm * 0.75;
         public static final double kPodiumRpm = 7600;
         public static final double kAmpRpm = 700;
 

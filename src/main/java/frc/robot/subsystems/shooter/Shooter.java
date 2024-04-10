@@ -27,6 +27,7 @@ import frc.util.logging.WaltLogger.DoubleLogger;
 
 import static frc.robot.Constants.ShooterK.FlywheelSimK.*;
 import static edu.wpi.first.units.Units.*;
+import static frc.robot.Constants.RotationsPerMinute;
 import static frc.robot.Constants.kCanbus;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -185,13 +186,13 @@ public class Shooter extends SubsystemBase {
 
     public Command increaseRpm() {
         return Commands.runOnce(() -> {
-            m_leftTarget = m_leftTarget.plus(Rotations.per(Minute).of(100));
+            m_leftTarget = m_leftTarget.plus(RotationsPerMinute.of(100));
         });
     }
 
     public Command decreaseRpm() {
         return Commands.runOnce(() -> {
-            m_leftTarget = m_leftTarget.minus(Rotations.per(Minute).of(100));
+            m_leftTarget = m_leftTarget.minus(RotationsPerMinute.of(100));
         });
     }
 
@@ -204,27 +205,31 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command subwoofer() {
-        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), () -> false).withName("ShooterToVelo_SubwooferTele");
+        return toVelo(() -> RotationsPerMinute.of(kSubwooferRpm), () -> false).withName("ShooterToVelo_SubwooferTele");
     }
 
     public Command farShot() {
-        return toVelo(() -> Rotations.per(Minute).of(8000), () -> false).withName("ShooterToVelo_FarShotTele");
+        return toVelo(() -> RotationsPerMinute.of(8000), () -> false).withName("ShooterToVelo_FarShotTele");
     }
 
     public Command farShotNoSpin() {
-        return toVeloNoSpin(() -> Rotations.per(Minute).of(8000)).withName("ShooterToVelo_FarShotNoSpin");
+        return toVeloNoSpin(() -> RotationsPerMinute.of(8000)).withName("ShooterToVelo_FarShotNoSpin");
     }
 
     public Command subwoofer(BooleanSupplier idle) {
-        return toVelo(() -> Rotations.per(Minute).of(kSubwooferRpm), idle).withName("ShooterToVelo_SubwooferAuton");
+        return toVelo(() -> RotationsPerMinute.of(kSubwooferRpm), idle).withName("ShooterToVelo_SubwooferAuton");
+    }
+
+    public Command lob() {
+        return toVelo(() -> RotationsPerMinute.of(kLobRpm), () -> false).withName("ShooterToVelo_SubwooferAuton");
     }
 
     public Command podium(BooleanSupplier idle) {
-        return toVelo(() -> Rotations.per(Minute).of(kPodiumRpm), idle);
+        return toVelo(() -> RotationsPerMinute.of(kPodiumRpm), idle);
     }
 
     public Command ampShot() {
-        return toVeloNoSpin(() -> Rotations.per(Minute).of(kAmpRpm));
+        return toVeloNoSpin(() -> RotationsPerMinute.of(kAmpRpm));
     }
 
     public boolean spinUpFinished() {
@@ -267,8 +272,8 @@ public class Shooter extends SubsystemBase {
     }
 
     public void periodic() {
-        log_leftTargetRpm.accept(m_leftTarget.in(Rotations.per(Minute)));
-        log_rightTargetRpm.accept(m_rightTarget.in(Rotations.per(Minute)));
+        log_leftTargetRpm.accept(m_leftTarget.in(RotationsPerMinute));
+        log_rightTargetRpm.accept(m_rightTarget.in(RotationsPerMinute));
         log_spinAmt.accept(m_spinAmt);
         log_shotTime.accept(m_shotTime);
         log_leftTarget.accept(m_left.getClosedLoopReference().getValueAsDouble());
@@ -287,7 +292,7 @@ public class Shooter extends SubsystemBase {
         // TODO: check voltage
         m_flywheelSim.setInputVoltage(volts);
 
-        if (m_flywheelSim.getAngularVelocityRPM() >= m_leftTarget.in(Rotations.per(Minute)) && !found) {
+        if (m_flywheelSim.getAngularVelocityRPM() >= m_leftTarget.in(RotationsPerMinute) && !found) {
             found = true;
         }
 

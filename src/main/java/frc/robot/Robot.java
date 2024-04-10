@@ -236,6 +236,10 @@ public class Robot extends TimedRobot {
 		manipulator.a().and(manipulator.povUp()).whileTrue(climber.extendBoth(manipulator.x()));
 		manipulator.a().and(manipulator.povLeft()).whileTrue(climber.retractLeft(manipulator.x()));
 		manipulator.a().and(manipulator.povRight()).whileTrue(climber.retractRight(manipulator.x()));
+
+		// feeding
+		manipulator.povUp().and(manipulator.a().negate()).whileTrue(shooter.lob())
+			.and(manipulator.y()).onTrue(aim.toAngleUntilAt(kSubwooferAngle));
 	}
 
 	public void configureTestingBindings() {
