@@ -40,6 +40,7 @@ import frc.robot.auton.AutonChooser;
 import frc.robot.auton.AutonFactory;
 import frc.robot.auton.AutonChooser.AutonOption;
 import frc.robot.auton.Trajectories;
+import frc.robot.auton.VisionAutonFactory;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.shooter.Aim;
@@ -129,25 +130,25 @@ public class Robot extends TimedRobot {
 		AutonChooser.setDefaultAuton(AutonOption.DO_NOTHING);
 		AutonChooser.assignAutonCommand(AutonOption.DO_NOTHING, Commands.none());
 		AutonChooser.assignAutonCommand(AutonOption.PRELOAD, AutonFactory.one(superstructure, shooter, aim));
-		AutonChooser.assignAutonCommand(AutonOption.AMP_TWO, AutonFactory.ampTwo(superstructure, shooter, swerve, aim),
+		AutonChooser.assignAutonCommand(AutonOption.AMP_TWO, VisionAutonFactory.ampTwo(superstructure, shooter, swerve, aim),
 			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.AMP_THREE, AutonFactory.ampThree(superstructure, shooter, swerve, aim), 
+		AutonChooser.assignAutonCommand(AutonOption.AMP_THREE, VisionAutonFactory.ampThree(superstructure, shooter, swerve, aim), 
 			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.AMP_FOUR, AutonFactory.ampFour(superstructure, shooter, swerve, aim), 
+		AutonChooser.assignAutonCommand(AutonOption.AMP_FOUR, VisionAutonFactory.ampFour(superstructure, shooter, swerve, aim), 
 			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.AMP_FIVE, AutonFactory.ampFive(superstructure, shooter, swerve, aim), 
+		AutonChooser.assignAutonCommand(AutonOption.AMP_FIVE, VisionAutonFactory.ampFive(superstructure, shooter, swerve, aim), 
 			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SOURCE_TWO, AutonFactory.sourceTwo(superstructure, shooter, swerve, aim),
+		AutonChooser.assignAutonCommand(AutonOption.SOURCE_TWO, VisionAutonFactory.sourceTwo(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE, AutonFactory.sourceThree(superstructure, shooter, swerve, aim),
+		AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE, VisionAutonFactory.sourceThree(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE_POINT_FIVE, AutonFactory.sourceThreePointFive(superstructure, shooter, swerve, aim),
+		AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE_POINT_FIVE, VisionAutonFactory.sourceThreePointFive(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SOURCE_FOUR, AutonFactory.sourceFour(superstructure, shooter, swerve, aim),
+		AutonChooser.assignAutonCommand(AutonOption.SOURCE_FOUR, VisionAutonFactory.sourceFour(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.VERY_AMP_THREE_POINT_FIVE, AutonFactory.veryAmpThreePointFive(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.G28_COUNTER, AutonFactory.g28Counter(superstructure, shooter, swerve, aim),
+		AutonChooser.assignAutonCommand(AutonOption.G28_COUNTER, VisionAutonFactory.g28Counter(superstructure, shooter, swerve, aim),
 			Trajectories.g28Counter.getInitialPose());
 	}
 
@@ -244,7 +245,6 @@ public class Robot extends TimedRobot {
 		driver.start().and(driver.x()).whileTrue(swerve.sysIdQuasistatic(Direction.kForward));
 		driver.start().and(driver.y()).whileTrue(swerve.sysIdQuasistatic(Direction.kReverse));
 
-
 		// sysid buttons
 		manipulator.back().and(manipulator.x()).whileTrue(shooter.sysIdDynamic(Direction.kForward));
 		manipulator.back().and(manipulator.y()).whileTrue(shooter.sysIdDynamic(Direction.kReverse));
@@ -264,7 +264,7 @@ public class Robot extends TimedRobot {
 
 		driver.back().onTrue(swerve.resetPoseToSpeaker());
 
-		// driver.povUp().whileTrue(AutonFactory.followAmpSide(swerve));
+		driver.povUp().whileTrue(swerve.goToPose(AllianceFlipUtil.apply(new Pose2d(2.89, 5.56, new Rotation2d()))));
 	}
 
 	private Command getAutonomousCommand() {

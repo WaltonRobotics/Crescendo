@@ -7,6 +7,9 @@ import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static frc.robot.Robot.kMaxSpeed;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
@@ -23,6 +26,7 @@ import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.ReplanningConfig;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -67,6 +71,10 @@ public class Constants {
           }
 
         public static final AprilTagFieldLayout kTagLayout = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
+        private static final List<AprilTag> kSpeakerTags =
+            List.of(kTagLayout.getTags().get(2), kTagLayout.getTags().get(3), kTagLayout.getTags().get(6), kTagLayout.getTags().get(7));
+        public static final AprilTagFieldLayout kTagLayout_SpeakerOnly = new AprilTagFieldLayout(
+            kSpeakerTags, kTagLayout.getFieldLength(), kTagLayout.getFieldWidth());
         public static final Pose3d kTag4Pose = kTagLayout.getTagPose(4).get();
         public static final Pose3d kTag7Pose = kTagLayout.getTagPose(7).get();
 

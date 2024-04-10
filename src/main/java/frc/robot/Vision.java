@@ -33,7 +33,7 @@ import java.util.function.Supplier;
 public class Vision {
 
     public static final Matrix<N3, N1> kSingleTagStdDevs = VecBuilder.fill(1.5, 1.5, 6.24);
-    public static final Matrix<N3, N1> kMultipleTagStdDevs = VecBuilder.fill(0.3, 0.3, 3.14);
+    public static final Matrix<N3, N1> kMultipleTagStdDevs = VecBuilder.fill(0.5, 0.5, 6.24);
 
     public static final double kMaxPoseHeight = 0.405;
     public static final double kMaxPoseAngle = 0.3;
@@ -58,8 +58,8 @@ public class Vision {
     private final PhotonCamera m_shooterCam = new PhotonCamera("ShooterCam");
     private final PhotonCamera m_frontCam = new PhotonCamera("FrontCam");
     private final Transform3d m_frontCam_robotToCam = new Transform3d(
-        Units.inchesToMeters(9.095), Units.inchesToMeters(11.212), Units.inchesToMeters(10.739), 
-        new Rotation3d(Units.degreesToRadians(180), Units.degreesToRadians(0 - 20), Units.degreesToRadians(-20)));
+        Units.inchesToMeters(-9.095), Units.inchesToMeters(-11.212), Units.inchesToMeters(10.739), 
+        new Rotation3d(Units.degreesToRadians(180), Units.degreesToRadians(0 - 17.8), Units.degreesToRadians(180 - 21)));
     public final PhotonPoseEstimator m_frontCam_poseEstimator = 
         new PhotonPoseEstimator(kTagLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, m_frontCam, m_frontCam_robotToCam);
 
@@ -81,24 +81,27 @@ public class Vision {
      *
      * @param estimatedPose The estimated pose to guess standard deviations for.
      */
-    public Matrix<N3, N1> getEstimationStdDevs(
+    public Optional<Matrix<N3, N1>> getEstimationStdDevs(
         Pose2d estimatedPose, PhotonPipelineResult pipelineResult) {
         var estStdDevs = kSingleTagStdDevs;
+        var usedIds = pipelineResult.getMultiTagResult().fiducialIDsUsed;
+        int numTags = usedIds.size();
         var targets = pipelineResult.getTargets();
-        int numTags = 0;
         double avgDist = 0;
         double avgWeight = 0;
         for (var tgt : targets) {
+            if (!usedIds.contains(tgt.getFiducialId())) { continue; } // skip tags not in layout
             var tagPose = kTagLayout.getTagPose(tgt.getFiducialId());
             if (tagPose.isEmpty()) continue;
-            numTags++;
             avgDist +=
                 tagPose.get().toPose2d().getTranslation().getDistance(estimatedPose.getTranslation());
             avgWeight += TAG_WEIGHTS[tgt.getFiducialId() - 1];
         }
-        if (numTags == 0) return estStdDevs;
+        if (numTags == 0) return Optional.of(estStdDevs);
 
         avgDist /= numTags;
+        if (avgDist > 5) return Optional.empty();
+
         avgWeight /= numTags;
 
         // Decrease std devs if multiple targets are visible
@@ -110,7 +113,7 @@ public class Vision {
 
         estStdDevs = estStdDevs.times(avgWeight);
 
-        return estStdDevs;
+        return Optional.of(estStdDevs);
     }
 
     public static int getMiddleSpeakerId() {
@@ -139,9 +142,13 @@ public class Vision {
         var estimateOpt = m_frontCam_poseEstimator.update();
         if (estimateOpt.isEmpty()) return new VisMeas3dEx(result.hasTargets(), Optional.empty());
         log_frontCamRawEstimate.accept(estimateOpt.get().estimatedPose);
-        if (FieldK.inField(estimateOpt.get().estimatedPose) && estimateOpt.get().estimatedPose.getZ() >= 0) {
+        if (FieldK.inField(estimateOpt.get().estimatedPose) && estimateOpt.get().estimatedPose.getZ() >= -0.2) {
             var filtered = estimateOpt.get();
-            var stdDevs = getEstimationStdDevs(filtered.estimatedPose.toPose2d(), result);
+            var stdDevsOpt = getEstimationStdDevs(filtered.estimatedPose.toPose2d(), result);
+            if (stdDevsOpt.isEmpty()) {
+                return new VisMeas3dEx(true, Optional.empty());
+            }
+            var stdDevs = stdDevsOpt.get();
             log_frontCamFilteredEstimate.accept(filtered.estimatedPose);
             return new VisMeas3dEx(true, Optional.of(new VisionMeasurement3d(filtered, stdDevs)));
         }

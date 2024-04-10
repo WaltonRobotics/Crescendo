@@ -13,6 +13,7 @@ import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -233,7 +234,13 @@ public class Shooter extends SubsystemBase {
             return false;
         }
         var leftMeas = m_leftTargetSupp.get();
-        var tolerance = leftMeas.gte(RotationsPerSecond.of(40)) ? kBigShootTolerance : kAmpTolerance;
+        Measure<Velocity<Angle>> tolerance;
+        
+        if (DriverStation.isAutonomous()) {
+            tolerance = RotationsPerSecond.of(4);
+        } else {
+            tolerance = leftMeas.gte(RotationsPerSecond.of(40)) ? kBigShootTolerance : kAmpTolerance;
+        }
 
         var leftCleMeas = RotationsPerSecond.of(m_left.getClosedLoopError().getValueAsDouble());
         var rightCleMeas = RotationsPerSecond.of(m_right.getClosedLoopError().getValueAsDouble());

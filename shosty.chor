@@ -2163,7 +2163,7 @@
                 }
             ],
             "eventMarkers": [],
-            "isTrajectoryStale": false
+            "isTrajectoryStale": true
         },
         "source_side": {
             "waypoints": [
@@ -4538,7 +4538,7 @@
                 }
             ],
             "eventMarkers": [],
-            "isTrajectoryStale": false
+            "isTrajectoryStale": true
         },
         "source_side_alt": {
             "waypoints": [
@@ -5518,7 +5518,7 @@
                 }
             ],
             "eventMarkers": [],
-            "isTrajectoryStale": false
+            "isTrajectoryStale": true
         },
         "9500_counter": {
             "waypoints": [
@@ -8162,7 +8162,7 @@
             "usesDefaultFieldObstacles": true,
             "circleObstacles": [],
             "eventMarkers": [],
-            "isTrajectoryStale": false
+            "isTrajectoryStale": true
         },
         "very_amp": {
             "waypoints": [
@@ -10269,7 +10269,7 @@
             "usesDefaultFieldObstacles": true,
             "circleObstacles": [],
             "eventMarkers": [],
-            "isTrajectoryStale": false
+            "isTrajectoryStale": true
         }
     },
     "splitTrajectoriesAtStopPoints": true,
