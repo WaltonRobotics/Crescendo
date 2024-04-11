@@ -258,6 +258,7 @@ public class Superstructure {
             .onTrue(
             // wait until aim is ±50 degrees to intake mode
             Commands.sequence(
+                Commands.runOnce(() -> trapping = false),
                 m_aim.intakeAngleNearCmd(),
                 Commands.parallel(m_intake.run(), m_conveyor.startSlow())).withName("TeleIntake"));
 

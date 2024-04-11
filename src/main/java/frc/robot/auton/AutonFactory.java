@@ -3,7 +3,6 @@ package frc.robot.auton;
 import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.Swerve;
@@ -43,7 +42,7 @@ public final class AutonFactory {
 	}
 
 	private static Command printLater(Supplier<String> stringSup) {
-		return Commands.defer(() -> {
+		return defer(() -> {
 			return print(stringSup.get());
 		}, Set.of());
 	}

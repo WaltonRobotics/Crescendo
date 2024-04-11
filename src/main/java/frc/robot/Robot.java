@@ -218,7 +218,7 @@ public class Robot extends TimedRobot {
 		manipulator.b().and(manipulator.leftTrigger()).onTrue(superstructure.forceStateToIntake());
 
 		// aim safe angle
-		manipulator.x().and(manipulator.rightBumper().negate()).and(manipulator.a().negate()).onTrue(aim.hardStop());
+		// manipulator.x().and(manipulator.rightBumper().negate()).and(manipulator.a().negate()).onTrue(aim.hardStop());
 		
 		// vision aiming
 		manipulator.y().and(manipulator.leftBumper().negate()).whileTrue(aim.aim());
