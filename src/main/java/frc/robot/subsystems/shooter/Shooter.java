@@ -232,6 +232,10 @@ public class Shooter extends SubsystemBase {
         return toVeloNoSpin(() -> RotationsPerMinute.of(kAmpRpm));
     }
 
+    public Command trap() {
+        return toVeloNoSpin(() -> RotationsPerMinute.of(kTrapRpm));
+    }
+
     public boolean spinUpFinished() {
         if (m_leftTarget.baseUnitMagnitude() == 0) {
             m_leftOk = false;

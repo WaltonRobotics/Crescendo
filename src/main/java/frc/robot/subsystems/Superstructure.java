@@ -70,6 +70,7 @@ public class Superstructure {
     private boolean autonShoot = false;
     private boolean driverRumbled = false;
     private boolean manipulatorRumbled = false;
+    private boolean trapping = false;
 
     public final EventLoop sensorEventLoop = new EventLoop();
     public final EventLoop stateEventLoop = new EventLoop();
@@ -83,6 +84,8 @@ public class Superstructure {
 
     private final Trigger trg_autonIntakeReq = new Trigger(() -> autonIntake);
     private final Trigger trg_autonShootReq = new Trigger(() -> autonShoot);
+
+    private final Trigger trg_trap = new Trigger(() -> trapping);
 
     /** true = has note */
     private final Trigger irqTrg_frontSensor;
@@ -364,13 +367,15 @@ public class Superstructure {
                 ).withName("IdleStop")
             );
         
-        (stateTrg_idle.and(RobotModeTriggers.autonomous().or(trg_driverTrapReq)))
+        (stateTrg_idle.and(RobotModeTriggers.autonomous().or(trg_trap)))
             .onTrue(
                 Commands.parallel(
                     resetFlags(),
                     autonStop()
                 ).withName("AutonStop")
             );
+
+        trg_driverTrapReq.onTrue(Commands.runOnce(() -> trapping = true));
     }
 
     private Command resetFlags() { 

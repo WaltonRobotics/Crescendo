@@ -56,7 +56,9 @@ import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
 
 import static frc.robot.Constants.AimK.kAmpAngle;
+import static frc.robot.Constants.AimK.kClimbAngle;
 import static frc.robot.Constants.AimK.kSubwooferAngle;
+import static frc.robot.Constants.AimK.kTrapAngle;
 import static frc.robot.Constants.RobotK.*;
 
 import java.util.function.Supplier;
@@ -86,7 +88,7 @@ public class Robot extends TimedRobot {
 
 	public final Superstructure superstructure = new Superstructure(
 		aim, intake, conveyor, shooter, vision,
-		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()), manipulator.leftBumper().and(manipulator.a()),
+		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()), manipulator.back(),
 		(intensity) -> driverRumble(intensity), (intensity) -> manipulatorRumble(intensity));
 
 	public static final Field2d field2d = new Field2d();
@@ -236,6 +238,10 @@ public class Robot extends TimedRobot {
 		manipulator.a().and(manipulator.povUp()).whileTrue(climber.extendBoth(manipulator.x()));
 		manipulator.a().and(manipulator.povLeft()).whileTrue(climber.retractLeft(manipulator.x()));
 		manipulator.a().and(manipulator.povRight()).whileTrue(climber.retractRight(manipulator.x()));
+
+		manipulator.a().onTrue(aim.toAngleUntilAt(kClimbAngle));
+		manipulator.back().whileTrue(shooter.trap())
+			.and(manipulator.y()).onTrue(aim.toAngleUntilAt(kTrapAngle));
 
 		// feeding
 		manipulator.povUp().and((manipulator.a().or(manipulator.b())).negate()).whileTrue(shooter.lob())
