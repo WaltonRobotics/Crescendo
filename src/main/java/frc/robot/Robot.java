@@ -239,6 +239,7 @@ public class Robot extends TimedRobot {
 		manipulator.a().and(manipulator.povLeft()).whileTrue(climber.retractLeft(manipulator.x()));
 		manipulator.a().and(manipulator.povRight()).whileTrue(climber.retractRight(manipulator.x()));
 
+		// trap buttons
 		manipulator.a().onTrue(aim.toAngleUntilAt(kClimbAngle));
 		manipulator.back().whileTrue(shooter.trap())
 			.and(manipulator.y()).onTrue(aim.toAngleUntilAt(kTrapAngle));
@@ -256,10 +257,10 @@ public class Robot extends TimedRobot {
 		driver.start().and(driver.y()).whileTrue(swerve.sysIdQuasistatic(Direction.kReverse));
 
 		// sysid buttons
-		manipulator.back().and(manipulator.x()).whileTrue(shooter.sysIdDynamic(Direction.kForward));
-		manipulator.back().and(manipulator.y()).whileTrue(shooter.sysIdDynamic(Direction.kReverse));
-		manipulator.start().and(manipulator.x()).whileTrue(shooter.sysIdQuasistatic(Direction.kForward));
-		manipulator.start().and(manipulator.y()).whileTrue(shooter.sysIdQuasistatic(Direction.kReverse));
+		// manipulator.back().and(manipulator.x()).whileTrue(shooter.sysIdDynamic(Direction.kForward));
+		// manipulator.back().and(manipulator.y()).whileTrue(shooter.sysIdDynamic(Direction.kReverse));
+		// manipulator.start().and(manipulator.x()).whileTrue(shooter.sysIdQuasistatic(Direction.kForward));
+		// manipulator.start().and(manipulator.y()).whileTrue(shooter.sysIdQuasistatic(Direction.kReverse));
 
 		driver.povUp().onTrue(shooter.moreSpin());
 		driver.povDown().onTrue(shooter.lessSpin());
