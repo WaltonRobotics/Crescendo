@@ -47,6 +47,7 @@ import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.Trap;
 import frc.util.AllianceFlipUtil;
 import frc.util.WaltRangeChecker;
 import frc.util.logging.WaltLogger;
@@ -81,17 +82,18 @@ public class Robot extends TimedRobot {
 	private final Intake intake = new Intake();
 	private final Conveyor conveyor = new Conveyor();
 	private final Climber climber = new Climber();
+	private final Trap trap = new Trap();
 
 	private final PowerDistribution pdp = new PowerDistribution();
 	private final DoubleLogger log_miniPcPower = WaltLogger.logDouble("MiniPc", "power");
 	private final BooleanLogger log_powerAbove10 = WaltLogger.logBoolean("MiniPc", "powerGreaterThan10");
 	private double miniPcPower;
 
-	private final Trigger trap = manipulator.start();
+	private final Trigger trapTrg = manipulator.start();
 
 	public final Superstructure superstructure = new Superstructure(
 		aim, intake, conveyor, shooter, vision,
-		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()), trap,
+		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()), trapTrg,
 		(intensity) -> driverRumble(intensity), (intensity) -> manipulatorRumble(intensity));
 
 	public static final Field2d field2d = new Field2d();
@@ -244,8 +246,9 @@ public class Robot extends TimedRobot {
 
 		// trap buttons
 		manipulator.a().onTrue(aim.toAngleUntilAt(kClimbAngle));
-		trap.whileTrue(shooter.trap())
-			.onTrue(aim.toAngleUntilAt(kTrapAngle));
+		trapTrg.whileTrue(shooter.trap())
+			.onTrue(aim.toAngleUntilAt(kTrapAngle))
+			.onTrue(trap.deploy());
 
 		// feeding
 		manipulator.povUp().and((manipulator.a().or(manipulator.b())).negate()).whileTrue(shooter.lob())

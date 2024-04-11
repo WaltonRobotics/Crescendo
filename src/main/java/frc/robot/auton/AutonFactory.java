@@ -81,6 +81,79 @@ public final class AutonFactory {
 		).withName("TheAutonWrapper");
 	}
 
+	private static Command closeTwoInternal(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
+		var resetPose = swerve.resetPose(Paths.close1);
+		var pathFollow = AutoBuilder.followPath(Paths.close1).withName("PathFollow");
+		var preloadShot = preloadShot(superstructure, aim);
+		var intake = superstructure.autonIntakeReq();
+		var secondShotReq = superstructure.autonShootReq();
+
+		return sequence(
+			parallel(
+				resetPose,
+				preloadShot
+			),
+			parallel(
+				intake,
+				pathFollow
+			),
+			secondShotReq,
+			waitUntil(superstructure.stateTrg_idle)
+		).withName("CloseTwoPcSequence");
+	}
+
+	public static Command closeTwo(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
+		var auton = closeTwoInternal(superstructure, shooter, swerve, aim);
+
+		return theWrapper(auton, shooter).withName("CloseTwoPcFullAuton");
+	}
+
+	private static Command closeThreeInternal(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
+		var two = closeTwoInternal(superstructure, shooter, swerve, aim);
+		var pathFollow = AutoBuilder.followPath(Paths.close2);
+		var intake = superstructure.autonIntakeReq();
+		var thirdShotReq = superstructure.autonShootReq();
+
+		return sequence(
+			two,
+			parallel(
+				pathFollow,
+				intake
+			),
+			thirdShotReq,
+			waitUntil(superstructure.stateTrg_idle)
+		).withName("CloseThreePcSequence");
+	}
+
+	public static Command closeThree(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
+		var auton = closeThreeInternal(superstructure, shooter, swerve, aim);
+
+		return theWrapper(auton, shooter).withName("CloseThreePcFullAuton");
+	}
+
+	private static Command closeFourInternal(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
+		var three = closeThreeInternal(superstructure, shooter, swerve, aim);
+		var pathFollow = AutoBuilder.followPath(Paths.close2);
+		var intake = superstructure.autonIntakeReq();
+		var fourthShotReq = superstructure.autonShootReq();
+
+		return sequence(
+			three,
+			parallel(
+				pathFollow,
+				intake
+			),
+			fourthShotReq,
+			waitUntil(superstructure.stateTrg_idle)
+		).withName("CloseFourPcSequence");
+	}
+
+	public static Command closeFour(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
+		var auton = closeFourInternal(superstructure, shooter, swerve, aim);
+
+		return theWrapper(auton, shooter).withName("CloseFourPcFullAuton");
+	}
+
 	public static Command one(Superstructure superstructure, Shooter shooter, Aim aim) {
 		var auton = preloadShot(superstructure, aim);
 

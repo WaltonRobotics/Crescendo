@@ -20,4 +20,8 @@ public class Paths {
     public static final PathPlannerPath veryAmp1 = PathPlannerPath.fromChoreoTrajectory("very_amp.1");
     public static final PathPlannerPath veryAmp2 = PathPlannerPath.fromChoreoTrajectory("very_amp.2");
     public static final PathPlannerPath veryAmp3 = PathPlannerPath.fromChoreoTrajectory("very_amp.3");
+
+    public static final PathPlannerPath close1 = PathPlannerPath.fromChoreoTrajectory("close.1");
+    public static final PathPlannerPath close2 = PathPlannerPath.fromChoreoTrajectory("close.2");
+    public static final PathPlannerPath close3 = PathPlannerPath.fromChoreoTrajectory("close.3");
 }

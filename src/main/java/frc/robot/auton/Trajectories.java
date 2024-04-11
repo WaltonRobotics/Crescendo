@@ -8,4 +8,5 @@ public class Trajectories {
 	public static final ChoreoTrajectory sourceSide = Choreo.getTrajectory("source_side");
 	public static final ChoreoTrajectory g28Counter = Choreo.getTrajectory("9500_counter");
 	public static final ChoreoTrajectory veryAmp = Choreo.getTrajectory("very_amp");
+	public static final ChoreoTrajectory close = Choreo.getTrajectory("close");
 }
