@@ -238,7 +238,7 @@ public class Robot extends TimedRobot {
 		manipulator.a().and(manipulator.povRight()).whileTrue(climber.retractRight(manipulator.x()));
 
 		// feeding
-		manipulator.povUp().and(manipulator.a().negate()).whileTrue(shooter.lob())
+		manipulator.povUp().and((manipulator.a().or(manipulator.b())).negate()).whileTrue(shooter.lob())
 			.and(manipulator.y()).onTrue(aim.toAngleUntilAt(kSubwooferAngle));
 	}
 
@@ -268,7 +268,7 @@ public class Robot extends TimedRobot {
 
 		driver.back().onTrue(swerve.resetPoseToSpeaker());
 
-		driver.povUp().whileTrue(swerve.goToPose(AllianceFlipUtil.apply(new Pose2d(2.89, 5.56, new Rotation2d()))));
+		driver.povUp().and(driver.start().negate()).whileTrue(swerve.goToPose(AllianceFlipUtil.apply(new Pose2d(2.89, 5.56, new Rotation2d()))));
 	}
 
 	private Command getAutonomousCommand() {

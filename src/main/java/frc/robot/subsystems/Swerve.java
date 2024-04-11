@@ -261,7 +261,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 				return m_req;
 			}
 
-			var yawEffort = m_visionYaw.in(Radians) * 1.2;
+			var yawEffort = m_visionYaw.in(Radians) * 7.5;
 			log_yawEffort.accept(yawEffort);
 
 			return m_req 	
@@ -281,10 +281,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			var dist = speakerTrans.minus(pose.getTranslation());
 			var desiredYaw = Math.atan2(dist.getY(), dist.getX());
 			var curYaw = pose.getRotation().getZ();
-			var yawErr = ((desiredYaw - curYaw) * Math.PI) % (2 * Math.PI) - Math.PI;
-			if (yawErr > 2 * Math.PI - Math.PI / 4) {
-				yawErr -= 2 * Math.PI;
-			}
+			var yawErr = MathUtil.angleModulus((desiredYaw - curYaw) - Math.PI);
 			log_yawErrOpt.accept(Units.radiansToDegrees(yawErr));
 			m_hasVisionYaw = true;
 			m_visYawTimer.restart();
@@ -377,16 +374,16 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	public Command goToPose(Pose2d pose) {
 		return run(() -> {
-				SmartDashboard.putNumberArray("desiredPose", AdvantageScopeUtil.toDoubleArr(pose));
+			SmartDashboard.putNumberArray("desiredPose", AdvantageScopeUtil.toDoubleArr(pose));
 
-				var curPose = getState().Pose;
-				var xSpeed = m_xController.calculate(curPose.getX(), pose.getX());
-				var ySpeed = m_yController.calculate(curPose.getY(), pose.getY());
-				var thetaSpeed = m_thetaController.calculate(curPose.getRotation().getRadians(),
-					pose.getRotation().getRadians());
-				var speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, thetaSpeed, pose.getRotation());
+			var curPose = getState().Pose;
+			var xSpeed = m_xController.calculate(curPose.getX(), pose.getX());
+			var ySpeed = m_yController.calculate(curPose.getY(), pose.getY());
+			var thetaSpeed = m_thetaController.calculate(curPose.getRotation().getRadians(),
+				pose.getRotation().getRadians());
+			var speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, thetaSpeed, pose.getRotation());
 
-				setControl(m_autoRequest.withSpeeds(speeds));
+			setControl(m_autoRequest.withSpeeds(speeds));
 		});
 	}
 

@@ -242,7 +242,7 @@ public class Shooter extends SubsystemBase {
         Measure<Velocity<Angle>> tolerance;
         
         if (DriverStation.isAutonomous()) {
-            tolerance = RotationsPerSecond.of(4);
+            tolerance = RotationsPerSecond.of(10);
         } else {
             tolerance = leftMeas.gte(RotationsPerSecond.of(40)) ? kBigShootTolerance : kAmpTolerance;
         }

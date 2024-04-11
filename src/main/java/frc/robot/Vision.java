@@ -59,7 +59,7 @@ public class Vision {
     private final PhotonCamera m_frontCam = new PhotonCamera("FrontCam");
     private final Transform3d m_frontCam_robotToCam = new Transform3d(
         Units.inchesToMeters(-9.095), Units.inchesToMeters(-11.212), Units.inchesToMeters(10.739), 
-        new Rotation3d(Units.degreesToRadians(180), Units.degreesToRadians(0 - 17.8), Units.degreesToRadians(180 - 21)));
+        new Rotation3d(Units.degreesToRadians(180), Units.degreesToRadians(0 - 17.8), Units.degreesToRadians(180 - 20)));
     public final PhotonPoseEstimator m_frontCam_poseEstimator = 
         new PhotonPoseEstimator(kTagLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, m_frontCam, m_frontCam_robotToCam);
 
