@@ -379,8 +379,8 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void simulationPeriodic() {
-		// getTrajLines();
-		// simulateAim();
+		getTrajLines();
+		simulateAim();
 	}
 
 	private void getTrajLines() {

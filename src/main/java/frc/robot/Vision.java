@@ -125,18 +125,6 @@ public class Vision {
         return kTagLayout.getTagPose(getMiddleSpeakerId()).get();
     }
 
-    private Optional<EstimatedRobotPose> filterEstimation(EstimatedRobotPose estPose) {
-        return Optional.of(estPose);
-
-        // if (
-        //     FieldK.inField(estPose.estimatedPose) &&
-        //     estPose.estimatedPose.getZ() < kMaxPoseHeight
-        // ) {
-        //     return Optional.of(estPose);
-        // }
-        // return Optional.empty();
-    }
-
     public VisMeas3dEx getFrontCamPoseEst() {
         var result = m_frontCam.getLatestResult();
         var estimateOpt = m_frontCam_poseEstimator.update();

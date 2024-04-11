@@ -1,9 +1,7 @@
 package frc.robot.auton;
 
 import edu.wpi.first.networktables.PubSubOption;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
@@ -22,12 +20,9 @@ import java.util.function.Supplier;
 
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
-import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 
 public final class AutonFactory {
-	private static SwerveRequest.FieldCentric m_aimReq = new SwerveRequest.FieldCentric().withRotationalDeadband(0);
-
 	private static IntLogger log_autonSeqInt = WaltLogger.logInt("Auton", "SequenceNum", PubSubOption.sendAll(true));
 	private static int m_seqVal = 0;
 	private static Command logSeqIncr() {
@@ -197,7 +192,6 @@ public final class AutonFactory {
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide3);
 		var intake = superstructure.autonIntakeReq();
 		var redAim = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
-		var blueAim = aim.toAngleUntilAt(Degrees.of(0.5)).asProxy();
 		var fourthShotReq = superstructure.autonShootReq();
 
 		return sequence( // 3pc then (path and (wait then intake))
@@ -235,7 +229,6 @@ public final class AutonFactory {
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide4);
 		var intake = superstructure.autonIntakeReq();
 		var redAim = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
-		var blueAim = aim.toAngleUntilAt(Degrees.of(0.5)).asProxy();
 		var fifthShotReq = superstructure.autonShootReq();
 
 		var auton = sequence( // 3pc then (path and (wait then intake))
