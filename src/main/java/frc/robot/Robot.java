@@ -32,6 +32,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.AimK;
 import frc.robot.Constants.FieldK;
@@ -86,9 +87,11 @@ public class Robot extends TimedRobot {
 	private final BooleanLogger log_powerAbove10 = WaltLogger.logBoolean("MiniPc", "powerGreaterThan10");
 	private double miniPcPower;
 
+	private final Trigger trap = manipulator.start();
+
 	public final Superstructure superstructure = new Superstructure(
 		aim, intake, conveyor, shooter, vision,
-		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()), manipulator.back(),
+		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()), trap,
 		(intensity) -> driverRumble(intensity), (intensity) -> manipulatorRumble(intensity));
 
 	public static final Field2d field2d = new Field2d();
@@ -241,8 +244,8 @@ public class Robot extends TimedRobot {
 
 		// trap buttons
 		manipulator.a().onTrue(aim.toAngleUntilAt(kClimbAngle));
-		manipulator.back().whileTrue(shooter.trap())
-			.and(manipulator.y()).onTrue(aim.toAngleUntilAt(kTrapAngle));
+		trap.whileTrue(shooter.trap())
+			.onTrue(aim.toAngleUntilAt(kTrapAngle));
 
 		// feeding
 		manipulator.povUp().and((manipulator.a().or(manipulator.b())).negate()).whileTrue(shooter.lob())

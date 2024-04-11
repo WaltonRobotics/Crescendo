@@ -14,6 +14,7 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Servo;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -39,6 +40,7 @@ public class Shooter extends SubsystemBase {
     private final VelocityVoltage m_request = new VelocityVoltage(0);
     private final VoltageOut m_voltage = new VoltageOut(0);
     private final CoastOut m_coast = new CoastOut();
+    private final Servo m_trap = new Servo(4); // TODO unmagify
 
     private double m_spinAmt = kSpinAmt;
     private double m_shotTime = 1.5;
@@ -233,7 +235,10 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command trap() {
-        return toVeloNoSpin(() -> RotationsPerMinute.of(kTrapRpm));
+        return Commands.parallel(
+            Commands.runOnce(() -> m_trap.setPosition(1)), 
+            toVeloNoSpin(() -> RotationsPerMinute.of(kTrapRpm))
+        );
     }
 
     public boolean spinUpFinished() {
