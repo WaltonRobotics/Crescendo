@@ -59,6 +59,7 @@ import frc.robot.subsystems.Superstructure;
 
 import static frc.robot.Constants.AimK.kAmpAngle;
 import static frc.robot.Constants.AimK.kClimbAngle;
+import static frc.robot.Constants.AimK.kClimbingAngle;
 import static frc.robot.Constants.AimK.kSubwooferAngle;
 import static frc.robot.Constants.AimK.kTrapAngle;
 import static frc.robot.Constants.RobotK.*;
@@ -93,7 +94,7 @@ public class Robot extends TimedRobot {
 
 	public final Superstructure superstructure = new Superstructure(
 		aim, intake, conveyor, shooter, vision,
-		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()), trapTrg,
+		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()), trapTrg.or(manipulator.a()),
 		(intensity) -> driverRumble(intensity), (intensity) -> manipulatorRumble(intensity));
 
 	public static final Field2d field2d = new Field2d();
@@ -205,6 +206,9 @@ public class Robot extends TimedRobot {
 		// face speaker tag
 		driver.leftTrigger().whileTrue(swerve.faceSpeakerTag(getTeleSwerveReq()));
 
+		// centre of gravity while climbing
+		driver.y().onTrue(aim.toAngleUntilAt(kClimbingAngle));
+
 		// face amp
 		driver.x().whileTrue(swerve.faceAmp(() -> -driver.getLeftY(), () -> -driver.getLeftX(), kMaxSpeed));
 		driver.start().whileTrue(swerve.faceAmpUnderDefence(() -> -driver.getLeftY(), () -> -driver.getLeftX(), kMaxSpeed));
@@ -254,7 +258,8 @@ public class Robot extends TimedRobot {
 		manipulator.a().onTrue(aim.toAngleUntilAt(kClimbAngle));
 		trapTrg.whileTrue(shooter.trap())
 			.onTrue(aim.toAngleUntilAt(kTrapAngle))
-			.onTrue(trap.deploy());
+			.onTrue(trap.deploy())
+			.onFalse(trap.stop());
 
 		// feeding
 		manipulator.povUp().and((manipulator.a().or(manipulator.b())).negate()).whileTrue(shooter.lob())
@@ -279,10 +284,7 @@ public class Robot extends TimedRobot {
 		driver.povUp().onTrue(shooter.increaseRpm());
 		driver.povDown().onTrue(shooter.decreaseRpm());
 
-		manipulator.povUp().onTrue(aim.increaseAngle());
-		manipulator.povDown().onTrue(aim.decreaseAngle());
-
-		manipulator.start().onTrue(superstructure.forceStateToNoteReady());
+		// manipulator.start().onTrue(superstructure.forceStateToNoteReady());
 
 		// wheel pointy straight for pit
 		driver.povUp().and(driver.start())

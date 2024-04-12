@@ -15,6 +15,7 @@ import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.wpilibj.AsynchronousInterrupt;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.SynchronousInterrupt;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.event.EventLoop;
@@ -375,7 +376,7 @@ public class Superstructure {
                 ).withName("AmpStop")
             );
         
-        (stateTrg_idle.and(trg_ampAngle.negate()))
+        (stateTrg_idle.and((trg_ampAngle.negate().or(trg_trap))))
             .onTrue(
                 Commands.parallel(
                     resetFlags(),
@@ -385,7 +386,7 @@ public class Superstructure {
 
         trg_driverTrapReq.onTrue(Commands.runOnce(() -> trapping = true));
 
-        trg_driverShootReq.negate().debounce(7).onTrue(m_aim.hardStop());
+        (trg_driverShootReq.or(trg_driverTrapReq)).negate().debounce(7).and(RobotModeTriggers.autonomous().negate()).onTrue(m_aim.hardStop());
     }
 
     private Command resetFlags() { 

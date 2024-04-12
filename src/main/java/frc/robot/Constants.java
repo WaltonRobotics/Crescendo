@@ -261,7 +261,7 @@ public class Constants {
         public static final double kLobRpm = 4500;
         public static final double kPodiumRpm = 7600;
         public static final double kAmpRpm = 700;
-        public static final double kTrapRpm = 1350;
+        public static final double kTrapRpm = 1400;
 
         public static final double kGearRatio = 18.0 / 36.0;
 
@@ -363,6 +363,7 @@ public class Constants {
         public static final Measure<Angle> kPodiumAngle = Degrees.of(6.5);
         public static final Measure<Angle> kTrapAngle = Degrees.of(74.2);
         public static final Measure<Angle> kClimbAngle = Degrees.of(60);
+        public static final Measure<Angle> kClimbingAngle = Degrees.of(50);
 
         public static final Measure<Angle> kTolerance = Degrees.of(2);
     }
