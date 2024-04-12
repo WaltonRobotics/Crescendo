@@ -52,7 +52,6 @@ import frc.robot.auton.AutonChooser;
 import frc.robot.auton.AutonChooser.AutonOption;
 import frc.util.AdvantageScopeUtil;
 import frc.util.AllianceFlipUtil;
-import frc.util.BetterFCFacingAngle;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.BooleanLogger;
 import frc.util.logging.WaltLogger.DoubleArrayLogger;
@@ -87,7 +86,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final PIDController m_yController = new PIDController(kPTranslation, 0.0, 0.0);
 	private final PIDController m_thetaController = new PIDController(kPTheta, 0.0, 0.0);
 
-	private final BetterFCFacingAngle m_facingAngle = new BetterFCFacingAngle();
+	private final SwerveRequest.FieldCentricFacingAngle m_facingAngle = new SwerveRequest.FieldCentricFacingAngle();
 
 	private Rotation2d m_desiredRot = new Rotation2d();
 
@@ -193,7 +192,8 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		m_gyroYawRadsSupplier = () -> Units.degreesToRadians(getPigeon2().getAngle());
 		m_thetaController.enableContinuousInput(0, 2 * Math.PI);
 		m_visYawTimer.reset();
-		m_facingAngle.HeadingController = new PhoenixPIDController(kPTheta - 2, 0, 0);
+		m_facingAngle.HeadingController.enableContinuousInput(0, 2 * Math.PI);
+		m_facingAngle.HeadingController.setP(kPTheta - 2);
 	}
 
 	public Command wheelRadiusCharacterisation(double omegaDirection) {

@@ -172,7 +172,7 @@ public class Superstructure {
         trg_driverTrapReq = trapShot;
 
         trg_subwooferAngle = new Trigger(() -> aim.getAngle().isNear(kSubwooferAngle, 0.1));
-        trg_ampAngle = new Trigger(() -> aim.getAngle().isNear(kAmpAngle, 0.2));
+        trg_ampAngle = new Trigger(() -> aim.getAngle().isNear(kAmpAngle, 0.3));
 
         trg_intakeReq = trg_driverIntakeReq.or(trg_autonIntakeReq);
         trg_shootReq = trg_driverShootReq.or(trg_autonShootReq);
