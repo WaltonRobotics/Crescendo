@@ -2,6 +2,8 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.wpilibj2.command.Commands.print;
+import static frc.robot.Constants.AimK.kAmpAngle;
+import static frc.robot.Constants.AimK.kSubwooferAngle;
 import static frc.robot.Constants.IntakeK.kVisiSightId;
 import static frc.robot.Constants.RobotK.kDbTabName;
 
@@ -93,6 +95,9 @@ public class Superstructure {
     public final Trigger trg_spunUp;
     public final Trigger trg_atAngle;
 
+    private final Trigger trg_subwooferAngle;
+    private final Trigger trg_ampAngle;
+
     private final Trigger trg_intakeReq;
     private final Trigger trg_shootReq;
 
@@ -165,6 +170,9 @@ public class Superstructure {
         trg_driverShootReq = shooting;
         trg_driverAmpReq = ampShot;
         trg_driverTrapReq = trapShot;
+
+        trg_subwooferAngle = new Trigger(() -> aim.getAngle().isNear(kSubwooferAngle, 0.1));
+        trg_ampAngle = new Trigger(() -> aim.getAngle().isNear(kAmpAngle, 0.2));
 
         trg_intakeReq = trg_driverIntakeReq.or(trg_autonIntakeReq);
         trg_shootReq = trg_driverShootReq.or(trg_autonShootReq);
@@ -253,16 +261,15 @@ public class Superstructure {
         // intakeReq && idle
         (trg_intakeReq.and(stateTrg_idle))
             .onTrue(Commands.runOnce(() -> m_state = INTAKE));
-        
-        (stateTrg_intake.and(RobotModeTriggers.autonomous().negate()))
-            .onTrue(
-            // wait until aim is ±50 degrees to intake mode
-            Commands.sequence(
-                Commands.runOnce(() -> trapping = false),
-                m_aim.intakeAngleNearCmd(),
-                Commands.parallel(m_intake.run(), m_conveyor.startSlow())).withName("TeleIntake"));
 
-        (stateTrg_intake.and(RobotModeTriggers.autonomous()))
+        stateTrg_intake.onTrue(Commands.runOnce(() -> trapping = false));
+        
+        (stateTrg_intake.and(trg_subwooferAngle.or(RobotModeTriggers.autonomous())))
+            .onTrue(
+                Commands.parallel(m_intake.fullPower(), m_conveyor.startFaster())
+            );
+
+        (stateTrg_intake.and(trg_subwooferAngle.negate()))
             .onTrue(
                 Commands.parallel(m_intake.run(), m_conveyor.startSlow()).withName("AutoIntake")
             );
@@ -360,23 +367,25 @@ public class Superstructure {
         (stateTrg_leftBeamBreak.debounce(0.1))
             .onTrue(changeStateCmd(IDLE));
 
-        (stateTrg_idle.and(RobotModeTriggers.autonomous().negate()))
+        (stateTrg_idle.and(trg_ampAngle).and(trg_trap.negate()))
+            .onTrue(
+                Commands.parallel(
+                    resetFlags(),
+                    ampStop()
+                ).withName("AmpStop")
+            );
+        
+        (stateTrg_idle.and(trg_ampAngle.negate()))
             .onTrue(
                 Commands.parallel(
                     resetFlags(),
                     idleStop()
                 ).withName("IdleStop")
             );
-        
-        (stateTrg_idle.and(RobotModeTriggers.autonomous().or(trg_trap)))
-            .onTrue(
-                Commands.parallel(
-                    resetFlags(),
-                    autonStop()
-                ).withName("AutonStop")
-            );
 
         trg_driverTrapReq.onTrue(Commands.runOnce(() -> trapping = true));
+
+        trg_driverShootReq.negate().debounce(7).onTrue(m_aim.hardStop());
     }
 
     private Command resetFlags() { 
@@ -400,7 +409,7 @@ public class Superstructure {
         return extStateTrg_noteIn.getAsBoolean();
     }
 
-    public Command autonStop() {
+    public Command idleStop() {
         var conveyorCmd = m_conveyor.stop();
         var intakeCmd = m_intake.stop();
 
@@ -410,9 +419,9 @@ public class Superstructure {
         ).withName("IdleStop");
     }
 
-    public Command idleStop() {
+    public Command ampStop() {
         var shootCmd = m_shooter.stop();
-        var aimCmd = m_aim.intakeAngleNearCmd();
+        var aimCmd = m_aim.toAngleUntilAt(kSubwooferAngle);
         var conveyorCmd = m_conveyor.stop();
         var intakeCmd = m_intake.stop();
 

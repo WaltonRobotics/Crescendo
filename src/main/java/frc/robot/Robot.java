@@ -205,9 +205,15 @@ public class Robot extends TimedRobot {
 		// face speaker tag
 		driver.leftTrigger().whileTrue(swerve.faceSpeakerTag(getTeleSwerveReq()));
 
+		// face amp
+		driver.x().whileTrue(swerve.faceAmp(() -> -driver.getLeftY(), () -> -driver.getLeftX(), kMaxSpeed));
+		driver.start().whileTrue(swerve.faceAmpUnderDefence(() -> -driver.getLeftY(), () -> -driver.getLeftX(), kMaxSpeed));
+
 		/* manipulator controls */
 		// eject note
 		manipulator.rightTrigger().whileTrue(intake.outtake());
+
+		manipulator.x().and((manipulator.rightBumper().or(manipulator.povUp())).negate()).onTrue(aim.hardStop());
 
 		// subwoofer shot prep
 		manipulator.rightBumper().whileTrue(shooter.subwoofer());
@@ -239,10 +245,10 @@ public class Robot extends TimedRobot {
 
 		// climber controls	
 		// x is override button
-		manipulator.a().and(manipulator.povDown()).whileTrue(climber.retractBoth(manipulator.x()));
-		manipulator.a().and(manipulator.povUp()).whileTrue(climber.extendBoth(manipulator.x()));
-		manipulator.a().and(manipulator.povLeft()).whileTrue(climber.retractLeft(manipulator.x()));
-		manipulator.a().and(manipulator.povRight()).whileTrue(climber.retractRight(manipulator.x()));
+		manipulator.a().and(manipulator.povDown()).whileTrue(climber.retractBoth());
+		manipulator.a().and(manipulator.povUp()).whileTrue(climber.extendBoth());
+		manipulator.a().and(manipulator.povLeft()).whileTrue(climber.retractLeft());
+		manipulator.a().and(manipulator.povRight()).whileTrue(climber.retractRight());
 
 		// trap buttons
 		manipulator.a().onTrue(aim.toAngleUntilAt(kClimbAngle));
@@ -252,7 +258,9 @@ public class Robot extends TimedRobot {
 
 		// feeding
 		manipulator.povUp().and((manipulator.a().or(manipulator.b())).negate()).whileTrue(shooter.lob())
-			.and(manipulator.y()).onTrue(aim.toAngleUntilAt(kSubwooferAngle));
+			.and(manipulator.x()).onTrue(aim.toAngleUntilAt(Degrees.of(15.5)));
+
+		manipulator.povLeft().and(manipulator.a().negate()).onTrue(aim.toAngleUntilAt(Degrees.of(15.5))); // TODO unmagify
 	}
 
 	public void configureTestingBindings() {
@@ -268,8 +276,11 @@ public class Robot extends TimedRobot {
 		// manipulator.start().and(manipulator.x()).whileTrue(shooter.sysIdQuasistatic(Direction.kForward));
 		// manipulator.start().and(manipulator.y()).whileTrue(shooter.sysIdQuasistatic(Direction.kReverse));
 
-		driver.povUp().onTrue(shooter.moreSpin());
-		driver.povDown().onTrue(shooter.lessSpin());
+		driver.povUp().onTrue(shooter.increaseRpm());
+		driver.povDown().onTrue(shooter.decreaseRpm());
+
+		manipulator.povUp().onTrue(aim.increaseAngle());
+		manipulator.povDown().onTrue(aim.decreaseAngle());
 
 		manipulator.start().onTrue(superstructure.forceStateToNoteReady());
 
@@ -280,8 +291,6 @@ public class Robot extends TimedRobot {
 			.onTrue(Commands.runOnce(() -> swerve.seedFieldRelative(new Pose2d())));
 
 		driver.back().onTrue(swerve.resetPoseToSpeaker());
-
-		driver.povUp().and(driver.start().negate()).whileTrue(swerve.goToPose(AllianceFlipUtil.apply(new Pose2d(2.89, 5.56, new Rotation2d()))));
 	}
 
 	private Command getAutonomousCommand() {

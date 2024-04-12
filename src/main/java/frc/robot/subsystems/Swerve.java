@@ -18,6 +18,7 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.ApplyChassisSpeeds;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SwerveDriveBrake;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest.SysIdSwerveTranslation;
+import com.ctre.phoenix6.mechanisms.swerve.utility.PhoenixPIDController;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathPlannerPath;
@@ -51,6 +52,7 @@ import frc.robot.auton.AutonChooser;
 import frc.robot.auton.AutonChooser.AutonOption;
 import frc.util.AdvantageScopeUtil;
 import frc.util.AllianceFlipUtil;
+import frc.util.BetterFCFacingAngle;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.BooleanLogger;
 import frc.util.logging.WaltLogger.DoubleArrayLogger;
@@ -84,6 +86,8 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final PIDController m_xController = new PIDController(kPTranslation, 0.0, 0.0);
 	private final PIDController m_yController = new PIDController(kPTranslation, 0.0, 0.0);
 	private final PIDController m_thetaController = new PIDController(kPTheta, 0.0, 0.0);
+
+	private final BetterFCFacingAngle m_facingAngle = new BetterFCFacingAngle();
 
 	private Rotation2d m_desiredRot = new Rotation2d();
 
@@ -141,6 +145,8 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final DoubleLogger log_yawErrOpt = WaltLogger.logDouble("Swerve", "yawErrorOpt");
 	private final BooleanLogger log_hasYaw = WaltLogger.logBoolean("Swerve", "hasYaw");
 
+	private final DoubleLogger log_pigeonYaw = WaltLogger.logDouble("Swerve", "pigeonYaw");
+
 	private final Pose2dLogger log_desiredPose = WaltLogger.logPose2d("Swerve", "desiredPose");
 
 	public void addVisionMeasurement3d(VisionMeasurement3d measurement) {
@@ -187,6 +193,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		m_gyroYawRadsSupplier = () -> Units.degreesToRadians(getPigeon2().getAngle());
 		m_thetaController.enableContinuousInput(0, 2 * Math.PI);
 		m_visYawTimer.reset();
+		m_facingAngle.HeadingController = new PhoenixPIDController(kPTheta - 2, 0, 0);
 	}
 
 	public Command wheelRadiusCharacterisation(double omegaDirection) {
@@ -272,6 +279,28 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			if (!m_hasVisionYaw) return true;
 			return MathUtil.isNear(0, m_visionYaw.in(Degrees), 0.5);
 		}).withTimeout(0.5);
+	}
+
+	public Command faceAmp(DoubleSupplier xRate, DoubleSupplier yRate, double maxSpeed) {
+		return applyRequest(() -> {
+			return m_facingAngle
+				.withRotationalDeadband(0)
+				.withTargetDirection(new Rotation2d(Degrees.of(AllianceFlipUtil.shouldFlip() ? 30 : -30)))
+				.withVelocityX(xRate.getAsDouble() * maxSpeed)
+				.withVelocityY(yRate.getAsDouble() * maxSpeed)
+				.withDeadband(maxSpeed * 0.1);
+		});
+	}
+
+	public Command faceAmpUnderDefence(DoubleSupplier xRate, DoubleSupplier yRate, double maxSpeed) {
+		return applyRequest(() -> {
+			return m_facingAngle
+				.withRotationalDeadband(0)
+				.withTargetDirection(new Rotation2d(Degrees.of(AllianceFlipUtil.shouldFlip() ? 10 : -10)))
+				.withVelocityX(xRate.getAsDouble() * maxSpeed)
+				.withVelocityY(yRate.getAsDouble() * maxSpeed)
+				.withDeadband(maxSpeed * 0.1);
+		});
 	}
 
 	public void calculateYawErr(Optional<VisionMeasurement3d> measOpt, boolean tagsPresent) {
@@ -474,5 +503,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		log_wheelVeloTargets.accept(m_wheelVeloTargets);
 		log_wheelVeloErrors.accept(m_wheelVeloErrs);
 		log_hasYaw.accept(m_hasVisionYaw);
+
+		log_pigeonYaw.accept(m_pigeon2.getAngle() % 360);
 	}
 }

@@ -35,11 +35,10 @@ public class Climber extends SubsystemBase {
         m_left.getEncoder().setPosition(0);
     }
 
-    public Command retractBoth(BooleanSupplier overrideSup) {
+    public Command retractBoth() {
         return runEnd(() -> {
-            boolean override = overrideSup.getAsBoolean();
-            boolean rightAtMax = m_right.getEncoder().getPosition() >= 0 && !override;
-            boolean leftAtMax = m_left.getEncoder().getPosition() >= 0 && !override;
+            boolean rightAtMax = m_right.getEncoder().getPosition() >= 0;
+            boolean leftAtMax = m_left.getEncoder().getPosition() >= 0;
             m_right.set(rightAtMax ? 0 : kRetractDutyCycle);
             m_left.set(leftAtMax ? 0 : kRetractDutyCycle);
         }, 
@@ -49,34 +48,28 @@ public class Climber extends SubsystemBase {
         });
     }
 
-    public Command retractLeft(BooleanSupplier overrideSup) {
+    public Command retractLeft() {
         return runEnd(() -> {
-            boolean override = overrideSup.getAsBoolean();
-            boolean atMax = m_left.getEncoder().getPosition() >= 0 && !override;
-            m_left.set(atMax ? 0 : kRetractSingleDutyCycle);
+            m_left.set(kRetractSingleDutyCycle);
         }, 
         () -> {
             m_left.set(0);
         });
     }
 
-    public Command retractRight(BooleanSupplier overrideSup) {
+    public Command retractRight() {
         return runEnd(() -> {
-            boolean override = overrideSup.getAsBoolean();
-            boolean atMax = m_right.getEncoder().getPosition() >= 0 && !override;
-            m_right.set(atMax ? 0 : kRetractSingleDutyCycle);
+            m_right.set(kRetractSingleDutyCycle);
         }, 
         () -> {
             m_right.set(0);
         });
     }
 
-    public Command extendBoth(BooleanSupplier overrideSup) {
+    public Command extendBoth() {
         return runEnd(() -> {
-            // max is negative, therefore >
-            boolean override = overrideSup.getAsBoolean();
-            boolean rightAtMax = m_right.getEncoder().getPosition() <= kMaxExtensionPos && !override;
-            boolean leftAtMax = m_left.getEncoder().getPosition() <= kMaxExtensionPos && !override;
+            boolean rightAtMax = m_right.getEncoder().getPosition() <= kMaxExtensionPos;
+            boolean leftAtMax = m_left.getEncoder().getPosition() <= kMaxExtensionPos;
             m_right.set(rightAtMax ? 0 : kExtendDutyCycle);
             m_left.set(leftAtMax ? 0 : kExtendDutyCycle);
             log_rightAtLimit.accept(rightAtMax);

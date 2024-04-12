@@ -170,23 +170,23 @@ public class Constants {
     public class ShooterK {
         public static final class ShooterConfigs {
             /* stuff that works for speaker */
-            private static final double kPRightSpeaker = 0.3;
+            private static final double kPRightSpeaker = 0.2;
             private static final double kSRightSpeaker = 0.25884; // volts
             private static final double kVRightSpeaker = 0.063367;
             private static final double kARightSpeaker = 0.018238;
 
-            private static final double kPLeftSpeaker = 0.3;
+            private static final double kPLeftSpeaker = 0.2;
             private static final double kSLeftSpeaker = 0.2612; // volts
             private static final double kVLeftSpeaker = 0.061983;
             private static final double kALeftSpeaker = 0.019191;
 
             /* stuff that works for amp */
-            private static final double kPRightAmp = 0.2;
+            private static final double kPRightAmp = 0.15;
             private static final double kSRightAmp = 0.11941; // volts
             private static final double kVRightAmp = 0.066954;
             private static final double kARightAmp = 0.025247;
 
-            private static final double kPLeftAmp = 0.2;
+            private static final double kPLeftAmp = 0.15;
             private static final double kSLeftAmp = 0.2612; // volts
             private static final double kVLeftAmp = 0.061983;
             private static final double kALeftAmp = 0.019191;
@@ -258,7 +258,7 @@ public class Constants {
         public static final double kSpinAmt = 0.7;
 
         public static final double kSubwooferRpm = 7300;
-        public static final double kLobRpm = kSubwooferRpm * 0.75;
+        public static final double kLobRpm = 4500;
         public static final double kPodiumRpm = 7600;
         public static final double kAmpRpm = 700;
         public static final double kTrapRpm = 1350;

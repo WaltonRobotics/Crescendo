@@ -188,6 +188,10 @@ public class Aim extends SubsystemBase {
         }
     }
 
+    public Measure<Angle> getAngle() {
+        return Rotations.of(m_motor.getPosition().getValueAsDouble());
+    }
+
     private double getDegrees() {
         return Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()) + 28;
     }

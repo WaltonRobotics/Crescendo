@@ -35,6 +35,10 @@ public class Conveyor extends SubsystemBase {
         return run(() -> m_conveyor.set(0.25)).withName("ConveyorRunSlow");
     }
 
+    public Command startFaster() {
+        return run(() -> m_conveyor.set(0.35)).withName("ConveyorRunSlow");
+    }
+
     public Command runBackwards() {
         var go = runEnd(() -> {
             m_conveyor.set(-0.25);
