@@ -205,14 +205,11 @@ public class Robot extends TimedRobot {
 		// rezero
 		driver.leftBumper().onTrue(swerve.runOnce(() -> swerve.seedFieldRelative()));
 
-		// face speaker tag
-		driver.leftTrigger().whileTrue(swerve.faceSpeakerTag(getTeleSwerveReq()));
-
 		// centre of gravity while climbing
 		driver.y().onTrue(aim.toAngleUntilAt(kClimbingAngle));
 
 		// face amp
-		driver.x().whileTrue(swerve.faceAmp(() -> -driver.getLeftY(), () -> -driver.getLeftX(), kMaxSpeed));
+		driver.leftTrigger().whileTrue(swerve.faceAmp(() -> -driver.getLeftY(), () -> -driver.getLeftX(), kMaxSpeed));
 		driver.start().whileTrue(swerve.faceAmpUnderDefence(() -> -driver.getLeftY(), () -> -driver.getLeftX(), kMaxSpeed));
 
 		/* manipulator controls */
@@ -236,9 +233,6 @@ public class Robot extends TimedRobot {
 
 		// aim safe angle
 		// manipulator.x().and(manipulator.rightBumper().negate()).and(manipulator.a().negate()).onTrue(aim.hardStop());
-		
-		// vision aiming
-		manipulator.y().and(manipulator.leftBumper().negate()).whileTrue(aim.aim());
 
 		// subwoofer if vision breaky
 		manipulator.x().and(manipulator.rightBumper()).onTrue(aim.toAngleUntilAt(kSubwooferAngle));
@@ -255,9 +249,9 @@ public class Robot extends TimedRobot {
 		manipulator.a().and(manipulator.povUp()).whileTrue(climber.extendBoth());
 		manipulator.a().and(manipulator.povLeft()).whileTrue(climber.retractLeft());
 		manipulator.a().and(manipulator.povRight()).whileTrue(climber.retractRight());
+		manipulator.y().and(manipulator.leftBumper().negate()).onTrue(aim.toAngleUntilAt(kClimbAngle));
 
 		// trap buttons
-		manipulator.a().onTrue(aim.toAngleUntilAt(kClimbAngle));
 		trapTrg.whileTrue(shooter.trap())
 			.onTrue(aim.toAngleUntilAt(kTrapAngle))
 			.onTrue(trap.deploy())
