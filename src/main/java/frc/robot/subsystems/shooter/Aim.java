@@ -40,6 +40,7 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.FieldK;
+import frc.robot.Constants.RobotK;
 import frc.robot.Constants.AimK.AimConfigs;
 import frc.robot.Vision.VisionMeasurement3d;
 import frc.util.AllianceFlipUtil;
@@ -62,7 +63,9 @@ public class Aim extends SubsystemBase {
     private final DigitalInput m_coastSwitch = new DigitalInput(kCoastSwitchId);
 
     private final Trigger trg_coastSwitch = new Trigger(m_coastSwitch::get);
-    private final Trigger trg_atStart = new Trigger(() -> MathUtil.isNear(kSubwooferAngle.in(Rotations), m_motor.getPosition().getValueAsDouble(), Units.degreesToRotations(1)));
+    private final Trigger trg_autonAngleOk = new Trigger(() -> 
+        MathUtil.isNear(kSubwooferAngle.plus(Degrees.of(5)).in(Rotations), m_motor.getPosition().getValueAsDouble(), Units.degreesToRotations(1))
+        && RobotK.kStopCoast);
 
     private final DynamicMotionMagicVoltage m_dynamicRequest = new DynamicMotionMagicVoltage(0, 20, 40, 200);
     private final CoastOut m_coastRequest = new CoastOut();
@@ -98,6 +101,7 @@ public class Aim extends SubsystemBase {
 
     private Translation3d m_centerPos;
 
+
     private final DoubleLogger log_targetAngle = WaltLogger.logDouble(kDbTabName, "targetAngle");
     private final DoubleLogger log_motorSpeed = WaltLogger.logDouble(kDbTabName, "motorSpeed");
     private final DoubleLogger log_motorPos = WaltLogger.logDouble(kDbTabName, "motorPos");
@@ -126,6 +130,7 @@ public class Aim extends SubsystemBase {
     private final DoubleLogger log_measTimer = WaltLogger.logDouble(kDbTabName, "measurementTimer");
 
     private final BooleanLogger log_coastSwitch = WaltLogger.logBoolean(kDbTabName, "coastSwitch");
+    private final BooleanLogger log_autonAngleOk = WaltLogger.logBoolean(kDbTabName, "autonAngleOk");
 
     private final GenericEntry nte_isCoast;
 
@@ -306,17 +311,7 @@ public class Aim extends SubsystemBase {
     public void setCoast(boolean coast) {
         m_isCoast = coast;
         m_motor.setNeutralMode(coast ? NeutralModeValue.Coast : NeutralModeValue.Brake);
-    }
-
-    public Command coastCmd(boolean coast) {
-        return runOnce(
-            () -> {
-                if (coast) {
-                    m_motor.setControl(m_coastRequest);
-                } else {
-                    m_motor.setControl(m_brakeRequest);
-                }
-            });
+        System.out.println("[ARM] SetCoast: " + coast);
     }
 
     public Command rezero() {
@@ -333,13 +328,13 @@ public class Aim extends SubsystemBase {
     }
 
     public void configureCoastTrigger() {
-        trg_coastSwitch.and(RobotModeTriggers.disabled())
-            .onTrue(
-                coastCmd(true).ignoringDisable(true)
-            )
-            .onFalse(
-                coastCmd(false).ignoringDisable(true)
-            );
+        var coastMgmtCmd = startEnd(() -> {
+            setCoast(true);
+        }, () -> {
+            setCoast(false);
+        }).until(trg_autonAngleOk).ignoringDisable(true);
+
+        trg_coastSwitch.and(RobotModeTriggers.disabled()).whileTrue(coastMgmtCmd);
     }
 
     public Command setTarget(Measure<Angle> target) {
@@ -386,6 +381,7 @@ public class Aim extends SubsystemBase {
         determineMotionMagicValues(m_usingVision);
         log_measTimer.accept(m_measurementTimer.get());
 
+        log_autonAngleOk.accept(trg_autonAngleOk.getAsBoolean());
         log_motorSpeed.accept(m_motor.get());
         log_motorPos.accept(Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()));
         log_targetAngle.accept(getTargetAngle());

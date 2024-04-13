@@ -15,7 +15,6 @@ import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.wpilibj.AsynchronousInterrupt;
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.SynchronousInterrupt;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.event.EventLoop;
@@ -27,6 +26,7 @@ import frc.robot.Vision;
 import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.util.CommandDoodads;
 import frc.util.WaltRangeChecker;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.*;
@@ -49,6 +49,9 @@ public class Superstructure {
 
     private final BooleanSupplier bs_conveyorBeamBreak = () -> !conveyorBeamBreak.get();
     private final BooleanSupplier bs_shooterBeamBreak = () -> !shooterBeamBreak.get();
+
+    public final Timer m_autonTimer = new Timer();
+    public int shotNumber = 0;
 
     private final BooleanLogger log_frontVisiSight = WaltLogger.logBoolean("Sensors", "frontVisiSight",
         PubSubOption.sendAll(true));
@@ -104,7 +107,7 @@ public class Superstructure {
 
     public final Trigger stateTrg_idle = new Trigger(stateEventLoop,
         () -> m_state == IDLE);
-    private final Trigger stateTrg_intake = new Trigger(stateEventLoop,
+    public final Trigger stateTrg_intake = new Trigger(stateEventLoop,
         () -> m_state == INTAKE);
     private final Trigger stateTrg_noteRetracting = new Trigger(stateEventLoop,
         () -> m_state == ROLLER_BEAM_RETRACT);
@@ -117,7 +120,6 @@ public class Superstructure {
     public final Trigger extStateTrg_shooting = new Trigger(stateEventLoop, () -> m_state.idx > SHOOT_OK.idx);
     public final Trigger stateTrg_noteReady = new Trigger(stateEventLoop,
         () -> m_state == NOTE_READY);
-
         
     /** To be set on any edge from the AsyncIrq callback  */
     // TODO: move to SynchronousInterrupt and handle in fastPeriodic()
@@ -387,6 +389,12 @@ public class Superstructure {
         trg_driverTrapReq.onTrue(Commands.runOnce(() -> trapping = true));
 
         (trg_driverShootReq.or(trg_driverTrapReq)).negate().debounce(7).and(RobotModeTriggers.autonomous().negate()).onTrue(m_aim.hardStop());
+
+        irqTrg_shooterBeamBreak.and(extStateTrg_shooting).and(RobotModeTriggers.autonomous())
+            .onTrue(CommandDoodads.printLater(() -> {
+                return "Shot " + ++shotNumber + " at " + m_autonTimer.get() + "s of 15.3s";
+            })
+        );
     }
 
     private Command resetFlags() { 

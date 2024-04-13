@@ -3,7 +3,6 @@ package frc.robot.auton;
 import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.Swerve;
@@ -15,10 +14,8 @@ import frc.robot.Constants.AimK;
 import frc.robot.subsystems.Superstructure;
 
 import static edu.wpi.first.units.Units.*;
-import java.util.Set;
-import java.util.function.Supplier;
-
 import static edu.wpi.first.wpilibj2.command.Commands.*;
+import static frc.util.CommandDoodads.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 
@@ -40,12 +37,6 @@ public final class VisionAutonFactory {
 
 	private static Trigger notAuton() {
 		return RobotModeTriggers.autonomous().negate();
-	}
-
-	private static Command printLater(Supplier<String> stringSup) {
-		return Commands.defer(() -> {
-			return print(stringSup.get());
-		}, Set.of());
 	}
 
 	private static Command preloadShot(Superstructure superstructure, Aim aim) {

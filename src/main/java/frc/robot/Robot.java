@@ -146,18 +146,20 @@ public class Robot extends TimedRobot {
 			Trajectories.ampSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.AMP_FIVE, AutonFactory.ampFive(superstructure, shooter, swerve, aim), 
 			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SOURCE_TWO, VisionAutonFactory.sourceTwo(superstructure, shooter, swerve, aim),
+		AutonChooser.assignAutonCommand(AutonOption.SOURCE_TWO, AutonFactory.sourceTwo(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE, VisionAutonFactory.sourceThree(superstructure, shooter, swerve, aim),
+		AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE, AutonFactory.sourceThree(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE_POINT_FIVE, VisionAutonFactory.sourceThreePointFive(superstructure, shooter, swerve, aim),
+		AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE_POINT_FIVE, AutonFactory.sourceThreePointFive(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SOURCE_FOUR, VisionAutonFactory.sourceFour(superstructure, shooter, swerve, aim),
+		AutonChooser.assignAutonCommand(AutonOption.SOURCE_FOUR, AutonFactory.sourceFour(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.VERY_AMP_THREE_POINT_FIVE, AutonFactory.veryAmpThreePointFive(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.G28_COUNTER, VisionAutonFactory.g28Counter(superstructure, shooter, swerve, aim),
+		AutonChooser.assignAutonCommand(AutonOption.G28_COUNTER, AutonFactory.g28Counter(superstructure, shooter, swerve, aim),
 			Trajectories.g28Counter.getInitialPose());
+		AutonChooser.assignAutonCommand(AutonOption.SILLY_AMP_FIVE, AutonFactory.sillyFive(superstructure, shooter, swerve, aim),
+			Trajectories.ampSide.getInitialPose());
 	}
 
 	private void driverRumble(double intensity) {
@@ -352,6 +354,8 @@ public class Robot extends TimedRobot {
 		if (m_autonomousCommand != null) {
 			m_autonomousCommand.schedule();
 		}
+		superstructure.m_autonTimer.restart();
+		superstructure.shotNumber = 0;
 	}
 
 	@Override

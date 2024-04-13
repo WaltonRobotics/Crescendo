@@ -12,8 +12,6 @@ import frc.util.logging.WaltLogger.DoubleLogger;
 
 import static frc.robot.Constants.ClimberK.*;
 
-import java.util.function.BooleanSupplier;
-
 public class Climber extends SubsystemBase {
     private final CANSparkMax m_right = new CANSparkMax(kRightId, MotorType.kBrushless); 
     private final CANSparkMax m_left = new CANSparkMax(kLeftId, MotorType.kBrushless);

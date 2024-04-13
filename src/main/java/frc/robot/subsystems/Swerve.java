@@ -268,6 +268,8 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 				return m_req;
 			}
 
+			System.out.println("[VISION] Correcting by " + m_visionYaw.in(Degrees) + "°");
+
 			var yawEffort = m_visionYaw.in(Radians) * 7.5;
 			log_yawEffort.accept(yawEffort);
 

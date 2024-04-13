@@ -383,5 +383,7 @@ public class Constants {
         public static final Measure<Distance> kHeightTilShooter = Inches.of(7.533);
         public static final boolean kTestMode = false;
         public static final double kSimInterval = 0.020;
+
+        public static final boolean kStopCoast = false;
     }
 }
