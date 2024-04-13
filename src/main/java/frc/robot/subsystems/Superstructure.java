@@ -201,7 +201,7 @@ public class Superstructure {
         irqTrg_shooterBeamBreak.negate().debounce(0.1)
             .onTrue(Commands.runOnce(() -> log_shooterBeamBreakExtended.accept(false)).ignoringDisable(true));
 
-        trg_spunUp = new Trigger(m_shooter::spinUpFinished).debounce(0.05);
+        trg_spunUp = new Trigger(m_shooter.spinUpFinished()).debounce(0.05);
         trg_atAngle = new Trigger(m_aim.aimFinished());
 
         m_state = IDLE;

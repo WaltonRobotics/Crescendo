@@ -138,13 +138,13 @@ public class Robot extends TimedRobot {
 		AutonChooser.setDefaultAuton(AutonOption.DO_NOTHING);
 		AutonChooser.assignAutonCommand(AutonOption.DO_NOTHING, Commands.none());
 		AutonChooser.assignAutonCommand(AutonOption.PRELOAD, AutonFactory.one(superstructure, shooter, aim));
-		AutonChooser.assignAutonCommand(AutonOption.AMP_TWO, VisionAutonFactory.ampTwo(superstructure, shooter, swerve, aim),
+		AutonChooser.assignAutonCommand(AutonOption.AMP_TWO, AutonFactory.ampTwo(superstructure, shooter, swerve, aim),
 			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.AMP_THREE, VisionAutonFactory.ampThree(superstructure, shooter, swerve, aim), 
+		AutonChooser.assignAutonCommand(AutonOption.AMP_THREE, AutonFactory.ampThree(superstructure, shooter, swerve, aim), 
 			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.AMP_FOUR, VisionAutonFactory.ampFour(superstructure, shooter, swerve, aim), 
+		AutonChooser.assignAutonCommand(AutonOption.AMP_FOUR, AutonFactory.ampFour(superstructure, shooter, swerve, aim), 
 			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.AMP_FIVE, VisionAutonFactory.ampFive(superstructure, shooter, swerve, aim), 
+		AutonChooser.assignAutonCommand(AutonOption.AMP_FIVE, AutonFactory.ampFive(superstructure, shooter, swerve, aim), 
 			Trajectories.ampSide.getInitialPose());
 		AutonChooser.assignAutonCommand(AutonOption.SOURCE_TWO, VisionAutonFactory.sourceTwo(superstructure, shooter, swerve, aim),
 			Trajectories.sourceSide.getInitialPose());

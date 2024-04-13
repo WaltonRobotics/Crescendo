@@ -359,6 +359,9 @@ public class Aim extends SubsystemBase {
         
         if (MathUtil.isNear(m_centerPos.getY(), pose.getY(), 1)) {
             speakerPos = m_centerPos;
+            if ((AllianceFlipUtil.apply(pose.getX()) > 3.5)) {
+                speakerPos = speakerPos.minus(new Translation3d(0, 0, Units.inchesToMeters(5)));
+            }
         } else if (pose.getY() < m_centerPos.getY()) {
             speakerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kTopRight);
         } else {

@@ -236,28 +236,30 @@ public class Shooter extends SubsystemBase {
         return toVeloNoSpin(() -> RotationsPerMinute.of(kTrapRpm));
     }
 
-    public boolean spinUpFinished() {
-        if (m_leftTarget.baseUnitMagnitude() == 0) {
-            m_leftOk = false;
-            m_rightOk = false;
-            return false;
-        }
-        var leftMeas = m_leftTargetSupp.get();
-        Measure<Velocity<Angle>> tolerance;
-        
-        if (DriverStation.isAutonomous()) {
-            tolerance = RotationsPerSecond.of(10);
-        } else {
-            tolerance = leftMeas.gte(RotationsPerSecond.of(40)) ? kBigShootTolerance : kAmpTolerance;
-        }
+    public BooleanSupplier spinUpFinished() {
+        return () -> {
+            if (m_leftTarget.baseUnitMagnitude() == 0) {
+                m_leftOk = false;
+                m_rightOk = false;
+                return false;
+            }
+            var leftMeas = m_leftTargetSupp.get();
+            Measure<Velocity<Angle>> tolerance;
+            
+            if (DriverStation.isAutonomous()) {
+                tolerance = RotationsPerSecond.of(50);
+            } else {
+                tolerance = leftMeas.gte(RotationsPerSecond.of(40)) ? kBigShootTolerance : kAmpTolerance;
+            }
 
-        var leftCleMeas = RotationsPerSecond.of(m_left.getClosedLoopError().getValueAsDouble());
-        var rightCleMeas = RotationsPerSecond.of(m_right.getClosedLoopError().getValueAsDouble());
+            var leftCleMeas = RotationsPerSecond.of(m_left.getClosedLoopError().getValueAsDouble());
+            var rightCleMeas = RotationsPerSecond.of(m_right.getClosedLoopError().getValueAsDouble());
 
-        m_leftOk = leftCleMeas.lte(tolerance);
-        m_rightOk = rightCleMeas.lte(tolerance);
-        m_spunUp = m_leftOk && m_rightOk;
-        return m_spunUp;
+            m_leftOk = leftCleMeas.lte(tolerance);
+            m_rightOk = rightCleMeas.lte(tolerance);
+            m_spunUp = m_leftOk && m_rightOk;
+            return m_spunUp;
+        };
     }
 
     private void rawRun(double dutyCycle) {
