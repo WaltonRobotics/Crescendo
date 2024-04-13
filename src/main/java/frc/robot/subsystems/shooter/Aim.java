@@ -125,6 +125,8 @@ public class Aim extends SubsystemBase {
     private final DoubleLogger log_xDist = WaltLogger.logDouble(kDbTabName, "xDist");
     private final DoubleLogger log_measTimer = WaltLogger.logDouble(kDbTabName, "measurementTimer");
 
+    private final BooleanLogger log_coastSwitch = WaltLogger.logBoolean(kDbTabName, "coastSwitch");
+
     private final GenericEntry nte_isCoast;
 
     private final Measure<Angle> kAngleAllowedError = Degrees.of(0.6);
@@ -160,7 +162,7 @@ public class Aim extends SubsystemBase {
             .withWidget(BuiltInWidgets.kToggleSwitch)
             .getEntry();
 
-        // configureCoastTrigger();
+        configureCoastTrigger();
 
         log_tunableTest.accept(0.0);
 
@@ -331,7 +333,7 @@ public class Aim extends SubsystemBase {
     }
 
     public void configureCoastTrigger() {
-        trg_coastSwitch.and(RobotModeTriggers.disabled()).and(trg_atStart.negate())
+        trg_coastSwitch.and(RobotModeTriggers.disabled())
             .onTrue(
                 coastCmd(true).ignoringDisable(true)
             )
@@ -407,6 +409,8 @@ public class Aim extends SubsystemBase {
             m_tunableNumber = m_tunableTest.get();
             log_tunableTest.accept(m_tunableNumber);
         }
+
+        log_coastSwitch.accept(trg_coastSwitch);
     }
 
     @Override
