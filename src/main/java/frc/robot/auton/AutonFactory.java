@@ -71,9 +71,12 @@ public final class AutonFactory {
 				print("aim and spin up"),
 				race(
 					aimCmd.andThen(print("aim done")),
-					sequence(
-						waitSeconds(0.15),
-						superstructure.forceStateToShooting()
+					race(
+						sequence(
+							waitSeconds(0.15),
+							superstructure.forceStateToShooting()
+						),
+						waitUntil(superstructure.extStateTrg_shooting.or(superstructure.stateTrg_idle))
 					),
 					shoot.andThen(print("shoot done"))
 				)
@@ -199,7 +202,7 @@ public final class AutonFactory {
 		var intake = superstructure.autonIntakeReq();
 		var aimCmd = aim.toAngleUntilAt(Degrees.of(2.25)).asProxy(); // superstructure requires Aim so this brokey stuff
 		var secondShotReq = superstructure.autonShootReq();
-		var swerveAim = swerve.faceSpeakerTagAuton().withTimeout(0.5);
+		// var swerveAim = swerve.faceSpeakerTagAuton().withTimeout(0.5);
 
 		return sequence(
 			logSeqIncr(),
@@ -217,7 +220,7 @@ public final class AutonFactory {
 				aimCmd,
 				pathFollow
 			),
-			swerveAim,
+			// swerveAim,
 			logSeqIncr(),
 			secondShotReq,
 			race(
@@ -244,7 +247,7 @@ public final class AutonFactory {
 		var intake = superstructure.autonIntakeReq();
 		// var swerveAim = swerve.aim(0.4);
 		var aimCmd = aim.toAngleUntilAt(Degrees.of(0)).asProxy();
-		var swerveAim = swerve.faceSpeakerTagAuton().withTimeout(0.5);
+		// var swerveAim = swerve.faceSpeakerTagAuton().withTimeout(0.5);
 		var thirdShotReq = superstructure.autonShootReq();
 		
 		return sequence(
@@ -259,7 +262,7 @@ public final class AutonFactory {
 				pathFollow,
 				aimCmd
 			),
-			swerveAim,
+			// swerveAim,
 			thirdShotReq,
 			race(
 				sequence(
@@ -283,7 +286,7 @@ public final class AutonFactory {
 		var intake = superstructure.autonIntakeReq();
 		var redAim = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
 		var fourthShotReq = superstructure.autonShootReq();
-		var swerveAim = swerve.faceSpeakerTagAuton().withTimeout(0.5);
+		// var swerveAim = swerve.faceSpeakerTagAuton().withTimeout(0.5);
 
 		return sequence( // 3pc then (path and (wait then intake))
 			three,
@@ -295,13 +298,14 @@ public final class AutonFactory {
 				),
 				pathFollow
 			),
-			swerveAim,
+			// swerveAim,
 			parallel(
 				redAim,
 				fourthShotReq
 			),
 			race(
 				sequence(
+					waitUntil(superstructure.stateTrg_noteReady),
 					waitSeconds(0.5),
 					superstructure.forceStateToShooting()
 				),
@@ -340,6 +344,7 @@ public final class AutonFactory {
 			),
 			race(
 				sequence(
+					waitUntil(superstructure.stateTrg_noteReady),
 					waitSeconds(0.5),
 					superstructure.forceStateToShooting()
 				),
@@ -357,6 +362,8 @@ public final class AutonFactory {
 		var intake = superstructure.autonIntakeReq();
 		var resetFlags = runOnce(() -> superstructure.resetAutonFlags());
 		var redAim = aim.toAngleUntilAt(Degrees.of(1)).asProxy();
+		var pathFollow2 = AutoBuilder.followPath(Paths.ampSideAlt5);
+		var intake2 = superstructure.autonIntakeReq();
 
 		return sequence(
 			three,
@@ -373,6 +380,13 @@ public final class AutonFactory {
 				skipNote(superstructure, shooter, swerve, aim), 
 				dontSkipNote(superstructure, shooter, swerve, aim), 
 				superstructure.stateTrg_idle
+			),
+			parallel(
+				pathFollow2,
+				sequence(
+					waitSeconds(0.8),
+					intake2
+				)
 			)
 		);
 	}

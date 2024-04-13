@@ -35,8 +35,8 @@ public class Climber extends SubsystemBase {
 
     public Command retractBoth() {
         return runEnd(() -> {
-            boolean rightAtMax = m_right.getEncoder().getPosition() >= 0 && false; // FIXME
-            boolean leftAtMax = m_left.getEncoder().getPosition() >= 0 && false;
+            boolean rightAtMax = m_right.getEncoder().getPosition() >= 0;
+            boolean leftAtMax = m_left.getEncoder().getPosition() >= 0;
             m_right.set(rightAtMax ? 0 : kRetractDutyCycle);
             m_left.set(leftAtMax ? 0 : kRetractDutyCycle);
         }, 
@@ -66,8 +66,8 @@ public class Climber extends SubsystemBase {
 
     public Command extendBoth() {
         return runEnd(() -> {
-            boolean rightAtMax = m_right.getEncoder().getPosition() <= kMaxExtensionPos && false;
-            boolean leftAtMax = m_left.getEncoder().getPosition() <= kMaxExtensionPos && false;
+            boolean rightAtMax = m_right.getEncoder().getPosition() <= kMaxExtensionPos;
+            boolean leftAtMax = m_left.getEncoder().getPosition() <= kMaxExtensionPos;
             m_right.set(rightAtMax ? 0 : kExtendDutyCycle);
             m_left.set(leftAtMax ? 0 : kExtendDutyCycle);
             log_rightAtLimit.accept(rightAtMax);

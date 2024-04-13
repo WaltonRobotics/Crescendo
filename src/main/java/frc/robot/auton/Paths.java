@@ -12,6 +12,7 @@ public class Paths {
     public static final PathPlannerPath ampSideAlt2 = PathPlannerPath.fromChoreoTrajectory("5_pc_skip_shot.2");
     public static final PathPlannerPath ampSideAlt3 = PathPlannerPath.fromChoreoTrajectory("5_pc_skip_shot.3");
     public static final PathPlannerPath ampSideAlt4 = PathPlannerPath.fromChoreoTrajectory("5_pc_skip_shot.4");
+    public static final PathPlannerPath ampSideAlt5 = PathPlannerPath.fromChoreoTrajectory("5_pc_skip_shot.5");
 
     public static final PathPlannerPath ampSideSkip1 = PathPlannerPath.fromChoreoTrajectory("5_pc_first_note.1"); // what a terrible name
 

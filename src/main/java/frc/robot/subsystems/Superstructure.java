@@ -388,8 +388,6 @@ public class Superstructure {
 
         trg_driverTrapReq.onTrue(Commands.runOnce(() -> trapping = true));
 
-        (trg_driverShootReq.or(trg_driverTrapReq)).negate().debounce(7).and(RobotModeTriggers.autonomous().negate()).onTrue(m_aim.hardStop());
-
         irqTrg_shooterBeamBreak.and(extStateTrg_shooting).and(RobotModeTriggers.autonomous())
             .onTrue(CommandDoodads.printLater(() -> {
                 return "Shot " + ++shotNumber + " at " + m_autonTimer.get() + "s of 15.3s";
