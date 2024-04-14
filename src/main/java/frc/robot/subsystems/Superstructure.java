@@ -274,7 +274,7 @@ public class Superstructure {
 
         (stateTrg_intake.and(trg_subwooferAngle.negate()))
             .onTrue(
-                Commands.parallel(m_intake.run(), m_conveyor.startSlow()).withName("AutoIntake")
+                Commands.parallel(m_intake.run(), m_conveyor.start()).withName("AutoIntake")
             );
 
         // !(intakeReq || seenNote) => !intakeReq && !seenNote
