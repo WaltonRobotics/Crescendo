@@ -17,7 +17,6 @@ import frc.robot.subsystems.Superstructure;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.Constants.RotationsPerMinute;
-import static frc.robot.Constants.AimK.kPodiumAngle;
 import static frc.robot.Constants.AimK.kSubwooferAngle;
 import static frc.robot.Constants.ShooterK.kSubwooferRpm;
 

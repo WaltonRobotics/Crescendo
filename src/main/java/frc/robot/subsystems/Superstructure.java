@@ -52,6 +52,9 @@ public class Superstructure {
 
     public final Timer m_autonTimer = new Timer();
     public int shotNumber = 0;
+    private int intakenNotes = 0;
+    private int shotNotes = 0;
+    private int shotNotes_amp = 0;
 
     private final BooleanLogger log_frontVisiSight = WaltLogger.logBoolean("Sensors", "frontVisiSight",
         PubSubOption.sendAll(true));
@@ -69,6 +72,10 @@ public class Superstructure {
         PubSubOption.sendAll(true));
     private final BooleanLogger log_autonShootReq = WaltLogger.logBoolean(kDbTabName, "autonShootReq",
         PubSubOption.sendAll(true)); 
+
+    private final IntLogger log_intakenNotes = WaltLogger.logInt(kDbTabName, "intakenNotes");
+    private final IntLogger log_shotNotes = WaltLogger.logInt(kDbTabName, "shotNotes");
+    private final IntLogger log_shotNotes_amp = WaltLogger.logInt(kDbTabName, "shotNotes_amp");
 
     private NoteState m_state;
 
@@ -301,7 +308,8 @@ public class Superstructure {
             .onTrue(
                 Commands.parallel(
                     cmdDriverRumble(1, 0.5),
-                    cmdManipRumble(1, 0.5)
+                    cmdManipRumble(1, 0.5),
+                    Commands.runOnce(() -> intakenNotes++)
                 )
             )
         .and(RobotModeTriggers.autonomous())
@@ -373,7 +381,10 @@ public class Superstructure {
         // cmd conveyorStop
         // (stateTrg_shooting.or(stateTrg_leavingBeamBreak).or(stateTrg_leftBeamBreak))
         extStateTrg_shooting
-            .onTrue(m_conveyor.runFast());
+            .onTrue(Commands.parallel(m_conveyor.runFast(), Commands.runOnce(() -> shotNotes++)));
+
+        extStateTrg_shooting.and(trg_driverAmpReq)
+            .onTrue(Commands.runOnce(() -> shotNotes_amp++));
         
         // if note in shooter sensor and state shooting
         // state -> LEFT_BEAM_BREAK, timothy says bye :D
@@ -521,6 +532,9 @@ public class Superstructure {
         log_frontVisiSightIrq.accept(frontVisiSightSeenNote);
         log_conveyorBeamBreakIrq.accept(conveyorBeamBreakIrq);
         log_shooterBeamBreakIrq.accept(irqTrg_shooterBeamBreak.getAsBoolean());
+        log_intakenNotes.accept(intakenNotes);
+        log_shotNotes.accept(shotNotes);
+        log_shotNotes_amp.accept(shotNotes_amp);
 
         stateEventLoop.poll();
 
