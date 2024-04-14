@@ -107,6 +107,15 @@ public class Intake extends SubsystemBase {
         }).withName("IntakeStop");
     }
 
+    public Command runSlower() {
+        return runOnce(
+            () -> {
+                runMainRollers(12);
+                m_feeder.set(-0.5);
+            }
+        );
+    }
+
     @Override
     public void periodic() {
         log_statorCurrent.accept(m_motor.getStatorCurrent().getValueAsDouble());

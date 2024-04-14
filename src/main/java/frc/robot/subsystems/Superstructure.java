@@ -279,6 +279,11 @@ public class Superstructure {
                 Commands.parallel(m_intake.run(), m_conveyor.start()).withName("AutoIntake")
             );
 
+        m_conveyor.trg_currentSpike.and(stateTrg_intake)
+            .onTrue(
+                m_intake.runSlower()
+            );
+
         stateTrg_intake.and(trg_straightThroughReq)
             .onTrue(
                 Commands.parallel(m_intake.fullPower(), m_conveyor.fullPower()).withName("FastIntake")
