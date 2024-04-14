@@ -263,7 +263,7 @@ public class Aim extends SubsystemBase {
     }
 
     public Command toAngleUntilAt(Measure<Angle> angle) {
-        return toAngleUntilAt(() -> angle, Degrees.of(0.25)).withName("ToAngleUntilAt"); // TODO unmagify i'm lazy rn
+        return toAngleUntilAt(() -> angle, Degrees.of(0.5)).withName("ToAngleUntilAt"); // TODO unmagify i'm lazy rn
     }
 
     public Command aim() {

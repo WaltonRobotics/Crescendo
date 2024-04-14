@@ -261,6 +261,8 @@ public class Robot extends TimedRobot {
 			.and(manipulator.x()).onTrue(aim.toAngleUntilAt(Degrees.of(15.5)));
 
 		manipulator.povLeft().and(manipulator.a().negate()).onTrue(aim.toAngleUntilAt(Degrees.of(15.5))); // TODO unmagify
+
+		driver.rightBumper().whileTrue(shooter.farShot());
 	}
 
 	public void configureTestingBindings() {

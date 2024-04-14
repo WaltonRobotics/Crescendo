@@ -284,7 +284,7 @@ public class Superstructure {
                 Commands.parallel(m_intake.fullPower(), m_conveyor.fullPower()).withName("FastIntake")
             );
 
-        irqTrg_conveyorBeamBreak.and(trg_straightThroughReq)
+        (irqTrg_conveyorBeamBreak.or(irqTrg_shooterBeamBreak)).and(trg_straightThroughReq)
             .onTrue(
                 changeStateCmd(SHOOTING)
             );
@@ -298,6 +298,10 @@ public class Superstructure {
                     cmdDriverRumble(1, 0.5),
                     cmdManipRumble(1, 0.5)
                 )
+            )
+        .and(RobotModeTriggers.autonomous())
+            .onTrue(
+                CommandDoodads.printLater(() -> "note intaken at " + m_autonTimer.get() + " s")
             );
 
         // note in shooter and not shooting

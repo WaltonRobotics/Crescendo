@@ -32,11 +32,11 @@ public class Conveyor extends SubsystemBase {
     }
 
     public Command start() {
-        return run(() -> m_conveyor.set(0.45)).withName("ConveyorRun");
+        return run(() -> m_conveyor.set(0.4)).withName("ConveyorRun");
     }
 
     public Command startSlower() {
-        return run(() -> m_conveyor.set(0.35)).withName("ConveyorRunSlow");
+        return run(() -> m_conveyor.set(0.2)).withName("ConveyorRunSlow");
     }
 
     public Command fullPower() {

@@ -124,7 +124,7 @@ public class Shooter extends SubsystemBase {
     public Command toVelo(Supplier<Measure<Velocity<Angle>>> velo, BooleanSupplier idle) {
         Runnable spin = () -> {
             var velMeas = velo.get();
-            m_rightTarget = velMeas.times(m_spinAmt);
+            m_rightTarget = velMeas.times(0.6);
             m_leftTarget = velMeas;
             var right = m_rightTarget.in(RotationsPerSecond);
             var left = m_leftTarget.in(RotationsPerSecond);
@@ -151,7 +151,7 @@ public class Shooter extends SubsystemBase {
 
     public Command toVelo(Supplier<Measure<Velocity<Angle>>> velo, BooleanSupplier idle, double spinAmt) {
         int slot;
-        if (spinAmt == 1) slot = 1;
+        if (spinAmt == 1 && velo.get().lte(RotationsPerMinute.of(kAmpRpm))) slot = 1;
         else slot = 0;
         Runnable spin = () -> {
             var velMeas = velo.get();
@@ -209,7 +209,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command farShot() {
-        return toVelo(() -> RotationsPerMinute.of(8000), () -> false).withName("ShooterToVelo_FarShotTele");
+        return toVelo(() -> RotationsPerMinute.of(6000), () -> false).withName("ShooterToVelo_FarShotTele");
     }
 
     public Command farShotNoSpin() {

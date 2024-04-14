@@ -19,6 +19,7 @@ public class AutonChooser {
         AMP_THREE("3 - center -> amp side", Trajectories.ampSide),
         AMP_FOUR("4 - center -> amp side", Trajectories.ampSide),
         AMP_FIVE("5 - center -> amp side", Trajectories.ampSide),
+        AMP_SIX("6 - center -> amp side", Trajectories.ampSide),
         SOURCE_TWO("2 - source side", Trajectories.sourceSide),
         SOURCE_THREE("3 - source side", Trajectories.sourceSide),
         SOURCE_THREE_POINT_FIVE("3.5 - source side", Trajectories.sourceSide),
