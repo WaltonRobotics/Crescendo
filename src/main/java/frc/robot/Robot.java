@@ -41,7 +41,6 @@ import frc.robot.auton.AutonChooser;
 import frc.robot.auton.AutonFactory;
 import frc.robot.auton.AutonChooser.AutonOption;
 import frc.robot.auton.Trajectories;
-import frc.robot.auton.VisionAutonFactory;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.shooter.Aim;
