@@ -199,10 +199,8 @@ public final class AutonFactory {
 		var resetPose = swerve.resetPose(Paths.ampSide1);
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide1).withName("PathFollow");
 		var preloadShot = preloadShot(superstructure, aim);
-		var intake = superstructure.autonIntakeReq();
+		var intake = superstructure.straightThroughReq();
 		var aimCmd = aim.toAngleUntilAt(Degrees.of(2.25)).asProxy(); // superstructure requires Aim so this brokey stuff
-		var secondShotReq = superstructure.autonShootReq();
-		// var swerveAim = swerve.faceSpeakerTagAuton().withTimeout(0.5);
 
 		return sequence(
 			logSeqIncr(),
@@ -220,16 +218,6 @@ public final class AutonFactory {
 				aimCmd,
 				pathFollow
 			),
-			// swerveAim,
-			logSeqIncr(),
-			secondShotReq,
-			race(
-				sequence(
-					waitSeconds(0.5),
-					superstructure.forceStateToShooting()
-				),
-				waitUntil(superstructure.extStateTrg_shooting.or(superstructure.stateTrg_idle))
-			),
 			logSeqIncr(),
 			waitUntil(superstructure.stateTrg_idle)
 		).withName("TwoPcSequence");
@@ -244,11 +232,8 @@ public final class AutonFactory {
 		var two = ampTwoInternal(superstructure, shooter, swerve, aim);
 		/* everything from 3 piece */
 		var pathFollow = AutoBuilder.followPath(Paths.ampSide2);
-		var intake = superstructure.autonIntakeReq();
-		// var swerveAim = swerve.aim(0.4);
+		var intake = superstructure.straightThroughReq();
 		var aimCmd = aim.toAngleUntilAt(Degrees.of(0)).asProxy();
-		// var swerveAim = swerve.faceSpeakerTagAuton().withTimeout(0.5);
-		var thirdShotReq = superstructure.autonShootReq();
 		
 		return sequence(
 			/* 2 piece */
@@ -261,15 +246,6 @@ public final class AutonFactory {
 				),
 				pathFollow,
 				aimCmd
-			),
-			// swerveAim,
-			thirdShotReq,
-			race(
-				sequence(
-					waitSeconds(0.5),
-					superstructure.forceStateToShooting()
-				),
-				waitUntil(superstructure.extStateTrg_shooting.or(superstructure.stateTrg_idle))
 			),
 			waitUntil(superstructure.stateTrg_idle)
 		).withName("ThreePcSequence");

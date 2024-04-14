@@ -73,6 +73,7 @@ public class Superstructure {
     private NoteState m_state;
 
     private boolean autonIntake = false;
+    private boolean straightThrough = false;
     private boolean autonShoot = false;
     private boolean driverRumbled = false;
     private boolean manipulatorRumbled = false;
@@ -89,6 +90,7 @@ public class Superstructure {
     private final Trigger trg_driverTrapReq;
 
     private final Trigger trg_autonIntakeReq = new Trigger(() -> autonIntake);
+    private final Trigger trg_straightThroughReq = new Trigger(() -> straightThrough);
     private final Trigger trg_autonShootReq = new Trigger(() -> autonShoot);
 
     private final Trigger trg_trap = new Trigger(() -> trapping);
@@ -177,7 +179,7 @@ public class Superstructure {
         trg_subwooferAngle = new Trigger(() -> aim.getAngle().isNear(kSubwooferAngle, 0.1));
         trg_ampAngle = new Trigger(() -> aim.getAngle().isNear(kAmpAngle, 0.3));
 
-        trg_intakeReq = trg_driverIntakeReq.or(trg_autonIntakeReq);
+        trg_intakeReq = trg_driverIntakeReq.or(trg_autonIntakeReq).or(trg_straightThroughReq);
         trg_shootReq = trg_driverShootReq.or(trg_autonShootReq);
 
         ai_frontVisiSight.setInterruptEdges(true, true);
@@ -253,7 +255,7 @@ public class Superstructure {
         stateTrg_shooting.onTrue(
             Commands.parallel(
                 Commands.runOnce(() -> timer.stop()),
-                Commands.print("[SUPERSTRUCTURE] Time from shoot req to shoot: " + timer.get())
+                CommandDoodads.printLater(() -> "[SUPERSTRUCTURE] Time from shoot req to shoot: " + timer.get())
             )
         );
     }
@@ -267,14 +269,24 @@ public class Superstructure {
 
         stateTrg_intake.onTrue(Commands.runOnce(() -> trapping = false));
         
-        (stateTrg_intake.and(trg_subwooferAngle.or(RobotModeTriggers.autonomous())))
+        (stateTrg_intake.and(trg_subwooferAngle.or(RobotModeTriggers.autonomous()).and(trg_straightThroughReq.negate())))
             .onTrue(
-                Commands.parallel(m_intake.fullPower(), m_conveyor.startFaster())
+                Commands.parallel(m_intake.fullPower(), m_conveyor.startSlower())
             );
 
-        (stateTrg_intake.and(trg_subwooferAngle.negate()))
+        (stateTrg_intake.and(trg_subwooferAngle.negate()).and(trg_straightThroughReq.negate()))
             .onTrue(
                 Commands.parallel(m_intake.run(), m_conveyor.start()).withName("AutoIntake")
+            );
+
+        stateTrg_intake.and(trg_straightThroughReq)
+            .onTrue(
+                Commands.parallel(m_intake.fullPower(), m_conveyor.fullPower()).withName("FastIntake")
+            );
+
+        irqTrg_conveyorBeamBreak.and(trg_straightThroughReq)
+            .onTrue(
+                changeStateCmd(SHOOTING)
             );
 
         // !(intakeReq || seenNote) => !intakeReq && !seenNote
@@ -294,7 +306,7 @@ public class Superstructure {
                 changeStateCmd(ROLLER_BEAM_RETRACT)
             );
 
-        (irqTrg_conveyorBeamBreak.and((extStateTrg_noteIn).negate())).and(RobotModeTriggers.autonomous())
+        (irqTrg_conveyorBeamBreak.and((extStateTrg_noteIn).negate())).and(RobotModeTriggers.autonomous()).and(trg_straightThroughReq.negate())
             .onTrue(
                 Commands.parallel(
                     m_intake.stop(),
@@ -400,6 +412,7 @@ public class Superstructure {
             () -> {
                 frontVisiSightSeenNote = false;
                 autonIntake = false;
+                straightThrough = false;
                 autonShoot = false;
                 driverRumbled = false;
                 manipulatorRumbled = false;
@@ -409,6 +422,7 @@ public class Superstructure {
 
     public void resetAutonFlags() {
         autonIntake = false;
+        straightThrough = false;
         autonShoot = false;
     }
 
@@ -537,6 +551,15 @@ public class Superstructure {
     public Command autonIntakeReq() {
         return Commands.runOnce(() -> {
             autonIntake = true;
+            straightThrough = false;
+            autonShoot = false;
+        });
+    }
+
+    public Command straightThroughReq() {
+        return Commands.runOnce(() -> {
+            autonIntake = false;
+            straightThrough = true;
             autonShoot = false;
         });
     }
