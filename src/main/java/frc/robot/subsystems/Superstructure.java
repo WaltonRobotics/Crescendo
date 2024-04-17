@@ -286,7 +286,7 @@ public class Superstructure {
                 Commands.parallel(m_intake.run(), m_conveyor.start()).withName("AutoIntake")
             );
 
-        m_conveyor.trg_currentSpike.and(stateTrg_intake)
+        m_intake.trg_middleRollerCurrentSpike.and(stateTrg_intake)
             .onTrue(
                 m_intake.runSlower()
             );

@@ -7,6 +7,7 @@ import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.util.WaltRangeChecker;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
@@ -19,6 +20,8 @@ public class Intake extends SubsystemBase {
         MotorType.kBrushless);
 
     private final VoltageOut m_voltsFoc = new VoltageOut(0).withEnableFOC(true);
+
+    public final Trigger trg_middleRollerCurrentSpike = new Trigger(() -> m_feeder.getOutputCurrent() > 20).debounce(0.1);
 
     private final DoubleLogger log_statorCurrent = WaltLogger.logDouble("Intake", "statorCurrent");
     private final DoubleLogger log_supplyCurrent = WaltLogger.logDouble("Intake", "supplyCurrent");
