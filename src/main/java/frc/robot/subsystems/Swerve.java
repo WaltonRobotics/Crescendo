@@ -48,12 +48,14 @@ import frc.robot.Constants.DriveK;
 import frc.robot.Constants.FieldK.SpeakerK;
 import frc.robot.Vision.VisionMeasurement3d;
 import frc.robot.auton.AutonChooser;
+import frc.robot.auton.AutonChooser.AutonOption;
 import frc.util.AdvantageScopeUtil;
 import frc.util.AllianceFlipUtil;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.BooleanLogger;
 import frc.util.logging.WaltLogger.DoubleArrayLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
+import frc.util.logging.WaltLogger.Pose2dLogger;
 
 import static frc.robot.Constants.FieldK.*;
 import static frc.robot.generated.TunerConstants.kDriveRadius;
@@ -82,6 +84,8 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final PIDController m_xController = new PIDController(kPTranslation, 0.0, 0.0);
 	private final PIDController m_yController = new PIDController(kPTranslation, 0.0, 0.0);
 	private final PIDController m_thetaController = new PIDController(kPTheta, 0.0, 0.0);
+
+	private final SwerveRequest.FieldCentricFacingAngle m_facingAngle = new SwerveRequest.FieldCentricFacingAngle();
 
 	private Rotation2d m_desiredRot = new Rotation2d();
 
@@ -127,8 +131,6 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final DoubleLogger log_rot = WaltLogger.logDouble("Swerve", "rotation");
 	private final DoubleArrayLogger log_poseError = WaltLogger.logDoubleArray("Swerve", "poseError");
 	private double[] m_poseError = new double[3];
-	private final DoubleArrayLogger log_desiredPose = WaltLogger.logDoubleArray("Swerve", "desiredPose");
-	private double[] m_desiredPose = new double[3];
 	private final DoubleArrayLogger log_wheelVeloErrors = WaltLogger.logDoubleArray("Swerve", "wheelVeloErrors");
 	private double[] m_wheelVeloErrs = new double[4];
 	private final DoubleArrayLogger log_wheelVelos = WaltLogger.logDoubleArray("Swerve", "wheelVelos");
@@ -140,6 +142,10 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final DoubleLogger log_yawEffort = WaltLogger.logDouble("Swerve", "yawEffort");
 	private final DoubleLogger log_yawErrOpt = WaltLogger.logDouble("Swerve", "yawErrorOpt");
 	private final BooleanLogger log_hasYaw = WaltLogger.logBoolean("Swerve", "hasYaw");
+
+	private final DoubleLogger log_pigeonYaw = WaltLogger.logDouble("Swerve", "pigeonYaw");
+
+	private final Pose2dLogger log_desiredPose = WaltLogger.logPose2d("Swerve", "desiredPose");
 
 	public void addVisionMeasurement3d(VisionMeasurement3d measurement) {
 		// sadge!
@@ -185,6 +191,8 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		m_gyroYawRadsSupplier = () -> Units.degreesToRadians(getPigeon2().getAngle());
 		m_thetaController.enableContinuousInput(0, 2 * Math.PI);
 		m_visYawTimer.reset();
+		m_facingAngle.HeadingController.enableContinuousInput(0, 2 * Math.PI);
+		m_facingAngle.HeadingController.setP(kPTheta - 2);
 	}
 
 	public Command wheelRadiusCharacterisation(double omegaDirection) {
@@ -259,10 +267,12 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 				return m_req;
 			}
 
-			var yawEffort = m_visionYaw.in(Radians) * 1.2;
+			System.out.println("[VISION] Correcting by " + m_visionYaw.in(Degrees) + "°");
+
+			var yawEffort = m_visionYaw.in(Radians) * 7.5;
 			log_yawEffort.accept(yawEffort);
 
-			return m_req
+			return m_req 	
 				.withRotationalDeadband(0)
 				.withRotationalRate(yawEffort);
 			}
@@ -272,6 +282,28 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		}).withTimeout(0.5);
 	}
 
+	public Command faceAmp(DoubleSupplier xRate, DoubleSupplier yRate, double maxSpeed) {
+		return applyRequest(() -> {
+			return m_facingAngle
+				.withRotationalDeadband(0)
+				.withTargetDirection(new Rotation2d(Degrees.of(AllianceFlipUtil.shouldFlip() ? 30 : -30)))
+				.withVelocityX(xRate.getAsDouble() * maxSpeed)
+				.withVelocityY(yRate.getAsDouble() * maxSpeed)
+				.withDeadband(maxSpeed * 0.1);
+		});
+	}
+
+	public Command faceAmpUnderDefence(DoubleSupplier xRate, DoubleSupplier yRate, double maxSpeed) {
+		return applyRequest(() -> {
+			return m_facingAngle
+				.withRotationalDeadband(0)
+				.withTargetDirection(new Rotation2d(Degrees.of(AllianceFlipUtil.shouldFlip() ? 10 : -10)))
+				.withVelocityX(xRate.getAsDouble() * maxSpeed)
+				.withVelocityY(yRate.getAsDouble() * maxSpeed)
+				.withDeadband(maxSpeed * 0.1);
+		});
+	}
+
 	public void calculateYawErr(Optional<VisionMeasurement3d> measOpt, boolean tagsPresent) {
 		if (measOpt.isPresent()) {
 			var pose = measOpt.get().estimate().estimatedPose;
@@ -279,14 +311,12 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 			var dist = speakerTrans.minus(pose.getTranslation());
 			var desiredYaw = Math.atan2(dist.getY(), dist.getX());
 			var curYaw = pose.getRotation().getZ();
-			var yawErr = ((desiredYaw - curYaw) * Math.PI) % (2 * Math.PI);
-			if (yawErr > 2 * Math.PI - Math.PI / 4) {
-				yawErr -= 2 * Math.PI;
-			}
+			var yawErr = MathUtil.angleModulus((desiredYaw - curYaw) - Math.PI);
 			log_yawErrOpt.accept(Units.radiansToDegrees(yawErr));
 			m_hasVisionYaw = true;
 			m_visYawTimer.restart();
 			m_visionYaw = Radians.of(yawErr);
+			log_desiredPose.accept(getState().Pose.rotateBy(Rotation2d.fromRadians(yawErr)));
 		}
 		m_hasVisionYaw = tagsPresent && !m_visYawTimer.hasElapsed(0.1);
 		log_yawErr.accept(m_visionYaw.in(Degrees));
@@ -339,7 +369,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	public Command resetPoseToSpeaker() {
 		return runOnce(() -> {
-			var startPose = AllianceFlipUtil.apply(new Pose2d(1.45, 5.5, Rotation2d.fromRadians(0)));
+			var startPose = AllianceFlipUtil.apply(AutonChooser.getAutonInitPose(AutonOption.AMP_FIVE).get());
 			seedFieldRelative(startPose);
 		});
 	}
@@ -369,6 +399,21 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 				setControl(m_autoRequest.withSpeeds(speeds));
 			}
+		});
+	}
+
+	public Command goToPose(Pose2d pose) {
+		return run(() -> {
+			SmartDashboard.putNumberArray("desiredPose", AdvantageScopeUtil.toDoubleArr(pose));
+
+			var curPose = getState().Pose;
+			var xSpeed = m_xController.calculate(curPose.getX(), pose.getX());
+			var ySpeed = m_yController.calculate(curPose.getY(), pose.getY());
+			var thetaSpeed = m_thetaController.calculate(curPose.getRotation().getRadians(),
+				pose.getRotation().getRadians());
+			var speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, thetaSpeed, pose.getRotation());
+
+			setControl(m_autoRequest.withSpeeds(speeds));
 		});
 	}
 
@@ -449,10 +494,6 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		m_poseError[1] = m_yController.getPositionError();
 		m_poseError[2] = Units.radiansToDegrees(m_thetaController.getPositionError());
 		log_poseError.accept(m_poseError);
-		m_desiredPose[0] = m_xController.getSetpoint();
-		m_desiredPose[1] = m_yController.getSetpoint();
-		m_desiredPose[2] = Units.radiansToDegrees(m_thetaController.getSetpoint());
-		log_desiredPose.accept(m_desiredPose);
 
 		for (int i = 0; i < Modules.length; i++) {
 			m_wheelVelos[i] = Math.abs(swerveState.ModuleStates[i].speedMetersPerSecond);
@@ -463,5 +504,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		log_wheelVeloTargets.accept(m_wheelVeloTargets);
 		log_wheelVeloErrors.accept(m_wheelVeloErrs);
 		log_hasYaw.accept(m_hasVisionYaw);
+
+		log_pigeonYaw.accept(m_pigeon2.getAngle() % 360);
 	}
 }

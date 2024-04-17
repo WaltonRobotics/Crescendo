@@ -65,7 +65,7 @@ public class Intake extends SubsystemBase {
         return runEnd(
             () -> {
                 runMainRollers(-12);
-                m_feeder.set(0.5);
+                m_feeder.set(0.8);
             },
             () -> {
                 runMainRollers(0);
@@ -77,7 +77,7 @@ public class Intake extends SubsystemBase {
         return runEnd(
             () -> {
                 runMainRollers(12);
-                m_feeder.set(-0.5);
+                m_feeder.set(-0.8);
             },
             () -> {
                 runMainRollers(0);
@@ -96,7 +96,7 @@ public class Intake extends SubsystemBase {
     public Command start() {
         return run(() -> {
             runMainRollers(12);
-            m_feeder.set(-0.5);
+            m_feeder.set(-0.8);
         }).withName("IntakeStart");
     }
 
@@ -105,6 +105,15 @@ public class Intake extends SubsystemBase {
             runMainRollers(0);
             m_feeder.set(0);
         }).withName("IntakeStop");
+    }
+
+    public Command runSlower() {
+        return runOnce(
+            () -> {
+                runMainRollers(12);
+                m_feeder.set(-0.5);
+            }
+        );
     }
 
     @Override

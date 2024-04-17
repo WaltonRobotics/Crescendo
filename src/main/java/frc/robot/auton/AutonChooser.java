@@ -19,12 +19,14 @@ public class AutonChooser {
         AMP_THREE("3 - center -> amp side", Trajectories.ampSide),
         AMP_FOUR("4 - center -> amp side", Trajectories.ampSide),
         AMP_FIVE("5 - center -> amp side", Trajectories.ampSide),
+        AMP_SIX("6 - center -> amp side", Trajectories.ampSide),
         SOURCE_TWO("2 - source side", Trajectories.sourceSide),
         SOURCE_THREE("3 - source side", Trajectories.sourceSide),
         SOURCE_THREE_POINT_FIVE("3.5 - source side", Trajectories.sourceSide),
         SOURCE_FOUR("4 - source side", Trajectories.sourceSide),
         VERY_AMP_THREE_POINT_FIVE("3.5 - amp side", Trajectories.veryAmp),
-        G28_COUNTER("3 - g28 counter", Trajectories.g28Counter);
+        G28_COUNTER("3 - g28 counter", Trajectories.g28Counter),
+        SILLY_AMP_FIVE("5 - five that skips a note maybe", Trajectories.ampSide);
 
         public final String m_description;
         public final ChoreoTrajectory m_traj;

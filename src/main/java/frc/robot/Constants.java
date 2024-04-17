@@ -3,9 +3,12 @@ package frc.robot;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Minute;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static frc.robot.Robot.kMaxSpeed;
+
+import java.util.List;
 
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
@@ -23,6 +26,7 @@ import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.ReplanningConfig;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -42,6 +46,8 @@ public class Constants {
 
     public static final double kStickDeadband = 0.1;
     public static final String kCanbus = "fd";
+
+    public static final Velocity<Angle> RotationsPerMinute = Rotations.per(Minute);
 
     public class VisionK {
         public static final Transform3d kFrontTagCamLocation = new Transform3d(
@@ -67,6 +73,10 @@ public class Constants {
           }
 
         public static final AprilTagFieldLayout kTagLayout = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
+        private static final List<AprilTag> kSpeakerTags =
+            List.of(kTagLayout.getTags().get(2), kTagLayout.getTags().get(3), kTagLayout.getTags().get(6), kTagLayout.getTags().get(7));
+        public static final AprilTagFieldLayout kTagLayout_SpeakerOnly = new AprilTagFieldLayout(
+            kSpeakerTags, kTagLayout.getFieldLength(), kTagLayout.getFieldWidth());
         public static final Pose3d kTag4Pose = kTagLayout.getTagPose(4).get();
         public static final Pose3d kTag7Pose = kTagLayout.getTagPose(7).get();
 
@@ -160,23 +170,23 @@ public class Constants {
     public class ShooterK {
         public static final class ShooterConfigs {
             /* stuff that works for speaker */
-            private static final double kPRightSpeaker = 0.3;
+            private static final double kPRightSpeaker = 0.2;
             private static final double kSRightSpeaker = 0.25884; // volts
             private static final double kVRightSpeaker = 0.063367;
             private static final double kARightSpeaker = 0.018238;
 
-            private static final double kPLeftSpeaker = 0.3;
+            private static final double kPLeftSpeaker = 0.2;
             private static final double kSLeftSpeaker = 0.2612; // volts
             private static final double kVLeftSpeaker = 0.061983;
             private static final double kALeftSpeaker = 0.019191;
 
             /* stuff that works for amp */
-            private static final double kPRightAmp = 0.2;
+            private static final double kPRightAmp = 0.15;
             private static final double kSRightAmp = 0.11941; // volts
             private static final double kVRightAmp = 0.066954;
             private static final double kARightAmp = 0.025247;
 
-            private static final double kPLeftAmp = 0.2;
+            private static final double kPLeftAmp = 0.15;
             private static final double kSLeftAmp = 0.2612; // volts
             private static final double kVLeftAmp = 0.061983;
             private static final double kALeftAmp = 0.019191;
@@ -248,8 +258,10 @@ public class Constants {
         public static final double kSpinAmt = 0.7;
 
         public static final double kSubwooferRpm = 7300;
+        public static final double kLobRpm = 4500;
         public static final double kPodiumRpm = 7600;
         public static final double kAmpRpm = 700;
+        public static final double kTrapRpm = 1400;
 
         public static final double kGearRatio = 18.0 / 36.0;
 
@@ -322,7 +334,7 @@ public class Constants {
                     .withReverseSoftLimitEnable(true);
 
                 cancoderConfig.MagnetSensor = cancoderConfig.MagnetSensor
-                    .withMagnetOffset(-0.4619140625)
+                    .withMagnetOffset(-0.4658203125)
                     .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
                     .withAbsoluteSensorRange(AbsoluteSensorRangeValue.Signed_PlusMinusHalf);
             }
@@ -349,6 +361,9 @@ public class Constants {
         public static final Measure<Angle> kSubwooferAngle = Rotations.of(0.08);
         public static final Measure<Angle> kAmpAngle = Rotations.of(0.195);
         public static final Measure<Angle> kPodiumAngle = Degrees.of(6.5);
+        public static final Measure<Angle> kTrapAngle = Degrees.of(74.2);
+        public static final Measure<Angle> kClimbAngle = Degrees.of(60);
+        public static final Measure<Angle> kClimbingAngle = Degrees.of(50);
 
         public static final Measure<Angle> kTolerance = Degrees.of(2);
     }
@@ -368,5 +383,7 @@ public class Constants {
         public static final Measure<Distance> kHeightTilShooter = Inches.of(7.533);
         public static final boolean kTestMode = false;
         public static final double kSimInterval = 0.020;
+
+        public static final boolean kStopCoast = false;
     }
 }

@@ -5,9 +5,12 @@ import static frc.robot.Constants.ConveyorK.*;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
+import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.util.logging.WaltLogger;
+import frc.util.logging.WaltLogger.BooleanLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 
 public class Conveyor extends SubsystemBase {
@@ -17,6 +20,12 @@ public class Conveyor extends SubsystemBase {
     private final DoubleLogger log_outputVoltage = WaltLogger.logDouble("Conveyor", "outputVoltage");
     private final DoubleLogger log_supplyVoltage = WaltLogger.logDouble("Conveyor", "supplyVoltage");
 
+    public final Trigger trg_currentSpike = new Trigger(() -> {
+        return m_conveyor.getOutputCurrent() >= 15;
+    }).debounce(0.085);
+
+    private final BooleanLogger log_currentSpike = WaltLogger.logBoolean("Conveyor", "currentSpike", PubSubOption.sendAll(true));
+    
     public Command runFast() {
         var go = runEnd(() -> {
             m_conveyor.set(1);
@@ -31,8 +40,16 @@ public class Conveyor extends SubsystemBase {
         return runEnd(() -> m_conveyor.set(-0.2), () -> m_conveyor.set(0)).withName("ConveyorRetract");
     }
 
-    public Command startSlow() {
-        return run(() -> m_conveyor.set(0.35)).withName("ConveyorRunSlow");
+    public Command start() {
+        return run(() -> m_conveyor.set(0.4)).withName("ConveyorRun");
+    }
+
+    public Command startSlower() {
+        return run(() -> m_conveyor.set(0.2)).withName("ConveyorRunSlow");
+    }
+
+    public Command fullPower() {
+        return run(() -> m_conveyor.set(1));
     }
 
     public Command runBackwards() {
@@ -54,5 +71,6 @@ public class Conveyor extends SubsystemBase {
         log_statorCurrent.accept(m_conveyor.getOutputCurrent());
         log_outputVoltage.accept(m_conveyor.getAppliedOutput());
         log_supplyVoltage.accept(m_conveyor.getBusVoltage());
+        log_currentSpike.accept(trg_currentSpike);
     }
 }
