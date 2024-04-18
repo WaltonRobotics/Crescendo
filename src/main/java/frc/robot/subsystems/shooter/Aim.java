@@ -67,7 +67,7 @@ public class Aim extends SubsystemBase {
         MathUtil.isNear(kSubwooferAngle.plus(Degrees.of(5)).in(Rotations), m_motor.getPosition().getValueAsDouble(), Units.degreesToRotations(1))
         && RobotK.kStopCoast);
 
-    private final DynamicMotionMagicVoltage m_dynamicRequest = new DynamicMotionMagicVoltage(0, 20, 40, 200);
+    public final DynamicMotionMagicVoltage m_dynamicRequest = new DynamicMotionMagicVoltage(0, 20, 40, 200);
     private final CoastOut m_coastRequest = new CoastOut();
     private final StaticBrake m_brakeRequest = new StaticBrake();
 
@@ -277,10 +277,16 @@ public class Aim extends SubsystemBase {
         }).withName("AimWithVision");
     }
 
-
     public Command toAngleUntilAt(Supplier<Measure<Angle>> angle, Measure<Angle> tolerance) {
+       return toAngleUntilAt(angle, tolerance, false);
+    }
+
+    public Command toAngleUntilAt(Supplier<Measure<Angle>> angle, Measure<Angle> tolerance, boolean amp) {
         Runnable goThere = () -> {
             m_targetAngle = angle.get();
+             if(amp) {
+                m_dynamicRequest.Acceleration = 6;
+             }
             sendAngleRequestToMotor(false);
         };
         BooleanSupplier isFinished = () -> {

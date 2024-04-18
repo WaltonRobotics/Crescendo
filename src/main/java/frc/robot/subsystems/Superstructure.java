@@ -593,7 +593,7 @@ public class Superstructure {
         
         var shoot = m_shooter.ampShot();
 
-        var aimCmd = m_aim.toAngleUntilAt(() -> target.plus(Degrees.of(15)), Degrees.of(0));
+        var aimCmd = m_aim.toAngleUntilAt(() -> target.plus(Degrees.of(20)), Degrees.of(0));
 
         return Commands.parallel(
             Commands.print("shoot"),
@@ -603,6 +603,7 @@ public class Superstructure {
                 Commands.sequence(
                     Commands.waitUntil(irqTrg_conveyorBeamBreak),
                     Commands.print("going to aim"),
+                    // Commands.runOnce(() -> { m_aim.m_dynamicRequest.Acceleration = 2; }),
                     aimCmd.asProxy().andThen(Commands.print("aim"))
             )
         ));
