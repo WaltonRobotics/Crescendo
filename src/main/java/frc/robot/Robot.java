@@ -177,12 +177,11 @@ public class Robot extends TimedRobot {
 		return () -> {
 			double leftY = -driver.getLeftY();
 			double leftX = -driver.getLeftX();
-			return drive;
-			
-				// .withVelocityX(leftY * kMaxSpeed)
-				// .withVelocityY(leftX * kMaxSpeed)
-				// .withRotationalRate(-driver.getRightX() * kMaxAngularRate)
-				// .withRotationalDeadband(kMaxAngularRate * 0.1);
+			return drive
+				.withVelocityX(leftY * kMaxSpeed)
+				.withVelocityY(leftX * kMaxSpeed)
+				.withRotationalRate(-driver.getRightX() * kMaxAngularRate)
+				.withRotationalDeadband(kMaxAngularRate * 0.1);
 		};
 	}
 
