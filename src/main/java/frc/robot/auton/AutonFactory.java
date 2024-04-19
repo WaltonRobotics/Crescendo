@@ -71,7 +71,7 @@ public final class AutonFactory {
 	private static Command preloadShot(Superstructure superstructure, Aim aim) {
 		var aimCmd = aim.toAngleUntilAt(kSubwooferAngle, kSubwooferAngle.times(0.75)).withTimeout(1).asProxy();
 		var noteReady = superstructure.forceStateToNoteReady();
-		var shoot = superstructure.autonShootReq();
+		var shoot = superstructure.preloadShootReq();
 
 		return sequence(
 			runOnce(() -> m_shotTimer.restart()),

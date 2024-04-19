@@ -366,6 +366,7 @@ public class Constants {
         public static final Measure<Angle> kClimbingAngle = Degrees.of(50);
 
         public static final Measure<Angle> kTolerance = Degrees.of(2);
+        public static final double kPreloadTolerance = 0.25;
     }
 
     public class ClimberK {

@@ -219,6 +219,15 @@ public class Aim extends SubsystemBase {
         };
     }
 
+    public BooleanSupplier aimFinished(double tolerance) {
+        return () -> {
+            var error = Rotations.of(Math.abs(m_targetAngle.in(Rotations) - m_motor.getPosition().getValueAsDouble()));
+            log_error.accept(error.in(Degrees));
+
+            return error.lte(m_targetAngle.times(tolerance));
+        };
+    }
+
     public Command coastOut() {
         return runOnce(() -> m_motor.setControl(m_coastRequest));
     }
