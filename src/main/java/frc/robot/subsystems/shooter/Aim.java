@@ -311,7 +311,10 @@ public class Aim extends SubsystemBase {
     }
 
     public Command hardStop() {
-        return toAngleUntilAt(Degrees.of(0));
+        return Commands.parallel(
+            Commands.print("hard stop"), 
+            toAngleUntilAt(Degrees.of(0))
+        );
     }
 
     public void setCoast(boolean coast) {
