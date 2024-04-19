@@ -106,6 +106,53 @@ public final class AutonFactory {
 		).withName("TheAutonWrapper");
 	}
 
+	public static Command madtown(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
+		var resetPose = swerve.resetPose(Paths.mad1);
+		var pathFollow = AutoBuilder.followPath(Paths.mad1).withName("PathFollow");
+		var preloadShot = preloadShot(superstructure, aim);
+		var intake = superstructure.autonIntakeReq();
+		var aimCmd = aim.toAngleUntilAt(Degrees.of(0)).asProxy(); // superstructure requires Aim so this brokey stuff
+		var pathFollow2 = AutoBuilder.followPath(Paths.mad2);
+		var secondShotReq = superstructure.autonShootReq();
+
+		var auton = sequence(
+			logSeqIncr(),
+			parallel(
+				resetPose,
+				preloadShot
+			),
+			print("resetPose and preloadShot done"),
+			logSeqIncr(),
+			waitUntil(superstructure.stateTrg_idle),
+			logSeqIncr(),
+			parallel(
+				print("should be intaking"),
+				sequence(
+					waitSeconds(1.5),
+					intake
+				),
+				pathFollow.andThen(print("path follow finished")),
+				aimCmd.until(superstructure.trg_atAngle)
+			),
+			waitSeconds(5),
+			pathFollow2,
+			print("aim finished, path follow finished, should be shooting"),
+			logSeqIncr(),
+			secondShotReq,
+			race(
+				sequence(
+					waitSeconds(0.5),
+					superstructure.forceStateToShooting()
+				),
+				waitUntil(superstructure.stateTrg_shooting)
+			),
+			logSeqIncr(),
+			waitUntil(superstructure.stateTrg_idle)
+		).withName("MadtownSequence");
+
+		return theWrapper(auton, shooter);
+	}
+
 	private static Command closeTwoInternal(Superstructure superstructure, Shooter shooter, Swerve swerve, Aim aim) {
 		var resetPose = swerve.resetPose(Paths.close1);
 		var pathFollow = AutoBuilder.followPath(Paths.close1).withName("PathFollow");
