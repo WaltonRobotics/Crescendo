@@ -26,7 +26,8 @@ public class AutonChooser {
         SOURCE_FOUR("4 - source side", Trajectories.sourceSide),
         VERY_AMP_THREE_POINT_FIVE("3.5 - amp side", Trajectories.veryAmp),
         G28_COUNTER("3 - g28 counter", Trajectories.g28Counter),
-        SILLY_AMP_FIVE("5 - five that skips a note maybe", Trajectories.ampSide);
+        SILLY_AMP_FIVE("5 - five that skips a note maybe", Trajectories.ampSide),
+        MADTOWN("2 - madtown", Trajectories.sourceSide);
 
         public final String m_description;
         public final ChoreoTrajectory m_traj;

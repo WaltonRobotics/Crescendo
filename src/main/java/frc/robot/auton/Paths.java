@@ -33,4 +33,7 @@ public class Paths {
     public static final PathPlannerPath close1 = PathPlannerPath.fromChoreoTrajectory("close.1");
     public static final PathPlannerPath close2 = PathPlannerPath.fromChoreoTrajectory("close.2");
     public static final PathPlannerPath close3 = PathPlannerPath.fromChoreoTrajectory("close.3");
+
+    public static final PathPlannerPath mad1 = PathPlannerPath.fromChoreoTrajectory("madtown.1");
+    public static final PathPlannerPath mad2 = PathPlannerPath.fromChoreoTrajectory("madtown.2");
 }

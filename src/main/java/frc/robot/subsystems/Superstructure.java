@@ -23,6 +23,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Vision;
+import frc.robot.Constants.AimK;
 import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
 import frc.robot.subsystems.shooter.Shooter;
@@ -72,6 +73,8 @@ public class Superstructure {
         PubSubOption.sendAll(true));
     private final BooleanLogger log_autonShootReq = WaltLogger.logBoolean(kDbTabName, "autonShootReq",
         PubSubOption.sendAll(true)); 
+    private final BooleanLogger log_preloadReq = WaltLogger.logBoolean(kDbTabName, "preload", 
+        PubSubOption.sendAll(true));
 
     private final IntLogger log_intakenNotes = WaltLogger.logInt(kDbTabName, "intakenNotes");
     private final IntLogger log_shotNotes = WaltLogger.logInt(kDbTabName, "shotNotes");
@@ -85,6 +88,7 @@ public class Superstructure {
     private boolean driverRumbled = false;
     private boolean manipulatorRumbled = false;
     private boolean trapping = false;
+    private boolean preload = false;
 
     public final EventLoop sensorEventLoop = new EventLoop();
     public final EventLoop stateEventLoop = new EventLoop();
@@ -100,6 +104,8 @@ public class Superstructure {
     private final Trigger trg_straightThroughReq = new Trigger(() -> straightThrough);
     private final Trigger trg_autonShootReq = new Trigger(() -> autonShoot);
 
+    private final Trigger trg_preloadShootReq = new Trigger(() -> preload).and(RobotModeTriggers.autonomous());
+
     private final Trigger trg_trap = new Trigger(() -> trapping);
 
     /** true = has note */
@@ -107,6 +113,7 @@ public class Superstructure {
 
     public final Trigger trg_spunUp;
     public final Trigger trg_atAngle;
+    public final Trigger trg_atPreloadAngle;
 
     private final Trigger trg_subwooferAngle;
     private final Trigger trg_ampAngle;
@@ -187,7 +194,7 @@ public class Superstructure {
         trg_ampAngle = new Trigger(() -> aim.getAngle().isNear(kAmpAngle, 0.3));
 
         trg_intakeReq = trg_driverIntakeReq.or(trg_autonIntakeReq).or(trg_straightThroughReq);
-        trg_shootReq = trg_driverShootReq.or(trg_autonShootReq);
+        trg_shootReq = trg_driverShootReq.or(trg_autonShootReq).or(trg_preloadShootReq);
 
         ai_frontVisiSight.setInterruptEdges(true, true);
         ai_frontVisiSight.enable();
@@ -214,6 +221,7 @@ public class Superstructure {
 
         trg_spunUp = new Trigger(m_shooter.spinUpFinished()).debounce(0.05);
         trg_atAngle = new Trigger(m_aim.aimFinished());
+        trg_atPreloadAngle = new Trigger(m_aim.aimFinished(AimK.kPreloadTolerance)).and(RobotModeTriggers.autonomous());
 
         m_state = IDLE;
 
@@ -286,7 +294,7 @@ public class Superstructure {
                 Commands.parallel(m_intake.run(), m_conveyor.start()).withName("AutoIntake")
             );
 
-        m_conveyor.trg_currentSpike.and(stateTrg_intake)
+        m_intake.trg_middleRollerCurrentSpike.and(stateTrg_intake)
             .onTrue(
                 m_intake.runSlower()
             );
@@ -353,7 +361,8 @@ public class Superstructure {
         stateTrg_noteReady.onTrue(Commands.runOnce(() -> driverRumbled = false));
 
         // added back shoot ok
-        (trg_spunUp.and(trg_atAngle).and(stateTrg_noteReady))
+        var preloadAngleTrg = trg_atPreloadAngle.and(trg_preloadShootReq);
+        (trg_spunUp.and(trg_atAngle.or(preloadAngleTrg)).and(stateTrg_noteReady))
             .onTrue(
                 Commands.parallel(
                     Commands.sequence(
@@ -444,6 +453,7 @@ public class Superstructure {
         autonIntake = false;
         straightThrough = false;
         autonShoot = false;
+        preload = false;
     }
 
     public boolean noteReadyOrGreater() {
@@ -535,6 +545,7 @@ public class Superstructure {
         log_intakenNotes.accept(intakenNotes);
         log_shotNotes.accept(shotNotes);
         log_shotNotes_amp.accept(shotNotes_amp);
+        log_preloadReq.accept(preload);
 
         stateEventLoop.poll();
 
@@ -557,6 +568,15 @@ public class Superstructure {
         return Commands.runOnce(() -> {
             autonIntake = false;
             autonShoot = true;
+            preload = false;
+        });
+    }
+
+    public Command preloadShootReq() {
+        return Commands.runOnce(() -> {
+            autonIntake = false;
+            autonShoot = false;
+            preload = true;
         });
     }
 
@@ -576,6 +596,7 @@ public class Superstructure {
             autonIntake = true;
             straightThrough = false;
             autonShoot = false;
+            preload = false;
         });
     }
 
@@ -584,6 +605,7 @@ public class Superstructure {
             autonIntake = false;
             straightThrough = true;
             autonShoot = false;
+            preload = false;
         });
     }
 
@@ -593,7 +615,7 @@ public class Superstructure {
         
         var shoot = m_shooter.ampShot();
 
-        var aimCmd = m_aim.toAngleUntilAt(() -> target.plus(Degrees.of(15)), Degrees.of(0));
+        var aimCmd = m_aim.toAngleUntilAt(() -> target.plus(Degrees.of(20)), Degrees.of(0));
 
         return Commands.parallel(
             Commands.print("shoot"),
@@ -603,6 +625,7 @@ public class Superstructure {
                 Commands.sequence(
                     Commands.waitUntil(irqTrg_conveyorBeamBreak),
                     Commands.print("going to aim"),
+                    // Commands.runOnce(() -> { m_aim.m_dynamicRequest.Acceleration = 2; }),
                     aimCmd.asProxy().andThen(Commands.print("aim"))
             )
         ));
