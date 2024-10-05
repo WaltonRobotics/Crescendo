@@ -87,8 +87,8 @@ public class TunerConstants {
 		.withCouplingGearRatio(kCoupleRatio)
 		.withSteerMotorInverted(kSteerMotorReversed);
 
-	private static final double kWheelBase = 18.75;
-	private static final double kTrackWidth = 22.75;
+	private static final double kWheelBase = 18.75; //front to back
+	private static final double kTrackWidth = 22.75; // l to r
 
 	// Front Left
 	private static final int kFrontLeftDriveMotorId = 5;
