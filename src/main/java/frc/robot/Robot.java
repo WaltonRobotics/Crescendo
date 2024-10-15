@@ -244,6 +244,12 @@ public class Robot extends TimedRobot {
 		// aim amp
 		manipulator.leftBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kAmpAngle, Degrees.of(0.25)));
 
+		// testing buttons. COMMENT OUT WHEN DONE !!!!! (watch me forget. sorry future grac. and everyone else involved.)
+		// also uncomment out first two climber controls.
+		// aim slowly go down
+		// manipulator.a().and(manipulator.povDown()).onTrue(aim.decreaseAngle());
+		// manipulator.a().and(manipulator.povUp()).whileTrue(aim.increaseAngle());
+
 		// climber controls	
 		// x is override button
 		manipulator.a().and(manipulator.povDown()).whileTrue(climber.retractBoth());
