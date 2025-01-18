@@ -78,14 +78,13 @@ public class TunerConstants {
 		.withDriveMotorGains(driveGains)
 		.withSteerMotorClosedLoopOutput(steerClosedLoopOutput)
 		.withDriveMotorClosedLoopOutput(driveClosedLoopOutput)
-		.withSpeedAt12VoltsMps(kSpeedAt12VoltsMps)
+		.withSpeedAt12Volts(kSpeedAt12VoltsMps)
 		.withSteerInertia(kSteerInertia)
 		.withDriveInertia(kDriveInertia)
 		.withSteerFrictionVoltage(kSteerFrictionVoltage)
 		.withDriveFrictionVoltage(kDriveFrictionVoltage)
 		.withFeedbackSource(SteerFeedbackType.FusedCANcoder)
 		.withCouplingGearRatio(kCoupleRatio)
-		.withSteerMotorInverted(kSteerMotorReversed);
 
 	private static final double kWheelBase = 18.75; //front to back
 	private static final double kTrackWidth = 22.75; // l to r

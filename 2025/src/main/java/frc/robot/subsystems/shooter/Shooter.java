@@ -8,7 +8,10 @@ import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
+
+import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.Measure;
@@ -70,7 +73,8 @@ public class Shooter extends SubsystemBase {
     private final BooleanLogger log_rightOk = WaltLogger.logBoolean(kDbTabName, "rightOk");
 
     private boolean found = false;
-    private final FlywheelSim m_flywheelSim = new FlywheelSim(DCMotor.getFalcon500(1), kGearRatio, kMoi);
+    private final FlywheelSim m_flywheelSim = new FlywheelSim(LinearSystemId.createFlywheelSystem(DCMotor.getFalcon500(1), kGearRatio, kMoi),
+        DCMotor.getFalcon500(1));
 
     // private final SysIdRoutine m_currentSysId = makeTorqueCurrentSysIdRoutine(
     // Amps.of(8).per(Second),

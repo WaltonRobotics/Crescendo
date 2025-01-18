@@ -31,7 +31,9 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.AngularVelocityUnit;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.measure.Velocity;
 import frc.robot.generated.TunerConstants;
@@ -44,7 +46,7 @@ public class Constants {
     public static final double kStickDeadband = 0.1;
     public static final String kCanbus = "fd";
 
-    public static final Velocity<Angle> RotationsPerMinute = Rotations.per(Minute);
+    public static final AngularVelocityUnit RotationsPerMinute = Rotations.per(Minute);
 
     public class VisionK {
         public static final Transform3d kFrontTagCamLocation = new Transform3d(
@@ -127,18 +129,7 @@ public class Constants {
         public static final double kRedStageClearanceLeft = Units.inchesToMeters(234.9);
     }
 
-    public class AutoK {
-        public static final double kPTranslation = 5;
-        public static final double kPTheta = 7.5; // 1
-
-        public static final HolonomicPathFollowerConfig kPathFollowerConfig = new HolonomicPathFollowerConfig(
-            new PIDConstants(kPTranslation),
-            new PIDConstants(kPTheta),
-            kMaxSpeed,
-            TunerConstants.kDriveRadius,
-            new ReplanningConfig()
-        );
-    }
+    
 
     public class IntakeK {
         public static final class IntakeConfigs {

@@ -152,7 +152,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		}
 
 		var openLoopConfig = new OpenLoopRampsConfigs().withDutyCycleOpenLoopRampPeriod(DriveK.kDutyCycleOpenLoopRamp);
-		for (var module : Modules) {
+		for (var module : getModules()) {
 			module.getDriveMotor().getConfigurator().apply(openLoopConfig);
 		}
 
@@ -163,6 +163,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		m_facingAngle.HeadingController.setP(kPTheta - 2);
 	}
 
+	/*just got this from flat2025 code! */
 	public Command wheelRadiusCharacterization(double omegaDirection) {
 
         /* wheel radius characterization schtuffs */
@@ -324,7 +325,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	}
 
 	public void logModulePositions() {
-		for (int i = 0; i < Modules.length; i++) {
+		for (int i = 0; i < getModules().length; i++) {
 			SmartDashboard.putNumber("Module " + i + "/position",
 				getModule(i).getDriveMotor().getPosition().getValueAsDouble());
 		}
@@ -332,24 +333,17 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	public Command resetModulePositions() {
 		return Commands.runOnce(() -> {
-			for (int i = 0; i < Modules.length; i++) {
+			for (int i = 0; i < getModules().length; i++) {
 				getModule(i).getDriveMotor().setPosition(0);
 			}
 		});
 	}
 
 	public void setTestMode() {
-		for (int i = 0; i < Modules.length; i++) {
+		for (int i = 0; i < getModules().length; i++) {
 			getModule(i).getDriveMotor().setNeutralMode(NeutralModeValue.Coast);
 			getModule(i).getSteerMotor().setNeutralMode(NeutralModeValue.Brake);
 		}
-	}
-
-	public Command resetPoseToSpeaker() {
-		return runOnce(() -> {
-			var startPose = AllianceFlipUtil.apply(AutonChooser.getAutonInitPose(AutonOption.AMP_FIVE).get());
-			seedFieldRelative(startPose);
-		});
 	}
 
 	
@@ -408,7 +402,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		m_poseError[2] = Units.radiansToDegrees(m_thetaController.getPositionError());
 		log_poseError.accept(m_poseError);
 
-		for (int i = 0; i < Modules.length; i++) {
+		for (int i = 0; i < getModules().length; i++) {
 			m_wheelVelos[i] = Math.abs(swerveState.ModuleStates[i].speedMetersPerSecond);
 			m_wheelVeloTargets[i] = Math.abs(swerveState.ModuleTargets[i].speedMetersPerSecond);
 			m_wheelVeloErrs[i] = Math.abs(m_wheelVeloTargets[i] - m_wheelVelos[i]);
