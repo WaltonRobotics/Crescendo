@@ -47,7 +47,6 @@ import frc.util.WaltRangeChecker;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.BooleanLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
-import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
 
@@ -75,7 +74,6 @@ public class Robot extends TimedRobot {
 	private final Aim aim = new Aim();
 	private final Intake intake = new Intake();
 	private final Conveyor conveyor = new Conveyor();
-	private final Climber climber = new Climber();
 	private final Trap trap = new Trap();
 
 	private final PowerDistribution pdp = new PowerDistribution();
@@ -86,7 +84,7 @@ public class Robot extends TimedRobot {
 	private final Trigger trapTrg = manipulator.start();
 
 	public final Superstructure superstructure = new Superstructure(
-		aim, intake, conveyor, shooter, vision,
+		aim, intake, conveyor, shooter,
 		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()), trapTrg.or(manipulator.a()),
 		(intensity) -> driverRumble(intensity), (intensity) -> manipulatorRumble(intensity));
 
@@ -110,6 +108,8 @@ public class Robot extends TimedRobot {
 		if (Robot.isSimulation()) {
 			DriverStation.silenceJoystickConnectionWarning(true);
 		}
+		// Vision stuff
+		/*
 		addPeriodic(() -> {
 			var frontCamEstOpt = vision.getFrontCamPoseEst();
 			boolean frontCamTagsPresent = frontCamEstOpt.hasTarget();
@@ -119,9 +119,10 @@ public class Robot extends TimedRobot {
 			if (frontCamEstPresent) {
 				var frontEst = frontCamEstOpt.measOpt().get();
 				aim.calculatePitchToSpeaker(frontEst);
-				// swerve.addVisionMeasurement(frontEst.estimate().estimatedPose.toPose2d(), frontEst.estimate().timestampSeconds);
+				swerve.addVisionMeasurement(frontEst.estimate().estimatedPose.toPose2d(), frontEst.estimate().timestampSeconds);
 			};
-		}, 0.02);
+		}, 0.02); 
+		*/
 		miniPcPower = pdp.getCurrent(17) * pdp.getVoltage();
 		WaltRangeChecker.addDoubleChecker("MiniPc", () -> miniPcPower, 10, 70, 1, false);
 	}
