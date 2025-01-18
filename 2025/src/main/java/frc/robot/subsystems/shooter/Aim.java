@@ -42,7 +42,6 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.FieldK;
 import frc.robot.Constants.RobotK;
 import frc.robot.Constants.AimK.AimConfigs;
-import frc.robot.Vision.VisionMeasurement3d;
 import frc.util.AllianceFlipUtil;
 import frc.util.WaltRangeChecker;
 import frc.util.logging.LoggedTunableNumber;
@@ -361,38 +360,41 @@ public class Aim extends SubsystemBase {
         });
     }
 
-    public void calculatePitchToSpeaker(VisionMeasurement3d meas) {
-        m_measurementTimer.restart();
 
-        var pose = meas.estimate().estimatedPose;
+    /*dont know if this is vital to the actual drive + shoot, so just commented out for now :p */
+    
+    // public void calculatePitchToSpeaker(VisionMeasurement3d meas) {
+    //     m_measurementTimer.restart();
 
-        var pivotPose = pose.transformBy(kOriginToPivot);
-        var pivotTrans = pivotPose.getTranslation();
+    //     var pose = meas.estimate().estimatedPose;
 
-        Translation3d speakerPos;
-        m_centerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kBlueCenterOpening.minus(new Translation3d(0, 0, Units.inchesToMeters(2))));
+    //     var pivotPose = pose.transformBy(kOriginToPivot);
+    //     var pivotTrans = pivotPose.getTranslation();
+
+    //     Translation3d speakerPos;
+    //     m_centerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kBlueCenterOpening.minus(new Translation3d(0, 0, Units.inchesToMeters(2))));
         
-        if (MathUtil.isNear(m_centerPos.getY(), pose.getY(), 1)) {
-            speakerPos = m_centerPos;
-            if ((AllianceFlipUtil.apply(pose.getX()) > 3.5)) {
-                speakerPos = speakerPos.minus(new Translation3d(0, 0, Units.inchesToMeters(5)));
-            }
-        } else if (pose.getY() < m_centerPos.getY()) {
-            speakerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kTopRight);
-        } else {
-            speakerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kTopLeft);
-        }
+    //     if (MathUtil.isNear(m_centerPos.getY(), pose.getY(), 1)) {
+    //         speakerPos = m_centerPos;
+    //         if ((AllianceFlipUtil.apply(pose.getX()) > 3.5)) {
+    //             speakerPos = speakerPos.minus(new Translation3d(0, 0, Units.inchesToMeters(5)));
+    //         }
+    //     } else if (pose.getY() < m_centerPos.getY()) {
+    //         speakerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kTopRight);
+    //     } else {
+    //         speakerPos = AllianceFlipUtil.apply(FieldK.SpeakerK.kTopLeft);
+    //     }
 
-        var distance = speakerPos.minus(pivotTrans);
-        log_speakerPos.accept(speakerPos);
-        log_pivotPos.accept(pivotPose);
+    //     var distance = speakerPos.minus(pivotTrans);
+    //     log_speakerPos.accept(speakerPos);
+    //     log_pivotPos.accept(pivotPose);
 
-        log_zDist.accept(Units.metersToInches(distance.getZ()));
-        log_xDist.accept(Units.metersToInches(distance.getX()));
+    //     log_zDist.accept(Units.metersToInches(distance.getZ()));
+    //     log_xDist.accept(Units.metersToInches(distance.getX()));
 
-        m_pitchToSpeaker = (m_filter.calculate(Math.atan2(distance.getZ(), Math.hypot(distance.getX(), distance.getY()))) - Units.degreesToRadians(28));
-        log_desiredPitch.accept(Units.radiansToDegrees(m_pitchToSpeaker));
-    }
+    //     m_pitchToSpeaker = (m_filter.calculate(Math.atan2(distance.getZ(), Math.hypot(distance.getX(), distance.getY()))) - Units.degreesToRadians(28));
+    //     log_desiredPitch.accept(Units.radiansToDegrees(m_pitchToSpeaker));
+    // }
 
     @Override
     public void periodic() {

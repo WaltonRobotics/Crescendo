@@ -2,8 +2,8 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -16,7 +16,7 @@ import static frc.robot.Constants.IntakeK.*;
 
 public class Intake extends SubsystemBase {
     private final TalonFX m_motor = new TalonFX(kIntakeId);
-    private final CANSparkMax m_feeder = new CANSparkMax(kFeederId,
+    private final SparkMax m_feeder = new SparkMax(kFeederId,
         MotorType.kBrushless);
 
     private final VoltageOut m_voltsFoc = new VoltageOut(0).withEnableFOC(true);

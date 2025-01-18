@@ -2,8 +2,8 @@ package frc.robot.subsystems.shooter;
 
 import static frc.robot.Constants.ConveyorK.*;
 
-import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -14,7 +14,7 @@ import frc.util.logging.WaltLogger.BooleanLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 
 public class Conveyor extends SubsystemBase {
-    private final CANSparkMax m_conveyor = new CANSparkMax(kConveyorId, MotorType.kBrushless);
+    private final SparkMax m_conveyor = new SparkMax(kConveyorId, MotorType.kBrushless);
 
     private final DoubleLogger log_statorCurrent = WaltLogger.logDouble("Conveyor", "statorCurrent");
     private final DoubleLogger log_outputVoltage = WaltLogger.logDouble("Conveyor", "outputVoltage");

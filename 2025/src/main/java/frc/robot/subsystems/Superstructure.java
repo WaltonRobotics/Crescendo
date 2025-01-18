@@ -22,7 +22,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.Vision;
 import frc.robot.Constants.AimK;
 import frc.robot.subsystems.shooter.Aim;
 import frc.robot.subsystems.shooter.Conveyor;
@@ -174,7 +173,7 @@ public class Superstructure {
     private Timer timer = new Timer();
         
     public Superstructure(
-        Aim aim, Intake intake, Conveyor conveyor, Shooter shooter, Vision vision,
+        Aim aim, Intake intake, Conveyor conveyor, Shooter shooter,
         Trigger intaking, Trigger shooting, Trigger ampShot, Trigger trapShot,
         DoubleConsumer driverRumbler, DoubleConsumer manipRumbler) {
         m_aim = aim;

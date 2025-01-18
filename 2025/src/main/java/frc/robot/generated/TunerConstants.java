@@ -1,11 +1,11 @@
 package frc.robot.generated;
 
 import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.mechanisms.swerve.SwerveDrivetrainConstants;
-import com.ctre.phoenix6.mechanisms.swerve.SwerveModuleConstants;
-import com.ctre.phoenix6.mechanisms.swerve.SwerveModuleConstantsFactory;
-import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.ClosedLoopOutputType;
-import com.ctre.phoenix6.mechanisms.swerve.SwerveModuleConstants.SteerFeedbackType;
+import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
+import com.ctre.phoenix6.swerve.SwerveModuleConstants;
+import com.ctre.phoenix6.swerve.SwerveModuleConstantsFactory;
+import com.ctre.phoenix6.swerve.SwerveModuleConstants.ClosedLoopOutputType;
+import com.ctre.phoenix6.swerve.SwerveModuleConstants.SteerFeedbackType;
 
 import edu.wpi.first.math.util.Units;
 import frc.robot.Constants;
@@ -67,7 +67,7 @@ public class TunerConstants {
 
 	private static final SwerveDrivetrainConstants DrivetrainConstants = new SwerveDrivetrainConstants()
 		.withPigeon2Id(kPigeonId)
-		.withCANbusName(kCanbusName);
+		.withCANBusName(kCanbusName);
 
 	private static final SwerveModuleConstantsFactory ConstantCreator = new SwerveModuleConstantsFactory()
 		.withDriveMotorGearRatio(kDriveGearRatio)

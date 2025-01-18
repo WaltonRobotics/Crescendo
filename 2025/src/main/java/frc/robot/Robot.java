@@ -7,14 +7,13 @@ package frc.robot;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 
-import org.photonvision.PhotonCamera;
 
-import com.choreo.lib.ChoreoTrajectory;
+
+
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
-import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.DriveRequestType;
-import com.pathplanner.lib.commands.FollowPathCommand;
-import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
+import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -37,10 +36,6 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.AimK;
 import frc.robot.Constants.FieldK;
 import frc.robot.Constants.FieldK.SpeakerK;
-import frc.robot.auton.AutonChooser;
-import frc.robot.auton.AutonFactory;
-import frc.robot.auton.AutonChooser.AutonOption;
-import frc.robot.auton.Trajectories;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.shooter.Aim;
@@ -76,7 +71,6 @@ public class Robot extends TimedRobot {
 	private final CommandXboxController manipulator = new CommandXboxController(1);
 
 	private final Swerve swerve = TunerConstants.drivetrain;
-	private final Vision vision = new Vision();
 	private final Shooter shooter = new Shooter();
 	private final Aim aim = new Aim();
 	private final Intake intake = new Intake();
@@ -112,7 +106,6 @@ public class Robot extends TimedRobot {
 
 	public Robot() {
 		DriverStation.silenceJoystickConnectionWarning(true);
-		PhotonCamera.setVersionCheckEnabled(false);
 		// disable joystick not found warnings when in sim
 		if (Robot.isSimulation()) {
 			DriverStation.silenceJoystickConnectionWarning(true);
@@ -131,36 +124,6 @@ public class Robot extends TimedRobot {
 		}, 0.02);
 		miniPcPower = pdp.getCurrent(17) * pdp.getVoltage();
 		WaltRangeChecker.addDoubleChecker("MiniPc", () -> miniPcPower, 10, 70, 1, false);
-	}
-
-	private void mapAutonCommands() {
-		AutonChooser.setDefaultAuton(AutonOption.DO_NOTHING);
-		AutonChooser.assignAutonCommand(AutonOption.DO_NOTHING, Commands.none());
-		AutonChooser.assignAutonCommand(AutonOption.PRELOAD, AutonFactory.one(superstructure, shooter, aim));
-		AutonChooser.assignAutonCommand(AutonOption.AMP_TWO, AutonFactory.ampTwo(superstructure, shooter, swerve, aim),
-			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.AMP_THREE, AutonFactory.ampThree(superstructure, shooter, swerve, aim), 
-			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.AMP_FOUR, AutonFactory.ampFour(superstructure, shooter, swerve, aim), 
-			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.AMP_FIVE, AutonFactory.ampFive(superstructure, shooter, swerve, aim), 
-			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SOURCE_TWO, AutonFactory.sourceTwo(superstructure, shooter, swerve, aim),
-			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE, AutonFactory.sourceThree(superstructure, shooter, swerve, aim),
-			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE_POINT_FIVE, AutonFactory.sourceThreePointFive(superstructure, shooter, swerve, aim),
-			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SOURCE_FOUR, AutonFactory.sourceFour(superstructure, shooter, swerve, aim),
-			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.VERY_AMP_THREE_POINT_FIVE, AutonFactory.veryAmpThreePointFive(superstructure, shooter, swerve, aim),
-			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.G28_COUNTER, AutonFactory.g28Counter(superstructure, shooter, swerve, aim),
-			Trajectories.g28Counter.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SILLY_AMP_FIVE, AutonFactory.sillyFive(superstructure, shooter, swerve, aim),
-			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.MADTOWN, AutonFactory.madtown(superstructure, shooter, swerve, aim),
-			Trajectories.sourceSide.getInitialPose());
 	}
 
 	private void driverRumble(double intensity) {
@@ -301,7 +264,6 @@ public class Robot extends TimedRobot {
 	}
 
 	private Command getAutonomousCommand() {
-		return AutonChooser.getChosenAutonCmd();
 	}
 
 	@Override
@@ -310,13 +272,6 @@ public class Robot extends TimedRobot {
 			superstructure.fastPeriodic();
 		}, 0.00125);
 		SmartDashboard.putData(field2d);
-		WaltLogger.logPose3d("FieldPoses", "shotLocation").accept(
-			Vision.getMiddleSpeakerTagPose().transformBy(AimK.kTagToSpeaker));
-		WaltLogger.logPose3d("FieldPoses", "tag4Location")
-			.accept(FieldK.kTag4Pose);
-		WaltLogger.logPose3d("FieldPoses", "tag7Location")
-			.accept(FieldK.kTag7Pose);
-		mapAutonCommands();
 		configureBindings();
 		DriverStation.startDataLog(DataLogManager.getLog());
 		if (!DriverStation.isFMSAttached()) {
@@ -325,7 +280,6 @@ public class Robot extends TimedRobot {
 		if (kTestMode) {
 			swerve.setTestMode();
 		}
-		FollowPathCommand.warmupCommand();
 	}
 
 	@Override
@@ -403,21 +357,10 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void simulationPeriodic() {
-		getTrajLines();
 		simulateAim();
 	}
 
-	private void getTrajLines() {
-		var traj = AutonChooser.getChosenTrajectory();
-		var alliance = DriverStation.getAlliance();
-		ChoreoTrajectory realTraj;
-		if (alliance.isPresent() && alliance.get().equals(Alliance.Red)) {
-			realTraj = traj.flipped();
-		} else {
-			realTraj = traj;
-		}
-		field2d.getObject("trajectory").setPoses(realTraj.getPoses());
-	}
+	
 
 	private void simulateAim() {
 		var drivePose = swerve.getState().Pose;
