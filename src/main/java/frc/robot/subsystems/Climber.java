@@ -16,11 +16,11 @@ public class Climber extends SubsystemBase {
     private final CANSparkMax m_right = new CANSparkMax(kRightId, MotorType.kBrushless); 
     private final CANSparkMax m_left = new CANSparkMax(kLeftId, MotorType.kBrushless);
 
-    private final DoubleLogger log_leftPos = WaltLogger.logDouble("Climber", "leftPos");
-    private final DoubleLogger log_rightPos = WaltLogger.logDouble("Climber", "rightPos");
+    // private final DoubleLogger log_leftPos = WaltLogger.logDouble("Climber", "leftPos");
+    // private final DoubleLogger log_rightPos = WaltLogger.logDouble("Climber", "rightPos");
 
-    private final BooleanLogger log_leftAtLimit = WaltLogger.logBoolean("Climber", "leftAtLimit");
-    private final BooleanLogger log_rightAtLimit = WaltLogger.logBoolean("Climber", "rightAtLimit");
+    // private final BooleanLogger log_leftAtLimit = WaltLogger.logBoolean("Climber", "leftAtLimit");
+    // private final BooleanLogger log_rightAtLimit = WaltLogger.logBoolean("Climber", "rightAtLimit");
 
     public Climber() {
         m_right.setInverted(false);
@@ -70,8 +70,8 @@ public class Climber extends SubsystemBase {
             boolean leftAtMax = m_left.getEncoder().getPosition() <= kMaxExtensionPos;
             m_right.set(rightAtMax ? 0 : kExtendDutyCycle);
             m_left.set(leftAtMax ? 0 : kExtendDutyCycle);
-            log_rightAtLimit.accept(rightAtMax);
-            log_leftAtLimit.accept(leftAtMax);
+            // log_rightAtLimit.accept(rightAtMax);
+            // log_leftAtLimit.accept(leftAtMax);
         }, 
         () -> {
             m_right.set(0);
@@ -79,9 +79,9 @@ public class Climber extends SubsystemBase {
         });
     }
 
-    @Override
-    public void periodic() {
-        log_leftPos.accept(m_left.getEncoder().getPosition());
-        log_rightPos.accept(m_right.getEncoder().getPosition());
-    }
+    // @Override
+    // public void periodic() {
+    //     log_leftPos.accept(m_left.getEncoder().getPosition());
+    //     log_rightPos.accept(m_right.getEncoder().getPosition());
+    // }
 }  

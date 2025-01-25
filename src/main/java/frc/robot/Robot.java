@@ -38,7 +38,7 @@ import frc.robot.Constants.AimK;
 import frc.robot.Constants.FieldK;
 import frc.robot.Constants.FieldK.SpeakerK;
 import frc.robot.auton.AutonChooser;
-import frc.robot.auton.AutonFactory;
+//import frc.robot.auton.AutonFactory;
 import frc.robot.auton.AutonChooser.AutonOption;
 import frc.robot.auton.Trajectories;
 import frc.robot.generated.TunerConstants;
@@ -54,7 +54,7 @@ import frc.util.logging.WaltLogger.BooleanLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
-import frc.robot.subsystems.Superstructure;
+//import frc.robot.subsystems.Superstructure;
 
 import static frc.robot.Constants.AimK.kAmpAngle;
 import static frc.robot.Constants.AimK.kClimbAngle;
@@ -91,10 +91,10 @@ public class Robot extends TimedRobot {
 
 	private final Trigger trapTrg = manipulator.start();
 
-	public final Superstructure superstructure = new Superstructure(
-		aim, intake, conveyor, shooter, vision,
-		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()), trapTrg.or(manipulator.a()),
-		(intensity) -> driverRumble(intensity), (intensity) -> manipulatorRumble(intensity));
+	// public final Superstructure superstructure = new Superstructure(
+	// 	aim, intake, conveyor, shooter, vision,
+	// 	manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()), trapTrg.or(manipulator.a()),
+	// 	(intensity) -> driverRumble(intensity), (intensity) -> manipulatorRumble(intensity));
 
 	public static final Field2d field2d = new Field2d();
 
@@ -134,33 +134,33 @@ public class Robot extends TimedRobot {
 	}
 
 	private void mapAutonCommands() {
-		AutonChooser.setDefaultAuton(AutonOption.DO_NOTHING);
-		AutonChooser.assignAutonCommand(AutonOption.DO_NOTHING, Commands.none());
-		AutonChooser.assignAutonCommand(AutonOption.PRELOAD, AutonFactory.one(superstructure, shooter, aim));
-		AutonChooser.assignAutonCommand(AutonOption.AMP_TWO, AutonFactory.ampTwo(superstructure, shooter, swerve, aim),
-			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.AMP_THREE, AutonFactory.ampThree(superstructure, shooter, swerve, aim), 
-			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.AMP_FOUR, AutonFactory.ampFour(superstructure, shooter, swerve, aim), 
-			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.AMP_FIVE, AutonFactory.ampFive(superstructure, shooter, swerve, aim), 
-			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SOURCE_TWO, AutonFactory.sourceTwo(superstructure, shooter, swerve, aim),
-			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE, AutonFactory.sourceThree(superstructure, shooter, swerve, aim),
-			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE_POINT_FIVE, AutonFactory.sourceThreePointFive(superstructure, shooter, swerve, aim),
-			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SOURCE_FOUR, AutonFactory.sourceFour(superstructure, shooter, swerve, aim),
-			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.VERY_AMP_THREE_POINT_FIVE, AutonFactory.veryAmpThreePointFive(superstructure, shooter, swerve, aim),
-			Trajectories.sourceSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.G28_COUNTER, AutonFactory.g28Counter(superstructure, shooter, swerve, aim),
-			Trajectories.g28Counter.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.SILLY_AMP_FIVE, AutonFactory.sillyFive(superstructure, shooter, swerve, aim),
-			Trajectories.ampSide.getInitialPose());
-		AutonChooser.assignAutonCommand(AutonOption.MADTOWN, AutonFactory.madtown(superstructure, shooter, swerve, aim),
-			Trajectories.sourceSide.getInitialPose());
+		// AutonChooser.setDefaultAuton(AutonOption.DO_NOTHING);
+		// AutonChooser.assignAutonCommand(AutonOption.DO_NOTHING, Commands.none());
+		// AutonChooser.assignAutonCommand(AutonOption.PRELOAD, AutonFactory.one(superstructure, shooter, aim));
+		// AutonChooser.assignAutonCommand(AutonOption.AMP_TWO, AutonFactory.ampTwo(superstructure, shooter, swerve, aim),
+		// 	Trajectories.ampSide.getInitialPose());
+		// AutonChooser.assignAutonCommand(AutonOption.AMP_THREE, AutonFactory.ampThree(superstructure, shooter, swerve, aim), 
+		// 	Trajectories.ampSide.getInitialPose());
+		// AutonChooser.assignAutonCommand(AutonOption.AMP_FOUR, AutonFactory.ampFour(superstructure, shooter, swerve, aim), 
+		// 	Trajectories.ampSide.getInitialPose());
+		// AutonChooser.assignAutonCommand(AutonOption.AMP_FIVE, AutonFactory.ampFive(superstructure, shooter, swerve, aim), 
+		// 	Trajectories.ampSide.getInitialPose());
+		// AutonChooser.assignAutonCommand(AutonOption.SOURCE_TWO, AutonFactory.sourceTwo(superstructure, shooter, swerve, aim),
+		// 	Trajectories.sourceSide.getInitialPose());
+		// AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE, AutonFactory.sourceThree(superstructure, shooter, swerve, aim),
+		// 	Trajectories.sourceSide.getInitialPose());
+		// AutonChooser.assignAutonCommand(AutonOption.SOURCE_THREE_POINT_FIVE, AutonFactory.sourceThreePointFive(superstructure, shooter, swerve, aim),
+		// 	Trajectories.sourceSide.getInitialPose());
+		// AutonChooser.assignAutonCommand(AutonOption.SOURCE_FOUR, AutonFactory.sourceFour(superstructure, shooter, swerve, aim),
+		// 	Trajectories.sourceSide.getInitialPose());
+		// AutonChooser.assignAutonCommand(AutonOption.VERY_AMP_THREE_POINT_FIVE, AutonFactory.veryAmpThreePointFive(superstructure, shooter, swerve, aim),
+		// 	Trajectories.sourceSide.getInitialPose());
+		// AutonChooser.assignAutonCommand(AutonOption.G28_COUNTER, AutonFactory.g28Counter(superstructure, shooter, swerve, aim),
+		// 	Trajectories.g28Counter.getInitialPose());
+		// AutonChooser.assignAutonCommand(AutonOption.SILLY_AMP_FIVE, AutonFactory.sillyFive(superstructure, shooter, swerve, aim),
+		// 	Trajectories.ampSide.getInitialPose());
+		// AutonChooser.assignAutonCommand(AutonOption.MADTOWN, AutonFactory.madtown(superstructure, shooter, swerve, aim),
+		// 	Trajectories.sourceSide.getInitialPose());
 	}
 
 	private void driverRumble(double intensity) {
@@ -201,7 +201,7 @@ public class Robot extends TimedRobot {
 		driver.a().whileTrue(swerve.applyRequest(() -> brake));
 
 		// force shot
-		driver.b().and(driver.rightTrigger()).onTrue(superstructure.forceStateToShooting());
+		// driver.b().and(driver.rightTrigger()).onTrue(superstructure.forceStateToShooting());
 
 		// rezero
 		driver.leftBumper().onTrue(swerve.runOnce(() -> swerve.seedFieldRelative()));
@@ -223,14 +223,14 @@ public class Robot extends TimedRobot {
 		manipulator.rightBumper().whileTrue(shooter.subwoofer());
 
 		// amp shot prep
-		manipulator.leftBumper().and(manipulator.a().negate()).whileTrue(superstructure.ampShot(kAmpAngle));
+		// manipulator.leftBumper().and(manipulator.a().negate()).whileTrue(superstructure.ampShot(kAmpAngle));
 
 		// manip force shot
-		manipulator.b().and(manipulator.povUp())
-			.onTrue(superstructure.forceStateToShooting());
+		// manipulator.b().and(manipulator.povUp())
+		// 	.onTrue(superstructure.forceStateToShooting());
 
 		// manip force FSM to intake
-		manipulator.b().and(manipulator.leftTrigger()).onTrue(superstructure.forceStateToIntake());
+		//manipulator.b().and(manipulator.leftTrigger()).onTrue(superstructure.forceStateToIntake());
 
 		// aim safe angle
 		// manipulator.x().and(manipulator.rightBumper().negate()).and(manipulator.a().negate()).onTrue(aim.hardStop());
@@ -307,7 +307,7 @@ public class Robot extends TimedRobot {
 	@Override
 	public void robotInit() {
 		addPeriodic(() -> {
-			superstructure.fastPeriodic();
+			//superstructure.fastPeriodic();
 		}, 0.00125);
 		SmartDashboard.putData(field2d);
 		WaltLogger.logPose3d("FieldPoses", "shotLocation").accept(
@@ -357,8 +357,8 @@ public class Robot extends TimedRobot {
 		if (m_autonomousCommand != null) {
 			m_autonomousCommand.schedule();
 		}
-		superstructure.m_autonTimer.restart();
-		superstructure.shotNumber = 0;
+		//superstructure.m_autonTimer.restart();
+		//superstructure.shotNumber = 0;
 	}
 
 	@Override
@@ -377,7 +377,7 @@ public class Robot extends TimedRobot {
 			m_autonomousCommand.cancel();
 		}
 
-		superstructure.resetAutonFlags();
+		//superstructure.resetAutonFlags();
 	}
 
 	@Override

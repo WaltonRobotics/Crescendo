@@ -23,14 +23,14 @@ public class Intake extends SubsystemBase {
 
     public final Trigger trg_middleRollerCurrentSpike = new Trigger(() -> m_feeder.getOutputCurrent() > 20).debounce(0.1);
 
-    private final DoubleLogger log_statorCurrent = WaltLogger.logDouble("Intake", "statorCurrent");
-    private final DoubleLogger log_supplyCurrent = WaltLogger.logDouble("Intake", "supplyCurrent");
-    private final DoubleLogger log_outputVoltage = WaltLogger.logDouble("Intake", "outputVoltage");
-    private final DoubleLogger log_supplyVoltage = WaltLogger.logDouble("Intake", "supplyVoltage");
+    // private final DoubleLogger log_statorCurrent = WaltLogger.logDouble("Intake", "statorCurrent");
+    // private final DoubleLogger log_supplyCurrent = WaltLogger.logDouble("Intake", "supplyCurrent");
+    // private final DoubleLogger log_outputVoltage = WaltLogger.logDouble("Intake", "outputVoltage");
+    // private final DoubleLogger log_supplyVoltage = WaltLogger.logDouble("Intake", "supplyVoltage");
 
-    private final DoubleLogger log_middleStatorCurrent = WaltLogger.logDouble("Intake/MiddleRoller", "statorCurrent");
-    private final DoubleLogger log_middleOutputVoltage = WaltLogger.logDouble("Intake/MiddleRoller", "outputVoltage");
-    private final DoubleLogger log_middleSupplyVoltage = WaltLogger.logDouble("Intake/MiddleRoller", "supplyVoltage");
+    // private final DoubleLogger log_middleStatorCurrent = WaltLogger.logDouble("Intake/MiddleRoller", "statorCurrent");
+    // private final DoubleLogger log_middleOutputVoltage = WaltLogger.logDouble("Intake/MiddleRoller", "outputVoltage");
+    // private final DoubleLogger log_middleSupplyVoltage = WaltLogger.logDouble("Intake/MiddleRoller", "supplyVoltage");
 
     public Intake() {
         m_motor.getConfigurator().apply(IntakeConfigs.kConfigs);
@@ -119,15 +119,15 @@ public class Intake extends SubsystemBase {
         );
     }
 
-    @Override
-    public void periodic() {
-        log_statorCurrent.accept(m_motor.getStatorCurrent().getValueAsDouble());
-        log_supplyCurrent.accept(m_motor.getSupplyCurrent().getValueAsDouble());
-        log_outputVoltage.accept(m_motor.getMotorVoltage().getValueAsDouble());
-        log_supplyVoltage.accept(m_motor.getSupplyVoltage().getValueAsDouble());
+    // @Override
+    // public void periodic() {
+    //     log_statorCurrent.accept(m_motor.getStatorCurrent().getValueAsDouble());
+    //     log_supplyCurrent.accept(m_motor.getSupplyCurrent().getValueAsDouble());
+    //     log_outputVoltage.accept(m_motor.getMotorVoltage().getValueAsDouble());
+    //     log_supplyVoltage.accept(m_motor.getSupplyVoltage().getValueAsDouble());
 
-        log_middleStatorCurrent.accept(m_feeder.getOutputCurrent());
-        log_middleOutputVoltage.accept(m_feeder.getAppliedOutput());
-        log_middleSupplyVoltage.accept(m_feeder.getBusVoltage());
-    }
+    //     log_middleStatorCurrent.accept(m_feeder.getOutputCurrent());
+    //     log_middleOutputVoltage.accept(m_feeder.getAppliedOutput());
+    //     log_middleSupplyVoltage.accept(m_feeder.getBusVoltage());
+    // }
 }
