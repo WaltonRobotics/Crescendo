@@ -62,6 +62,7 @@ import static frc.robot.Constants.AimK.kClimbingAngle;
 import static frc.robot.Constants.AimK.kSubwooferAngle;
 import static frc.robot.Constants.AimK.kTrapAngle;
 import static frc.robot.Constants.RobotK.*;
+import static frc.robot.generated.TunerConstants.drivetrain;
 
 import java.util.function.Supplier;
 
@@ -211,7 +212,10 @@ public class Robot extends TimedRobot {
 
 		// face amp
 		driver.leftTrigger().whileTrue(swerve.faceAmp(() -> -driver.getLeftY(), () -> -driver.getLeftX(), kMaxSpeed));
-		driver.start().whileTrue(swerve.faceAmpUnderDefence(() -> -driver.getLeftY(), () -> -driver.getLeftX(), kMaxSpeed));
+		// driver.start().whileTrue(swerve.faceAmpUnderDefence(() -> -driver.getLeftY(), () -> -driver.getLeftX(), kMaxSpeed));
+
+		// driver print encoder offsets so you can replace tuner constants
+		driver.start().and(driver.back()).and(driver.rightBumper()).onTrue(drivetrain.printCurrentEncoderOffsets());
 
 		/* manipulator controls */
 		// eject note
@@ -270,7 +274,7 @@ public class Robot extends TimedRobot {
 
 		manipulator.povLeft().and(manipulator.a().negate()).onTrue(aim.toAngleUntilAt(Degrees.of(15.5))); // TODO unmagify
 
-		driver.rightBumper().whileTrue(shooter.farShot());
+		// driver.rightBumper().whileTrue(shooter.farShot());
 	}
 
 	public void configureTestingBindings() {
@@ -297,7 +301,7 @@ public class Robot extends TimedRobot {
 			.onTrue(swerve.resetModulePositions())
 			.onTrue(Commands.runOnce(() -> swerve.seedFieldRelative(new Pose2d())));
 
-		driver.back().onTrue(swerve.resetPoseToSpeaker());
+		// driver.back().onTrue(swerve.resetPoseToSpeaker());
 	}
 
 	private Command getAutonomousCommand() {

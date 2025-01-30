@@ -58,6 +58,7 @@ import frc.util.logging.WaltLogger.DoubleLogger;
 import frc.util.logging.WaltLogger.Pose2dLogger;
 
 import static frc.robot.Constants.FieldK.*;
+import static frc.robot.generated.TunerConstants.drivetrain;
 import static frc.robot.generated.TunerConstants.kDriveRadius;
 import static frc.robot.generated.TunerConstants.kDriveRotationsPerMeter;
 import static edu.wpi.first.units.Units.Degrees;
@@ -146,6 +147,16 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 	private final DoubleLogger log_pigeonYaw = WaltLogger.logDouble("Swerve", "pigeonYaw");
 
 	private final Pose2dLogger log_desiredPose = WaltLogger.logPose2d("Swerve", "desiredPose");
+
+	public Command printCurrentEncoderOffsets() {
+		return Commands.sequence(
+			Commands.print(Double.toString(Timer.getFPGATimestamp())),
+			Commands.print("FL: " + Double.toString(drivetrain.Modules[0].getCANcoder().getAbsolutePosition().getValueAsDouble())),
+			Commands.print("FR: " + Double.toString(drivetrain.Modules[1].getCANcoder().getAbsolutePosition().getValueAsDouble())),
+			Commands.print("BL: " + Double.toString(drivetrain.Modules[2].getCANcoder().getAbsolutePosition().getValueAsDouble())),
+			Commands.print("BR: " + Double.toString(drivetrain.Modules[3].getCANcoder().getAbsolutePosition().getValueAsDouble()))
+		);
+	}
 
 	public void addVisionMeasurement3d(VisionMeasurement3d measurement) {
 		// sadge!
