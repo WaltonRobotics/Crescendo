@@ -81,7 +81,7 @@ public class Robot extends TimedRobot {
 	private final Aim aim = new Aim();
 	private final Intake intake = new Intake();
 	private final Conveyor conveyor = new Conveyor();
-	private final Climber climber = new Climber();
+	// private final Climber climber = new Climber();
 	private final Trap trap = new Trap();
 
 	private final PowerDistribution pdp = new PowerDistribution();
@@ -252,10 +252,10 @@ public class Robot extends TimedRobot {
 
 		// climber controls	
 		// x is override button
-		manipulator.a().and(manipulator.povDown()).whileTrue(climber.retractBoth());
-		manipulator.a().and(manipulator.povUp()).whileTrue(climber.extendBoth());
-		manipulator.a().and(manipulator.povLeft()).whileTrue(climber.retractLeft());
-		manipulator.a().and(manipulator.povRight()).whileTrue(climber.retractRight());
+		// manipulator.a().and(manipulator.povDown()).whileTrue(climber.retractBoth());
+		// manipulator.a().and(manipulator.povUp()).whileTrue(climber.extendBoth());
+		// manipulator.a().and(manipulator.povLeft()).whileTrue(climber.retractLeft());
+		// manipulator.a().and(manipulator.povRight()).whileTrue(climber.retractRight());
 		manipulator.y().and(manipulator.leftBumper().negate()).onTrue(aim.toAngleUntilAt(kClimbAngle));
 
 		// trap buttons
@@ -318,7 +318,8 @@ public class Robot extends TimedRobot {
 			.accept(FieldK.kTag7Pose);
 		mapAutonCommands();
 		configureBindings();
-		DriverStation.startDataLog(DataLogManager.getLog());
+		// DataLogManager
+		// DriverStation.startDataLog(DataLogManager.getLog());
 		if (!DriverStation.isFMSAttached()) {
 			configureTestingBindings();
 		}
