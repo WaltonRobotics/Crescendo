@@ -198,20 +198,14 @@ public class Robot extends TimedRobot {
 		swerve.setDefaultCommand(swerve.applyFcRequest(getTeleSwerveReq()));
 
 		// swerve brake
-		driver.a().whileTrue(swerve.applyRequest(() -> brake));
+		driver.a().onTrue(swerve.applyRequest(() -> brake));
+		driver.y().onFalse(swerve.resetModulePositions());
 
 		// force shot
 		driver.b().and(driver.rightTrigger()).onTrue(superstructure.forceStateToShooting());
 
 		// rezero
 		driver.leftBumper().onTrue(swerve.runOnce(() -> swerve.seedFieldRelative()));
-
-		// centre of gravity while climbing
-		driver.y().onTrue(aim.toAngleUntilAt(kClimbingAngle));
-
-		// face amp
-		driver.leftTrigger().whileTrue(swerve.faceAmp(() -> -driver.getLeftY(), () -> -driver.getLeftX(), kMaxSpeed));
-		driver.start().whileTrue(swerve.faceAmpUnderDefence(() -> -driver.getLeftY(), () -> -driver.getLeftX(), kMaxSpeed));
 
 		/* manipulator controls */
 		// eject note
@@ -232,37 +226,8 @@ public class Robot extends TimedRobot {
 		// manip force FSM to intake
 		manipulator.b().and(manipulator.leftTrigger()).onTrue(superstructure.forceStateToIntake());
 
-		// aim safe angle
-		// manipulator.x().and(manipulator.rightBumper().negate()).and(manipulator.a().negate()).onTrue(aim.hardStop());
-
-		// subwoofer if vision breaky
-		manipulator.x().and(manipulator.rightBumper()).onTrue(aim.toAngleUntilAt(kSubwooferAngle));
-
 		// aim rezero
 		manipulator.b().and(manipulator.povDown()).and(manipulator.x()).onTrue(aim.rezero());
-
-		// aim amp
-		manipulator.leftBumper().and(manipulator.y()).onTrue(aim.toAngleUntilAt(() -> AimK.kAmpAngle, Degrees.of(0.25)));
-
-		// testing buttons. COMMENT OUT WHEN DONE !!!!! (watch me forget. sorry future grac. and everyone else involved.)
-		// also uncomment out first two climber controls.
-		// aim slowly go down
-		// manipulator.a().and(manipulator.povDown()).onTrue(aim.decreaseAngle());
-		// manipulator.a().and(manipulator.povUp()).whileTrue(aim.increaseAngle());
-
-		// climber controls	
-		// x is override button
-		// manipulator.a().and(manipulator.povDown()).whileTrue(climber.retractBoth());
-		// manipulator.a().and(manipulator.povUp()).whileTrue(climber.extendBoth());
-		// manipulator.a().and(manipulator.povLeft()).whileTrue(climber.retractLeft());
-		// manipulator.a().and(manipulator.povRight()).whileTrue(climber.retractRight());
-		manipulator.y().and(manipulator.leftBumper().negate()).onTrue(aim.toAngleUntilAt(kClimbAngle));
-
-		// trap buttons
-		trapTrg.whileTrue(shooter.trap())
-			.onTrue(aim.toAngleUntilAt(kTrapAngle))
-			.onTrue(trap.deploy())
-			.onFalse(trap.stop());
 
 		// feeding
 		manipulator.povUp().and((manipulator.a().or(manipulator.b())).negate()).whileTrue(shooter.lob())
