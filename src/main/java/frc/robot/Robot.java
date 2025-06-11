@@ -52,7 +52,6 @@ import frc.util.WaltRangeChecker;
 import frc.util.logging.WaltLogger;
 import frc.util.logging.WaltLogger.BooleanLogger;
 import frc.util.logging.WaltLogger.DoubleLogger;
-import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
 
@@ -76,7 +75,6 @@ public class Robot extends TimedRobot {
 	private final CommandXboxController manipulator = new CommandXboxController(1);
 
 	private final Swerve swerve = TunerConstants.drivetrain;
-	private final Vision vision = new Vision();
 	private final Shooter shooter = new Shooter();
 	private final Aim aim = new Aim();
 	private final Intake intake = new Intake();
@@ -92,7 +90,7 @@ public class Robot extends TimedRobot {
 	private final Trigger trapTrg = manipulator.start();
 
 	public final Superstructure superstructure = new Superstructure(
-		aim, intake, conveyor, shooter, vision,
+		aim, intake, conveyor, shooter,
 		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()), trapTrg.or(manipulator.a()),
 		(intensity) -> driverRumble(intensity), (intensity) -> manipulatorRumble(intensity));
 
@@ -117,18 +115,6 @@ public class Robot extends TimedRobot {
 		if (Robot.isSimulation()) {
 			DriverStation.silenceJoystickConnectionWarning(true);
 		}
-		addPeriodic(() -> {
-			var frontCamEstOpt = vision.getFrontCamPoseEst();
-			boolean frontCamTagsPresent = frontCamEstOpt.hasTarget();
-			boolean frontCamEstPresent = frontCamEstOpt.measOpt().isPresent();
-			log_frontCamEstPresent.accept(frontCamEstPresent);
-			swerve.calculateYawErr(frontCamEstOpt.measOpt(), frontCamTagsPresent);
-			if (frontCamEstPresent) {
-				var frontEst = frontCamEstOpt.measOpt().get();
-				aim.calculatePitchToSpeaker(frontEst);
-				// swerve.addVisionMeasurement(frontEst.estimate().estimatedPose.toPose2d(), frontEst.estimate().timestampSeconds);
-			};
-		}, 0.02);
 		miniPcPower = pdp.getCurrent(17) * pdp.getVoltage();
 		WaltRangeChecker.addDoubleChecker("MiniPc", () -> miniPcPower, 10, 70, 1, false);
 	}
@@ -275,8 +261,6 @@ public class Robot extends TimedRobot {
 			superstructure.fastPeriodic();
 		}, 0.00125);
 		SmartDashboard.putData(field2d);
-		WaltLogger.logPose3d("FieldPoses", "shotLocation").accept(
-			Vision.getMiddleSpeakerTagPose().transformBy(AimK.kTagToSpeaker));
 		WaltLogger.logPose3d("FieldPoses", "tag4Location")
 			.accept(FieldK.kTag4Pose);
 		WaltLogger.logPose3d("FieldPoses", "tag7Location")
