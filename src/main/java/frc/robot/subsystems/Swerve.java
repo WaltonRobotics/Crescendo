@@ -46,7 +46,6 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.DriveK;
 import frc.robot.Constants.FieldK.SpeakerK;
-import frc.robot.Vision.VisionMeasurement3d;
 import frc.robot.auton.AutonChooser;
 import frc.robot.auton.AutonChooser.AutonOption;
 import frc.util.AdvantageScopeUtil;
@@ -147,17 +146,6 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 
 	private final Pose2dLogger log_desiredPose = WaltLogger.logPose2d("Swerve", "desiredPose");
 
-	public void addVisionMeasurement3d(VisionMeasurement3d measurement) {
-		// sadge!
-		var now = Timer.getFPGATimestamp();
-		var timestamp = measurement.estimate().timestampSeconds;
-		if (timestamp > now) return;
-
-		addVisionMeasurement(
-			measurement.estimate().estimatedPose.toPose2d(),
-			timestamp,
-			measurement.stdDevs());
-	}
 
 	private void configureAutoBuilder() {
 		AutoBuilder.configureHolonomic(
@@ -304,23 +292,7 @@ public class Swerve extends SwerveDrivetrain implements Subsystem {
 		});
 	}
 
-	public void calculateYawErr(Optional<VisionMeasurement3d> measOpt, boolean tagsPresent) {
-		if (measOpt.isPresent()) {
-			var pose = measOpt.get().estimate().estimatedPose;
-			var speakerTrans = AllianceFlipUtil.apply(SpeakerK.kBlueCenterOpening);
-			var dist = speakerTrans.minus(pose.getTranslation());
-			var desiredYaw = Math.atan2(dist.getY(), dist.getX());
-			var curYaw = pose.getRotation().getZ();
-			var yawErr = MathUtil.angleModulus((desiredYaw - curYaw) - Math.PI);
-			log_yawErrOpt.accept(Units.radiansToDegrees(yawErr));
-			m_hasVisionYaw = true;
-			m_visYawTimer.restart();
-			m_visionYaw = Radians.of(yawErr);
-			log_desiredPose.accept(getState().Pose.rotateBy(Rotation2d.fromRadians(yawErr)));
-		}
-		m_hasVisionYaw = tagsPresent && !m_visYawTimer.hasElapsed(0.1);
-		log_yawErr.accept(m_visionYaw.in(Degrees));
-	}
+
 
 	public Command applyRequest(Supplier<SwerveRequest> requestSupplier) {
 		return run(() -> setControl(requestSupplier.get()));
