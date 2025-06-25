@@ -55,6 +55,7 @@ import frc.util.logging.WaltLogger.DoubleLogger;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 //import frc.robot.subsystems.Superstructure;
+import frc.robot.subsystems.Superstructure;
 
 import static frc.robot.Constants.AimK.kAmpAngle;
 import static frc.robot.Constants.AimK.kClimbAngle;
@@ -94,10 +95,10 @@ public class Robot extends TimedRobot {
 
 	private final Trigger trapTrg = manipulator.start();
 
-	// public final Superstructure superstructure = new Superstructure(
-	// 	aim, intake, conveyor, shooter, vision,
-	// 	manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()), trapTrg.or(manipulator.a()),
-	// 	(intensity) -> driverRumble(intensity), (intensity) -> manipulatorRumble(intensity));
+	public final Superstructure superstructure = new Superstructure(
+		aim, intake, conveyor, shooter, vision,
+		manipulator.leftTrigger(), driver.rightTrigger(), manipulator.leftBumper().and(driver.rightTrigger()), trapTrg.or(manipulator.a()),
+		(intensity) -> driverRumble(intensity), (intensity) -> manipulatorRumble(intensity));
 
 	public static final Field2d field2d = new Field2d();
 
@@ -210,16 +211,16 @@ public class Robot extends TimedRobot {
 		swerve.registerTelemetry(logger::telemeterize);
 
 		/* driver controls */
-		driver.leftTrigger().whileTrue(swerve.applyFcRequest(getTeleSwerveReq()));
+		driver.leftTrigger().onTrue(swerve.applyFcRequest(getTeleSwerveReq()));
 
 		swerve.setDefaultCommand(swerve.applyFcRequest(getOutreachTeleSwerveReq()));
 
 		// swerve brake
 		driver.a().onTrue(swerve.applyRequest(() -> brake));
-		driver.y().onFalse(swerve.resetModulePositions());
+		driver.y().onTrue(swerve.applyFcRequest(getOutreachTeleSwerveReq()));
 
 		// force shot
-		// driver.b().and(driver.rightTrigger()).onTrue(superstructure.forceStateToShooting());
+		driver.b().and(driver.rightTrigger()).onTrue(superstructure.forceStateToShooting());
 
 		// rezero
 		driver.leftBumper().onTrue(swerve.runOnce(() -> swerve.seedFieldRelative()));
@@ -244,7 +245,7 @@ public class Robot extends TimedRobot {
 		// 	.onTrue(superstructure.forceStateToShooting());
 
 		// manip force FSM to intake
-		//manipulator.b().and(manipulator.leftTrigger()).onTrue(superstructure.forceStateToIntake());
+		manipulator.b().and(manipulator.leftTrigger()).onTrue(superstructure.forceStateToIntake());
 
 		// aim safe angle
 		// manipulator.x().and(manipulator.rightBumper().negate()).and(manipulator.a().negate()).onTrue(aim.hardStop());
