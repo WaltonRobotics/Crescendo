@@ -68,9 +68,9 @@ public class Conveyor extends SubsystemBase {
 
     @Override
     public void periodic() {
-        log_statorCurrent.accept(m_conveyor.getOutputCurrent());
-        log_outputVoltage.accept(m_conveyor.getAppliedOutput());
-        log_supplyVoltage.accept(m_conveyor.getBusVoltage());
-        log_currentSpike.accept(trg_currentSpike);
+        // log_statorCurrent.accept(m_conveyor.getOutputCurrent());
+        // log_outputVoltage.accept(m_conveyor.getAppliedOutput());
+        // log_supplyVoltage.accept(m_conveyor.getBusVoltage());
+        // log_currentSpike.accept(trg_currentSpike);
     }
 }

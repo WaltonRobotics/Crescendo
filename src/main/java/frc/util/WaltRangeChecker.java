@@ -15,8 +15,8 @@ public class WaltRangeChecker {
         BooleanLogger lowLogger = new BooleanLogger("Faults", name + "_Low");
         BooleanLogger highLogger = new BooleanLogger("Faults", name + "_High");
 
-        lowLogger.accept(false);
-        highLogger.accept(false);
+        // lowLogger.accept(false);
+        // highLogger.accept(false);
 
         Timer oorTimer = new Timer();
         var trg_outOfRangeLow = eqTo ?
@@ -29,11 +29,11 @@ public class WaltRangeChecker {
         trg_outOfRangeLow.debounce(secondsToFail)
             .onTrue(Commands.runOnce(() -> {
                 System.out.println(name + " (" + val.getAsDouble() + ") has been below range for " + secondsToFail + " seconds");
-                lowLogger.accept(true);
+                // lowLogger.accept(true);
                 oorTimer.restart();
             }).ignoringDisable(true))
             .onFalse(Commands.runOnce(() -> {
-                lowLogger.accept(false);
+                // lowLogger.accept(false);
                 oorTimer.stop();
                 System.out.println(name + " (" + val.getAsDouble() + ") re-entered safe range from low after " + oorTimer.get() + " seconds");
                 oorTimer.reset();
@@ -42,11 +42,11 @@ public class WaltRangeChecker {
         trg_outOfRangeHigh.debounce(secondsToFail)
             .onTrue(Commands.runOnce(() -> {
                 System.out.println(name + " (" + val.getAsDouble() + ") has been above range for " + secondsToFail + " seconds");
-                highLogger.accept(true);
+                // highLogger.accept(true);
                 oorTimer.restart();
             }).ignoringDisable(true))
             .onFalse(Commands.runOnce(() -> {
-                highLogger.accept(false);
+                // highLogger.accept(false);
                 oorTimer.stop();
                 System.out.println(name + " (" + val.getAsDouble() + ") re-entered safe range from high after " + oorTimer.get() + " seconds");
                 oorTimer.reset();
@@ -57,8 +57,8 @@ public class WaltRangeChecker {
         BooleanLogger lowLogger = new BooleanLogger("Faults", name + "_Low");
         BooleanLogger highLogger = new BooleanLogger("Faults", name + "_High");
         
-        lowLogger.accept(false);
-        highLogger.accept(false);
+        // lowLogger.accept(false);
+        // highLogger.accept(false);
         
         Timer oorTimer = new Timer();
         var trg_outOfRangeLow = eqTo ?
@@ -71,11 +71,11 @@ public class WaltRangeChecker {
         trg_outOfRangeLow.debounce(secondsToFail)
             .onTrue(Commands.runOnce(() -> {
                 System.out.println(name + " (" + val.getAsInt() + ") has been below range for " + secondsToFail + " seconds");
-                lowLogger.accept(true);
+                // lowLogger.accept(true);
                 oorTimer.restart();
             }).ignoringDisable(true))
             .onFalse(Commands.runOnce(() -> {
-                lowLogger.accept(false);
+                // lowLogger.accept(false);
                 oorTimer.stop();
                 System.out.println(name + " (" + val.getAsInt() + ") re-entered safe range from low after " + oorTimer.get() + " seconds");
                 oorTimer.reset();
@@ -84,11 +84,11 @@ public class WaltRangeChecker {
         trg_outOfRangeHigh.debounce(secondsToFail)
             .onTrue(Commands.runOnce(() -> {
                 System.out.println(name + " (" + val.getAsInt() + ") has been above range for " + secondsToFail + " seconds");
-                highLogger.accept(true);
+                // highLogger.accept(true);
                 oorTimer.restart();
             }).ignoringDisable(true))
             .onFalse(Commands.runOnce(() -> {
-                highLogger.accept(false);
+                // highLogger.accept(false);
                 oorTimer.stop();
                 System.out.println(name + " (" + val.getAsInt() + ") re-entered safe range from high after " + oorTimer.get() + " seconds");
                 oorTimer.reset();

@@ -143,7 +143,7 @@ public class Superstructure {
     (Boolean rising, Boolean falling) -> {
         if ((rising || falling) && !frontVisiSightSeenNote && stateTrg_intake.getAsBoolean()) {
             frontVisiSightSeenNote = true;
-            log_frontVisiSightIrq.accept(true);
+            // log_frontVisiSightIrq.accept(true);
         }
     });
         
@@ -528,28 +528,28 @@ public class Superstructure {
         evaluateConveyorIrq();
         evaluateShooterIrq();
 
-        log_driverIntakeReq.accept(trg_driverIntakeReq);
-        log_driverShootReq.accept(trg_driverShootReq);
-        log_autonIntakeReq.accept(autonIntake);
-        log_autonShootReq.accept(autonShoot);
-        log_aimReady.accept(trg_atAngle);
+        // log_driverIntakeReq.accept(trg_driverIntakeReq);
+        // log_driverShootReq.accept(trg_driverShootReq);
+        // log_autonIntakeReq.accept(autonIntake);
+        // log_autonShootReq.accept(autonShoot);
+        // log_aimReady.accept(trg_atAngle);
         
         sensorEventLoop.poll();
-        log_frontVisiSight.accept(bs_frontVisiSight);
+        // log_frontVisiSight.accept(bs_frontVisiSight);
         log_conveyorBeamBreak.accept(bs_conveyorBeamBreak);
         log_shooterBeamBreak.accept(bs_shooterBeamBreak);
-        log_frontVisiSightIrq.accept(frontVisiSightSeenNote);
+        // log_frontVisiSightIrq.accept(frontVisiSightSeenNote);
         log_conveyorBeamBreakIrq.accept(conveyorBeamBreakIrq);
         log_shooterBeamBreakIrq.accept(irqTrg_shooterBeamBreak.getAsBoolean());
-        log_intakenNotes.accept(intakenNotes);
-        log_shotNotes.accept(shotNotes);
-        log_shotNotes_amp.accept(shotNotes_amp);
-        log_preloadReq.accept(preload);
+        // log_intakenNotes.accept(intakenNotes);
+        // log_shotNotes.accept(shotNotes);
+        // log_shotNotes_amp.accept(shotNotes_amp);
+        // log_preloadReq.accept(preload);
 
         stateEventLoop.poll();
 
         // log state after, so it represents the event loop changes
-        log_state.accept(m_state.idx);
+        // log_state.accept(m_state.idx);
     }
 
     public Command forceStateToNoteReady() {

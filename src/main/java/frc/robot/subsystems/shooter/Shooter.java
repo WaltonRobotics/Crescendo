@@ -278,18 +278,18 @@ public class Shooter extends SubsystemBase {
     }
 
     public void periodic() {
-        log_leftTargetRpm.accept(m_leftTarget.in(RotationsPerMinute));
-        log_rightTargetRpm.accept(m_rightTarget.in(RotationsPerMinute));
-        log_spinAmt.accept(m_spinAmt);
-        log_shotTime.accept(m_shotTime);
-        log_leftTarget.accept(m_left.getClosedLoopReference().getValueAsDouble());
-        log_rightTarget.accept(m_right.getClosedLoopReference().getValueAsDouble());
+        // log_leftTargetRpm.accept(m_leftTarget.in(RotationsPerMinute));
+        // log_rightTargetRpm.accept(m_rightTarget.in(RotationsPerMinute));
+        // log_spinAmt.accept(m_spinAmt);
+        // log_shotTime.accept(m_shotTime);
+        // log_leftTarget.accept(m_left.getClosedLoopReference().getValueAsDouble());
+        // log_rightTarget.accept(m_right.getClosedLoopReference().getValueAsDouble());
 
-        log_leftError.accept(m_left.getClosedLoopError().getValueAsDouble());
-        log_rightError.accept(m_right.getClosedLoopError().getValueAsDouble());
-        log_spunUp.accept(m_spunUp);
-        log_leftOk.accept(m_leftOk);
-        log_rightOk.accept(m_rightOk);
+        // log_leftError.accept(m_left.getClosedLoopError().getValueAsDouble());
+        // log_rightError.accept(m_right.getClosedLoopError().getValueAsDouble());
+        // log_spunUp.accept(m_spunUp);
+        // log_leftOk.accept(m_leftOk);
+        // log_rightOk.accept(m_rightOk);
     }
 
     public void simulationPeriodic() {

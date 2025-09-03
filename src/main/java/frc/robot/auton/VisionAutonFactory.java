@@ -24,7 +24,7 @@ public final class VisionAutonFactory {
 	private static int m_seqVal = 0;
 	private static Command logSeqIncr() {
 		return runOnce(() -> {
-			log_autonSeqInt.accept(m_seqVal);
+			// log_autonSeqInt.accept(m_seqVal);
 			m_seqVal++;
 		});
 	}

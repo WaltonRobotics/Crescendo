@@ -121,13 +121,13 @@ public class Intake extends SubsystemBase {
 
     @Override
     public void periodic() {
-        log_statorCurrent.accept(m_motor.getStatorCurrent().getValueAsDouble());
-        log_supplyCurrent.accept(m_motor.getSupplyCurrent().getValueAsDouble());
-        log_outputVoltage.accept(m_motor.getMotorVoltage().getValueAsDouble());
-        log_supplyVoltage.accept(m_motor.getSupplyVoltage().getValueAsDouble());
+        // log_statorCurrent.accept(m_motor.getStatorCurrent().getValueAsDouble());
+        // log_supplyCurrent.accept(m_motor.getSupplyCurrent().getValueAsDouble());
+        // log_outputVoltage.accept(m_motor.getMotorVoltage().getValueAsDouble());
+        // log_supplyVoltage.accept(m_motor.getSupplyVoltage().getValueAsDouble());
 
-        log_middleStatorCurrent.accept(m_feeder.getOutputCurrent());
-        log_middleOutputVoltage.accept(m_feeder.getAppliedOutput());
-        log_middleSupplyVoltage.accept(m_feeder.getBusVoltage());
+        // log_middleStatorCurrent.accept(m_feeder.getOutputCurrent());
+        // log_middleOutputVoltage.accept(m_feeder.getAppliedOutput());
+        // log_middleSupplyVoltage.accept(m_feeder.getBusVoltage());
     }
 }

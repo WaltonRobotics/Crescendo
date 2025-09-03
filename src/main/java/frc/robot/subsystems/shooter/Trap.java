@@ -22,6 +22,6 @@ public class Trap extends SubsystemBase {
 
 
     public void periodic() {
-        log_position.accept(m_servo.getPosition());
+        // log_position.accept(m_servo.getPosition());
     }
 }

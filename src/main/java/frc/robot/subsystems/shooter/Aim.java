@@ -168,7 +168,7 @@ public class Aim extends SubsystemBase {
 
         configureCoastTrigger();
 
-        log_tunableTest.accept(0.0);
+        // log_tunableTest.accept(0.0);
 
         WaltRangeChecker.addDoubleChecker("DesiredPitch", () -> m_pitchToSpeaker, 0, kSubwooferAngle.in(Radians), 1, false);
 
@@ -208,7 +208,7 @@ public class Aim extends SubsystemBase {
                 return false;
             }
             var error = Rotations.of(Math.abs(m_targetAngle.in(Rotations) - m_motor.getPosition().getValueAsDouble()));
-            log_error.accept(error.in(Degrees));
+            // log_error.accept(error.in(Degrees));
 
             if (m_targetAngle.baseUnitMagnitude() == kAmpAngle.baseUnitMagnitude()) {
                 return error.lte(kAmpAngleAllowedError);
@@ -221,7 +221,7 @@ public class Aim extends SubsystemBase {
     public BooleanSupplier aimFinished(double tolerance) {
         return () -> {
             var error = Rotations.of(Math.abs(m_targetAngle.in(Rotations) - m_motor.getPosition().getValueAsDouble()));
-            log_error.accept(error.in(Degrees));
+            // log_error.accept(error.in(Degrees));
 
             return error.lte(m_targetAngle.times(tolerance));
         };
@@ -299,7 +299,7 @@ public class Aim extends SubsystemBase {
         };
         BooleanSupplier isFinished = () -> {
             var error = Rotations.of(Math.abs(m_targetAngle.in(Rotations) - m_motor.getPosition().getValueAsDouble()));
-            log_error.accept(error.in(Degrees));
+            // log_error.accept(error.in(Degrees));
 
             boolean imThere = error.lte(tolerance);
             if (imThere) {
@@ -364,21 +364,21 @@ public class Aim extends SubsystemBase {
     @Override
     public void periodic() {
         determineMotionMagicValues(m_usingVision);
-        log_measTimer.accept(m_measurementTimer.get());
+        // log_measTimer.accept(m_measurementTimer.get());
 
-        log_autonAngleOk.accept(trg_autonAngleOk.getAsBoolean());
-        log_motorSpeed.accept(m_motor.get());
-        log_motorPos.accept(Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()));
-        log_targetAngle.accept(getTargetAngle());
-        log_cancoderPos.accept(Units.rotationsToDegrees(m_cancoder.getPosition().getValueAsDouble()));
+        // log_autonAngleOk.accept(trg_autonAngleOk.getAsBoolean());
+        // log_motorSpeed.accept(m_motor.get());
+        // log_motorPos.accept(Units.rotationsToDegrees(m_motor.getPosition().getValueAsDouble()));
+        // log_targetAngle.accept(getTargetAngle());
+        // log_cancoderPos.accept(Units.rotationsToDegrees(m_cancoder.getPosition().getValueAsDouble()));
 
-        log_reference.accept(Units.rotationsToDegrees(m_motor.getClosedLoopReference().getValueAsDouble()));
-        log_output.accept(m_motor.getClosedLoopOutput().getValueAsDouble());
-        log_ff.accept(m_motor.getClosedLoopFeedForward().getValueAsDouble());
+        // log_reference.accept(Units.rotationsToDegrees(m_motor.getClosedLoopReference().getValueAsDouble()));
+        // log_output.accept(m_motor.getClosedLoopOutput().getValueAsDouble());
+        // log_ff.accept(m_motor.getClosedLoopFeedForward().getValueAsDouble());
 
-        log_statorCurrent.accept(m_motor.getStatorCurrent().getValueAsDouble());
-        log_supplyCurrent.accept(m_motor.getSupplyCurrent().getValueAsDouble());
-        log_tqCurrent.accept(m_motor.getTorqueCurrent().getValueAsDouble());
+        // log_statorCurrent.accept(m_motor.getStatorCurrent().getValueAsDouble());
+        // log_supplyCurrent.accept(m_motor.getSupplyCurrent().getValueAsDouble());
+        // log_tqCurrent.accept(m_motor.getTorqueCurrent().getValueAsDouble());
 
         boolean dashCoast = nte_isCoast.getBoolean(false);
         if (dashCoast != m_isCoast && !trg_coastSwitch.getAsBoolean()) {
@@ -388,10 +388,10 @@ public class Aim extends SubsystemBase {
 
         if (m_tunableNumber != m_tunableTest.get()) {
             m_tunableNumber = m_tunableTest.get();
-            log_tunableTest.accept(m_tunableNumber);
+            // log_tunableTest.accept(m_tunableNumber);
         }
 
-        log_coastSwitch.accept(trg_coastSwitch);
+        // log_coastSwitch.accept(trg_coastSwitch);
     }
 
     @Override
@@ -414,10 +414,10 @@ public class Aim extends SubsystemBase {
         m_aim2d.setAngle(Units.rotationsToDegrees(
             m_motor.getPosition().getValueAsDouble())); // TODO: make this render correctly with the real robot too
 
-        log_simVoltage.accept(volts);
-        log_simVelo.accept(m_aimSim.getVelocityRadPerSec());
-        log_simAngle.accept(angle);
-        log_simTarget.accept(m_targetAngle.in(Degrees));
+        // log_simVoltage.accept(volts);
+        // log_simVelo.accept(m_aimSim.getVelocityRadPerSec());
+        // log_simAngle.accept(angle);
+        // log_simTarget.accept(m_targetAngle.in(Degrees));
     }
 
     public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {

@@ -201,8 +201,7 @@ public class Robot extends TimedRobot {
 		swerve.setDefaultCommand(swerve.applyFcRequest(getOutreachTeleSwerveReq()));
 
 		// swerve brake
-		driver.a().onTrue(swerve.applyRequest(() -> brake));
-		driver.y().onFalse(swerve.resetModulePositions());
+		driver.a().whileTrue(swerve.applyRequest(() -> brake));
 
 		// force shot
 		driver.b().and(driver.rightTrigger()).onTrue(superstructure.forceStateToShooting());
@@ -278,10 +277,10 @@ public class Robot extends TimedRobot {
 			superstructure.fastPeriodic();
 		}, 0.00125);
 		SmartDashboard.putData(field2d);
-		WaltLogger.logPose3d("FieldPoses", "tag4Location")
-			.accept(FieldK.kTag4Pose);
-		WaltLogger.logPose3d("FieldPoses", "tag7Location")
-			.accept(FieldK.kTag7Pose);
+		// WaltLogger.logPose3d("FieldPoses", "tag4Location")
+		// 	.accept(FieldK.kTag4Pose);
+		// WaltLogger.logPose3d("FieldPoses", "tag7Location")
+		// 	.accept(FieldK.kTag7Pose);
 		mapAutonCommands();
 		configureBindings();
 		// DataLogManager
@@ -300,8 +299,8 @@ public class Robot extends TimedRobot {
 		CommandScheduler.getInstance().run();
 		swerve.logModulePositions();
 		miniPcPower = pdp.getCurrent(17) * pdp.getVoltage();
-		log_miniPcPower.accept(miniPcPower);
-		log_powerAbove10.accept(miniPcPower > 10);
+		// log_miniPcPower.accept(miniPcPower);
+		// log_powerAbove10.accept(miniPcPower > 10);
 	}
 
 	@Override

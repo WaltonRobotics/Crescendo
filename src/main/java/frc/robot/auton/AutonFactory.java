@@ -35,7 +35,7 @@ public final class AutonFactory {
 
 	private static Command logSeqIncr() {
 		return runOnce(() -> {
-			log_autonSeqInt.accept(m_seqVal);
+			// log_autonSeqInt.accept(m_seqVal);
 			m_seqVal++;
 		});
 	}
