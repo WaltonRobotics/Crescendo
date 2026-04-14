@@ -180,10 +180,10 @@ public class Robot extends TimedRobot {
 			double leftY = -driver.getLeftY();
 			double leftX = -driver.getLeftX();
 			return drive
-				.withVelocityX(leftY * kMaxSpeed)
-				.withVelocityY(leftX * kMaxSpeed)
-				.withRotationalRate(-driver.getRightX() * kMaxAngularRate)
-				.withRotationalDeadband(kMaxAngularRate * 0.1);
+				.withVelocityX(leftY * kOutreachMaxSpeed)
+				.withVelocityY(leftX * kOutreachMaxSpeed)
+				.withRotationalRate(-driver.getRightX() * kOutreachMaxAngularRate)
+				.withRotationalDeadband(kOutreachMaxAngularRate * 0.1);
 		};
 	}
 
@@ -195,10 +195,11 @@ public class Robot extends TimedRobot {
 		swerve.registerTelemetry(logger::telemeterize);
 
 		/* driver controls */
-		driver.leftTrigger().whileTrue(swerve.applyFcRequest(getTeleSwerveReq()));
+		// OUTREACH SWERVE BINDS
+		// driver.leftTrigger().whileTrue(swerve.applyFcRequest(getTeleSwerveReq()));
+		// swerve.setDefaultCommand(swerve.applyFcRequest(getOutreachTeleSwerveReq()));
 
-		//outreach controls
-		swerve.setDefaultCommand(swerve.applyFcRequest(getOutreachTeleSwerveReq()));
+		swerve.setDefaultCommand(swerve.applyFcRequest(getTeleSwerveReq()));
 
 		// swerve brake
 		driver.a().whileTrue(swerve.applyRequest(() -> brake));
