@@ -67,10 +67,10 @@ import java.util.function.Supplier;
 public class Robot extends TimedRobot {
 	/** 5.21 meters per second desired top speed */
 	public static final double kMaxSpeed = 5;
-	// public static final double kOutreachMaxSpeed = kMaxSpeed * 0.5;
+	public static final double kOutreachMaxSpeed = kMaxSpeed * 0.5;
 	/** 1.5 of a rotation per second max angular velocity */
 	public static final double kMaxAngularRate = 1.5 * (Math.PI * 2);
-	// public static final double kOutreachMaxAngularRate = 0.5 * (Math.PI * 2);
+	public static final double kOutreachMaxAngularRate = 0.5 * (Math.PI * 2);
 
 	/* Setting up bindings for necessary control of the swerve drive platform */
 	private final CommandXboxController driver = new CommandXboxController(0); // My joystick
